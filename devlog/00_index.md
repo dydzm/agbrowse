@@ -107,8 +107,13 @@ Each phase file ends with a `## cli-jaw mirror` section that maps:
   to the runtime change.
 
 Phase 0 was the proof of the pattern: shipped to agbrowse `main` (`3c1ea8e`,
-`1b4b238`) and cli-jaw `master` (`3d54c1f`) plus skills_ref `main`
+`1b4b238`, `32618a7`) and cli-jaw `master` (`3d54c1f`) plus skills_ref `main`
 (`256956c`) on the same day.
+
+Plan close-out signed off by GPT-5.5 Pro on 2026-05-01 at conversation
+`https://chatgpt.com/c/69f3d889-fe30-83ab-be42-ebf2d9fd692f`. Verbatim
+record at `context/260501_gpt_pro_plan_closeout.md`. Non-blocking
+clarifications absorbed into Phase 1, 2, 3, 4, 5, and 6 mirror sections.
 
 Sequence inside one phase:
 

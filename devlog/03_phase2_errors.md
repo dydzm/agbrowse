@@ -30,6 +30,9 @@ Phase 3 PR1 because they touch different files.
 | `context.symlink-rejected` | `context-preflight` | `path-list` | false | optional |
 | `grok.context-pack-not-allowed` | `grok-context-pack-not-allowed` | `inline-only-or-allow-flag` | false | required (`grok`) |
 | `internal.unhandled` | `internal` | `report` | false | optional |
+| `cdp.target-mismatch` | `session-target-verify` | `tab-switch` | false | required (cli-jaw `WrongTargetError`) |
+| `capability.unsupported` | `capability-preflight` | `feature-fallback` | false | required (cli-jaw `BrowserCapabilityError`) |
+| `provider.runtime-disabled` | `provider-runtime-gate` | `enable-or-skip` | false | required (cli-jaw `ProviderRuntimeDisabledError`) |
 
 ## PR plan
 
@@ -361,7 +364,12 @@ cli-jaw already has a rudimentary error helper that this phase replaces:
 | `WebAiError` class | **Ports as-is** to `src/browser/web-ai/errors.ts`. Same code catalog (`provider.composer-not-visible`, etc.). |
 | `wrapError` helper | **Ports as-is**. |
 | `stageError` helper | **Replace** — every call site that does `stageError(err, '<stage>')` becomes `throw new WebAiError({ stage, ... })`. |
-| `toWebAiHttpError` | **Modify** — delegates to `WebAiError.toJSON()` when the error is an instance, falls back to legacy shape otherwise (during transition). |
+| `WrongTargetError` (in `session.ts`) | **Map to `cdp.target-mismatch`** — preserve `expectedTargetId` and `actualTargetId` in `evidence`. |
+| `BrowserCapabilityError` (in `primitives.ts` / `capability-registry.ts`) | **Map to `capability.unsupported`** — preserve `capabilityId`, `stage`, `mutationAllowed`, `ownerPrd`. |
+| `ProviderRuntimeDisabledError` (in `provider-adapter.ts`) | **Map to `provider.runtime-disabled`** — preserve `vendor`, `stage`. |
+| `toWebAiHttpError` (in `routes/browser.ts`) | **Modify** — delegates to `WebAiError.toJSON()` when the error is an instance, falls back to legacy shape otherwise (during transition). |
+| `toWebAiErrorEnvelope` (in `web-ai/diagnostics.ts`) | **Delegate or delete** — convert to `WebAiError.toJSON()` shim or remove after every HTTP route uses the new shape. |
+| `WebAiFailureStage` enum | **Reconcile** — align Phase 2 `stage` strings (table above) with cli-jaw's existing stage names so HTTP parity is painless. List the cli-jaw stage names first, agbrowse-only stages last. |
 | `AGBROWSE_JSON_ERRORS` env | **Skip** for cli-jaw — HTTP responses are already JSON. CLI side prints human messages from the JSON response by default; add `--json` to dump the full payload (already supported). |
 | Call-site conversions | All `throw new Error(` in `src/browser/web-ai/**.ts` and `src/browser/web-ai/context-pack/**.ts` get the same conversion as agbrowse. |
 | Tests | Add `tests/unit/browser-web-ai-errors.test.ts` mirroring the agbrowse `WebAiError` coverage. |

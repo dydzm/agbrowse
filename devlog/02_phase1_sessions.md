@@ -532,16 +532,26 @@ cli-jaw is **already partially ahead** of agbrowse on sessions:
 | `withStoreLock` for concurrent writes | **Missing** in cli-jaw too. Both repos need it; share design. |
 | `sessions-command.mjs` ↔ cli-jaw | agbrowse uses local `runSessionsCommand`; cli-jaw uses HTTP routes. Each repo keeps its style. |
 
+**Direction note (post-closeout, GPT Pro):** Phase 1 in agbrowse **adapts
+cli-jaw's session model**; it is not greenfield. Use cli-jaw
+`session.ts` field names and lifecycle states as the canonical shape. The
+ULID-vs-UUID divergence is a deliberate trade-off — keep `randomUUID()` in
+cli-jaw to avoid touching watcher and notification ledgers, generate ULIDs
+in agbrowse, and add a shared `sortKey` derived from `createdAt` so listing
+by recency works the same in both repos.
+
 PR slicing for cli-jaw:
 
 - **PR1**: agbrowse already shipped. Mirror the store improvements
-  (`withStoreLock`, `prune`, ULID sortKey) to `session.ts` plus contract
-  tests that match `tests/unit/browser-web-ai-session-lifecycle.test.ts`.
+  (`withStoreLock`, `prune`, derived `sortKey`) to `session.ts` plus
+  contract tests that match `tests/unit/browser-web-ai-session-lifecycle.test.ts`.
 - **PR2**: align provider integration with the agbrowse changes; ensure
   `chatgpt.ts`/`gemini-live.ts`/`grok-live.ts` use the same `findSession`
   priority order. Most of this is already done.
 - **PR3**: add the missing CLI surfaces (`resume`/`reattach`/`prune` +
-  `--deadline`/`--navigate`) and HTTP routes; sync `cli-jaw/skills_ref/web-ai/SKILL.md`.
+  `--deadline`/`--navigate`) and matching HTTP routes
+  (`/api/browser/web-ai/sessions/prune` is new); sync
+  `cli-jaw/skills_ref/web-ai/SKILL.md`.
 
 Watcher reattach (Phase 6) stays cli-jaw-led; agbrowse Phase 6 ports a
 minimal subset of `watcher.ts` only after Phase 1 ships in both repos.

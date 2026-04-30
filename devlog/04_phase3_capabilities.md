@@ -48,12 +48,19 @@ Cross-provider:
 
 ```json
 {
-  "capabilityId": "chatgpt.composer.visible",
+  "capabilityId": "chatgpt-composer-visible",
   "state": "ok | warn | fail | unknown",
   "evidence": { "selector": "#prompt-textarea", "matched": 1, "visible": true },
   "next": "send | re-snapshot | model-fallback | login | tab-switch"
 }
 ```
+
+**Canonical ID format (post-closeout, GPT Pro):** use cli-jaw's
+**hyphenated** ID convention. Existing cli-jaw IDs include
+`chatgpt-model-selection`, `chatgpt-active-tab-verification`,
+`web-ai-session-lifecycle`. Do not introduce dot-separated IDs like
+`chatgpt.model.alias-selectable` — pick the cli-jaw shape or add an
+explicit alias map; do not ship both.
 
 ## Diffs (PR1)
 

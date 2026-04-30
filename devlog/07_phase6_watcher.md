@@ -68,7 +68,9 @@ cli-jaw already has a production watcher:
 - `src/browser/web-ai/watcher.ts` — long-running poll loop with reattach,
   notify-on-complete, expired-session detection, and resume-after-restart
   recovery (`resumeStoredWebAiWatchers`).
-- `src/browser/web-ai/notifications.ts` — channel send + ledger.
+- `src/browser/web-ai/notifications.ts` — channel send helper + ledger
+  (delivery target wired through `src/messaging/send.ts`, not a single
+  HTTP route).
 - HTTP routes `/api/browser/web-ai/watch` and `/api/browser/web-ai/watchers`
   expose the lifecycle.
 - CLI command `cli-jaw browser web-ai watch --vendor <v> --session <id>`

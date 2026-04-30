@@ -344,10 +344,11 @@ Phase 4 reconciles the two surfaces:
 | Privacy cap (≤4 KB default) | **Apply equally** — same test asserts in both repos. |
 | Skill docs | `cli-jaw/skills_ref/web-ai/SKILL.md` already mentions `web-ai diagnose`. Update to `doctor` (or add alias) and document the new fields. |
 
-Open question for the phase: do we **rename `diagnose` to `doctor` in
-cli-jaw** to match agbrowse, or **keep both and alias**? The renaming
-breaks any user scripts that hit `cli-jaw browser web-ai diagnose`. Default
-recommendation: keep `diagnose` as a deprecated alias for one minor release.
+**Naming decision (post-closeout, GPT Pro):** keep `diagnose` as a
+**deprecated alias** for `doctor` for one full minor release in cli-jaw.
+Do **not** rename-only. New work targets `doctor`; `diagnose` continues to
+respond identically until it is removed. Phase 4 PR2 documents the
+deprecation in `cli-jaw/skills_ref/web-ai/SKILL.md`.
 
 PR slicing in cli-jaw mirrors agbrowse:
 

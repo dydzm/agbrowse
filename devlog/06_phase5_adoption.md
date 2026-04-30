@@ -298,9 +298,9 @@ cli-jaw already differentiates Chrome ownership at the runtime layer:
 
 | Item | cli-jaw status |
 | --- | --- |
-| `--port-strict` | **Ports as-is** — reject fast when port is occupied by foreign CDP unless `--reuse-foreign-chrome` is passed. |
-| `--reuse-foreign-chrome` | **Ports as-is** — flips the existing best-effort warning into an explicit ack. |
-| `BROWSER_AGENT_HOME/profile.lock` | **Apply both** — even though cli-jaw has runtime ownership tracking, the lock file is the cross-process guard. cli-jaw uses `JAW_HOME` style path (`process.env.JAW_HOME` or default); name it `profile.lock` under there. |
+| `--port-strict` | **Ports as-is, but new in cli-jaw** — must be added to `resolveBrowserStartOptions`, `bin/commands/browser-web-ai.ts` (or the browser-start command file), the `/api/browser/start` route plumbing, and `launchChrome` itself. Today neither the route nor the CLI exposes this flag. |
+| `--reuse-foreign-chrome` | **Ports as-is, also new in cli-jaw** — same plumbing path as `--port-strict`. Flips the existing stderr warning into an explicit user ack and demotes the warning. |
+| `BROWSER_AGENT_HOME/profile.lock` | **Apply both** — runtime-owner is in-process state; `profile.lock` is the cross-process guard. Keep both; runtime-owner does not replace the lock file. cli-jaw uses `JAW_HOME` style path (`process.env.JAW_HOME` or default); name it `profile.lock` under there. |
 | `churn-log.jsonl` | **Ports as-is** — same JSONL semantics; tied to whichever command emits feature-level `domHash` (Phase 4 doctor/diagnose). |
 | `AGBROWSE_CHURN_LOG=1` env | **Rename to `JAW_CHURN_LOG=1`** for cli-jaw to avoid agbrowse-prefixed env in cli-jaw runtime. Both can coexist. |
 | Adoption checklist | `docs/adoption-checklist.md` lives in agbrowse; cli-jaw points at it from `cli-jaw/skills_ref/web-ai/SKILL.md` rather than maintaining a duplicate. |
