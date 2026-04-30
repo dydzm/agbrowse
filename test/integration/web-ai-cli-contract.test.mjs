@@ -2,6 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { execBrowser } from '../helpers/exec-browser.mjs';
 
 describe('web-ai CLI contract', () => {
+    it('shows detailed web-ai help without requiring a prompt', async () => {
+        const result = await execBrowser(['web-ai', '--help']);
+        expect(result.code).toBe(0);
+        expect(result.stdout).toContain('Usage:');
+        expect(result.stdout).toContain('Provider options:');
+        expect(result.stdout).toContain('--context-from-files');
+        expect(result.stdout).toContain('agbrowse web-ai query --vendor grok');
+    });
+
     it('supports render command without a running browser', async () => {
         const result = await execBrowser(['web-ai', 'render', '--vendor', 'chatgpt', '--prompt', 'hello']);
         expect(result.code).toBe(0);

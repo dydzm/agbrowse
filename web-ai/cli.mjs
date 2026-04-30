@@ -5,11 +5,71 @@ import { grokStatusWebAi, grokSendWebAi, grokPollWebAi, grokQueryWebAi, grokStop
 import { buildContextPackageResult, prepareContextForBrowser, renderContextDryRunReport } from './context-pack/index.mjs';
 
 const COMMANDS = new Set(['render', 'status', 'send', 'poll', 'query', 'stop', 'context-dry-run', 'context-render']);
+export const WEB_AI_USAGE = `
+Usage:
+  agbrowse web-ai <command> --vendor <chatgpt|gemini|grok> [options]
+
+Commands:
+  render              Render the prompt envelope without opening a browser
+  status              Check active provider tab state
+  send                Send a prompt and save a polling session
+  poll                Poll the saved session for completion
+  query               Send and poll in one command
+  stop                Stop a saved session
+  context-dry-run     Build a context package without sending
+  context-render      Render full prompt/context package text
+
+Provider options:
+  --vendor <name>     chatgpt, gemini, or grok (default: chatgpt)
+  --url <url>         Navigate or verify the provider URL before mutation
+  --model <alias>     Provider model alias
+                       ChatGPT: instant, thinking, pro
+                       Gemini: fast, thinking, pro
+                       Grok: auto, fast, expert, thinking, beta
+  --timeout <sec>     Wait timeout for send/query/poll
+
+Prompt envelope:
+  --prompt <text>     Main user prompt/question
+  --system <text>     System or role instruction
+  --project <text>    Project name
+  --goal <text>       Task goal
+  --context <text>    Inline context
+  --question <text>   Alias/detail question text
+  --output <text>     Output preference
+  --constraints <txt> Constraints to include in the prompt
+
+Attachments and context:
+  --inline-only                     Required for send/query without files
+  --file <path>                     Upload a single file
+  --context-from-files <glob|path>  Add files to a context package; repeatable
+  --context-exclude <glob>          Exclude files from context package; repeatable
+  --context-file <path>             Use a prebuilt context package file
+  --context-transport <mode>        upload or inline
+  --max-input <chars>               Inline prompt budget
+  --max-file-size <bytes>           Per-file context budget
+  --files-report                    Include file report metadata
+  --allow-copy-markdown-fallback    Capture provider Copy button output after DOM response
+
+Output:
+  --json             Print JSON
+  --full             Print full context dry-run/render output
+  --dry-run <mode>   summary, full, or json for context-dry-run
+
+Examples:
+  agbrowse web-ai render --vendor chatgpt --prompt "hello" --json
+  agbrowse web-ai query --vendor grok --inline-only --prompt "Reply OK"
+  agbrowse web-ai query --vendor gemini --model thinking --inline-only --prompt "Reply OK"
+  agbrowse web-ai query --vendor chatgpt --context-from-files "src/**/*.ts" --context-transport upload --prompt "Review this"
+`;
 
 export async function runWebAiCli(argv = [], deps) {
     const command = argv[0];
+    if (!command || command === '--help' || command === 'help' || argv.includes('--help')) {
+        console.log(WEB_AI_USAGE.trim());
+        return { ok: true, status: 'help' };
+    }
     if (!COMMANDS.has(command)) {
-        throw new Error(`Usage: browser.mjs web-ai <${[...COMMANDS].join('|')}> --vendor chatgpt`);
+        throw new Error(WEB_AI_USAGE.trim());
     }
 
     const { values } = parseArgs({
