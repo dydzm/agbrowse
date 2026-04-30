@@ -3,7 +3,7 @@
  * browser.mjs — Standalone browser control for AI agents
  * Extracted from cli-jaw browser. Zero external dependencies beyond playwright-core.
  *
- * Usage:  agent-browser <command> [args] [--flags]
+ * Usage:  agbrowse <command> [args] [--flags]
  *
  * Commands:
  *   start [--port N] [--headless] [--chrome-path PATH]  Start Chrome with CDP
@@ -363,7 +363,7 @@ async function connectCdp(port = getPort(), retries = 4) {
     }
     throw new Error(
         `CDP connection failed after ${retries} attempts: ${lastError?.message}\n` +
-        `  💡 Fix: Ensure Chrome is running (agent-browser start) or check port ${port}`
+        `  💡 Fix: Ensure Chrome is running (agbrowse start) or check port ${port}`
     );
 }
 

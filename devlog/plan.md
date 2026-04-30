@@ -1,4 +1,4 @@
-# agent-browser — MVP Plan
+# agbrowse — MVP Plan
 
 ## 개요
 
@@ -30,4 +30,4 @@ cli-jaw 브라우저 엔진을 추출·보강하여 MCP 토큰 세금 없이 브
 ## 원본
 
 - **출처**: [cli-jaw/openclaw](https://github.com/nicepkg/cli-jaw)
-- **리모트**: https://github.com/lidge-jun/agent-browser.git
+- **리모트**: https://github.com/lidge-jun/agbrowse.git

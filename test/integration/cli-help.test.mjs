@@ -27,7 +27,7 @@ describe.sequential('CLI help', () => {
     it('shows vision-click help when no target is given', async () => {
         const result = await execVisionClick([]);
         expect(result.code).toBe(0);
-        expect(result.stdout).toContain('agent-browser-vision-click');
+        expect(result.stdout).toContain('agbrowse-vision-click');
         expect(result.stdout).toContain('--browser-script <path>');
         expect(result.stdout).toContain('--prepare-stable');
         expect(result.stdout).toContain('--verify-before-click');

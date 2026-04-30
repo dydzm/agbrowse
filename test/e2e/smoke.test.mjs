@@ -6,7 +6,7 @@ import { createTempBrowserEnv, getAvailablePort } from '../helpers/temp-env.mjs'
 import { extractRef } from '../helpers/snapshot-utils.mjs';
 
 describe.sequential('browser smoke e2e', () => {
-    const temp = createTempBrowserEnv('agent-browser-smoke-');
+    const temp = createTempBrowserEnv('agbrowse-smoke-');
     const env = temp.env;
     let port;
     let server;

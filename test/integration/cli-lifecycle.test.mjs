@@ -3,14 +3,14 @@ import { execBrowser, stopBrowserIfRunning } from '../helpers/exec-browser.mjs';
 import { createTempBrowserEnv, getAvailablePort, readBrowserState, writeBrowserState } from '../helpers/temp-env.mjs';
 
 describe.sequential('browser lifecycle regressions', () => {
-    const temp = createTempBrowserEnv('agent-browser-lifecycle-');
+    const temp = createTempBrowserEnv('agbrowse-lifecycle-');
     const env = temp.env;
     let port;
     let isolated;
 
     beforeAll(async () => {
         port = await getAvailablePort();
-        isolated = createTempBrowserEnv('agent-browser-cli-port-');
+        isolated = createTempBrowserEnv('agbrowse-cli-port-');
         await stopBrowserIfRunning(env);
     });
 

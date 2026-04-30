@@ -3,7 +3,7 @@ import net from 'node:net';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-export function createTempBrowserEnv(prefix = 'agent-browser-test-') {
+export function createTempBrowserEnv(prefix = 'agbrowse-test-') {
     const homeDir = mkdtempSync(join(tmpdir(), prefix));
     const env = { BROWSER_AGENT_HOME: homeDir };
     const cleanup = () => rmSync(homeDir, { recursive: true, force: true });

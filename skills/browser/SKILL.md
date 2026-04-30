@@ -5,7 +5,7 @@ description: "Chrome browser control: open pages, take ref snapshots, click, typ
 
 # Browser Control
 
-Control Chrome browser via `agent-browser` commands.
+Control Chrome browser via `agbrowse` commands.
 Uses ref-based snapshots to identify page elements, then click/type by ref ID.
 
 ## Prerequisites
@@ -22,22 +22,22 @@ npm install playwright-core
 ## Quick Start
 
 ```bash
-agent-browser start                               # Start Chrome (CDP auto port)
-agent-browser start --headless                    # Headless mode (server/CI/WSL)
-agent-browser navigate "https://example.com"      # Go to URL
-agent-browser snapshot --interactive              # Interactive elements with ref IDs
-agent-browser click e3                            # Click ref e3
-agent-browser type e5 "hello" --submit           # Type + Enter
-agent-browser screenshot                          # Save screenshot
-agent-browser reload                              # Reload current page
+agbrowse start                               # Start Chrome (CDP auto port)
+agbrowse start --headless                    # Headless mode (server/CI/WSL)
+agbrowse navigate "https://example.com"      # Go to URL
+agbrowse snapshot --interactive              # Interactive elements with ref IDs
+agbrowse click e3                            # Click ref e3
+agbrowse type e5 "hello" --submit           # Type + Enter
+agbrowse screenshot                          # Save screenshot
+agbrowse reload                              # Reload current page
 ```
 
 For AI provider websites, use the bundled `web-ai` skill/command instead of
 raw click/type sequences when possible:
 
 ```bash
-agent-browser web-ai status --vendor chatgpt
-agent-browser web-ai query --vendor gemini --url https://gemini.google.com/app --inline-only --prompt "Reply exactly OK"
+agbrowse web-ai status --vendor chatgpt
+agbrowse web-ai query --vendor gemini --url https://gemini.google.com/app --inline-only --prompt "Reply exactly OK"
 ```
 
 ## Core Workflow
@@ -52,29 +52,29 @@ agent-browser web-ai query --vendor gemini --url https://gemini.google.com/app -
 ### Browser Management
 
 ```bash
-agent-browser start [--port <9222>] [--headless] [--chrome-path /path/to/chrome]
-agent-browser stop
-agent-browser status
-agent-browser reset [--force]
+agbrowse start [--port <9222>] [--headless] [--chrome-path /path/to/chrome]
+agbrowse stop
+agbrowse status
+agbrowse reset [--force]
 ```
 
 ### Observe
 
 ```bash
-agent-browser snapshot                # Ref snapshot (all elements)
-agent-browser snapshot --interactive  # Interactive elements only (recommended)
-agent-browser snapshot --max-nodes 30 # Limit output for token budget
-agent-browser screenshot              # Current viewport
-agent-browser screenshot --full-page  # Full page
-agent-browser screenshot --ref e5     # Specific ref element only
-agent-browser screenshot --clip 0 0 320 180  # Clipped region in CSS pixels
-agent-browser screenshot --json       # JSON output (path, dpr, viewport)
-agent-browser text                    # Page text content
-agent-browser text --format html      # HTML source
-agent-browser get-dom                 # Full DOM HTML
-agent-browser get-dom --selector ".card" --max-chars 2000
-agent-browser console --clear --reload --duration 3000 # Buffered console logs
-agent-browser network --reload --duration 1000         # Fresh page-load + async requests
+agbrowse snapshot                # Ref snapshot (all elements)
+agbrowse snapshot --interactive  # Interactive elements only (recommended)
+agbrowse snapshot --max-nodes 30 # Limit output for token budget
+agbrowse screenshot              # Current viewport
+agbrowse screenshot --full-page  # Full page
+agbrowse screenshot --ref e5     # Specific ref element only
+agbrowse screenshot --clip 0 0 320 180  # Clipped region in CSS pixels
+agbrowse screenshot --json       # JSON output (path, dpr, viewport)
+agbrowse text                    # Page text content
+agbrowse text --format html      # HTML source
+agbrowse get-dom                 # Full DOM HTML
+agbrowse get-dom --selector ".card" --max-chars 2000
+agbrowse console --clear --reload --duration 3000 # Buffered console logs
+agbrowse network --reload --duration 1000         # Fresh page-load + async requests
 ```
 
 ### Snapshot Output Example
@@ -90,45 +90,45 @@ e5   button     "I'm Feeling Lucky"
 ### Act
 
 ```bash
-agent-browser click e3              # Click element
-agent-browser click e3 --double     # Double-click
-agent-browser click e3 --right      # Right-click / context menu
-agent-browser type e3 "hello"       # Type text
-agent-browser type e3 "hello" --submit  # Type + press Enter
-agent-browser press Enter           # Press key
-agent-browser press Escape
-agent-browser press Tab
-agent-browser hover e5              # Mouse hover
-agent-browser select e7 "option1"   # Select dropdown option
-agent-browser drag e3 e5            # Drag element to another
-agent-browser move-mouse 400 300    # Move mouse only
-agent-browser mouse-down            # Hold left mouse button
-agent-browser mouse-up --right      # Release right mouse button
-agent-browser mouse-click 400 300   # Click at pixel coordinates
+agbrowse click e3              # Click element
+agbrowse click e3 --double     # Double-click
+agbrowse click e3 --right      # Right-click / context menu
+agbrowse type e3 "hello"       # Type text
+agbrowse type e3 "hello" --submit  # Type + press Enter
+agbrowse press Enter           # Press key
+agbrowse press Escape
+agbrowse press Tab
+agbrowse hover e5              # Mouse hover
+agbrowse select e7 "option1"   # Select dropdown option
+agbrowse drag e3 e5            # Drag element to another
+agbrowse move-mouse 400 300    # Move mouse only
+agbrowse mouse-down            # Hold left mouse button
+agbrowse mouse-up --right      # Release right mouse button
+agbrowse mouse-click 400 300   # Click at pixel coordinates
 ```
 
 ### Navigate & Scroll
 
 ```bash
-agent-browser navigate "https://example.com"  # Go to URL
-agent-browser reload                           # Reload current page
-agent-browser resize 1440 900                 # Resize browser window
-agent-browser resize 0 0 --fullscreen         # Fullscreen or 1920x1080 viewport fallback
-agent-browser tabs                             # List tabs
-agent-browser tab-switch 2                     # Switch to tab 2
-agent-browser scroll down                      # Scroll down 500px
-agent-browser scroll up --amount 1000          # Scroll up 1000px
-agent-browser scroll --ref e15                 # Scroll element into view
-agent-browser evaluate "document.title"        # Execute JS
+agbrowse navigate "https://example.com"  # Go to URL
+agbrowse reload                           # Reload current page
+agbrowse resize 1440 900                 # Resize browser window
+agbrowse resize 0 0 --fullscreen         # Fullscreen or 1920x1080 viewport fallback
+agbrowse tabs                             # List tabs
+agbrowse tab-switch 2                     # Switch to tab 2
+agbrowse scroll down                      # Scroll down 500px
+agbrowse scroll up --amount 1000          # Scroll up 1000px
+agbrowse scroll --ref e15                 # Scroll element into view
+agbrowse evaluate "document.title"        # Execute JS
 ```
 
 ### Wait & Sync
 
 ```bash
-agent-browser wait 2000              # Wait 2 seconds
-agent-browser wait-for e5            # Deprecated: wait for last-snapshot ref
-agent-browser wait-for-selector ".toast-success" --timeout 30000
-agent-browser wait-for-text "Dashboard" --timeout 30000
+agbrowse wait 2000              # Wait 2 seconds
+agbrowse wait-for e5            # Deprecated: wait for last-snapshot ref
+agbrowse wait-for-selector ".toast-success" --timeout 30000
+agbrowse wait-for-text "Dashboard" --timeout 30000
 ```
 
 ## Common Workflows
@@ -136,65 +136,65 @@ agent-browser wait-for-text "Dashboard" --timeout 30000
 ### Web Search
 
 ```bash
-agent-browser start
-agent-browser navigate "https://www.google.com"
-agent-browser snapshot --interactive
+agbrowse start
+agbrowse navigate "https://www.google.com"
+agbrowse snapshot --interactive
 # → e3 textbox "Search"
-agent-browser type e3 "search query" --submit
-agent-browser snapshot --interactive
+agbrowse type e3 "search query" --submit
+agbrowse snapshot --interactive
 # Click desired result link
-agent-browser click e7
+agbrowse click e7
 ```
 
 ### Form Filling
 
 ```bash
-agent-browser snapshot --interactive
+agbrowse snapshot --interactive
 # → e1 textbox "Name", e2 textbox "Email", e3 button "Submit"
-agent-browser type e1 "John Doe"
-agent-browser type e2 "john@example.com"
-agent-browser click e3
-agent-browser snapshot  # Verify result
+agbrowse type e1 "John Doe"
+agbrowse type e2 "john@example.com"
+agbrowse click e3
+agbrowse snapshot  # Verify result
 ```
 
 ### SPA Login Flow
 
 ```bash
-agent-browser navigate "https://app.example.com/login"
-agent-browser snapshot --interactive
-agent-browser type e1 "user@example.com"
-agent-browser type e2 "password"
-agent-browser click e3                    # Login button
-agent-browser wait-for-text "Dashboard" --timeout 15000
-agent-browser snapshot --interactive      # Verify logged in
+agbrowse navigate "https://app.example.com/login"
+agbrowse snapshot --interactive
+agbrowse type e1 "user@example.com"
+agbrowse type e2 "password"
+agbrowse click e3                    # Login button
+agbrowse wait-for-text "Dashboard" --timeout 15000
+agbrowse snapshot --interactive      # Verify logged in
 ```
 
 ### Long Page with Scrolling
 
 ```bash
-agent-browser navigate "https://news.ycombinator.com"
-agent-browser snapshot --interactive --max-nodes 20  # First 20 items
-agent-browser scroll down
-agent-browser snapshot --interactive --max-nodes 20  # Next items
+agbrowse navigate "https://news.ycombinator.com"
+agbrowse snapshot --interactive --max-nodes 20  # First 20 items
+agbrowse scroll down
+agbrowse snapshot --interactive --max-nodes 20  # Next items
 ```
 
 ### Multi-Tab Workflow
 
 ```bash
-agent-browser navigate "https://docs.example.com"  # Tab 1
-agent-browser evaluate "window.open('https://api.example.com')"  # Tab 2
-agent-browser tabs                  # List tabs
-agent-browser tab-switch 2          # Switch to tab 2
-agent-browser snapshot --interactive
+agbrowse navigate "https://docs.example.com"  # Tab 1
+agbrowse evaluate "window.open('https://api.example.com')"  # Tab 2
+agbrowse tabs                  # List tabs
+agbrowse tab-switch 2          # Switch to tab 2
+agbrowse snapshot --interactive
 ```
 
 ### Inspect DOM / Console / Network
 
 ```bash
-agent-browser navigate "https://example.com"
-agent-browser get-dom --selector "main" --max-chars 4000
-agent-browser console --clear --expression "console.log('probe')"
-agent-browser network --reload --duration 2000 --filter example
+agbrowse navigate "https://example.com"
+agbrowse get-dom --selector "main" --max-chars 4000
+agbrowse console --clear --expression "console.log('probe')"
+agbrowse network --reload --duration 2000 --filter example
 ```
 
 ## Recovery Strategy
@@ -221,8 +221,8 @@ If something goes wrong, follow this escalation path:
 ## Headless Mode (Server/CI/WSL)
 
 ```bash
-agent-browser start --headless               # CLI flag
-CHROME_HEADLESS=1 agent-browser start         # env var
+agbrowse start --headless               # CLI flag
+CHROME_HEADLESS=1 agbrowse start         # env var
 ```
 
 - GUI 없는 환경(WSL, SSH, Docker, CI)에서 사용

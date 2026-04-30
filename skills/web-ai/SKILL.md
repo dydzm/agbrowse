@@ -1,33 +1,33 @@
 ---
 name: web-ai
-description: "Standalone agent-browser web-ai workflow for ChatGPT, Gemini, and Grok with Oracle-style prompt envelopes, file/context uploads, model selection, polling, and opt-in copy-markdown fallback."
+description: "Standalone agbrowse web-ai workflow for ChatGPT, Gemini, and Grok with Oracle-style prompt envelopes, file/context uploads, model selection, polling, and opt-in copy-markdown fallback."
 ---
 
 # Web AI
 
 Use this skill when an agent needs to drive AI provider websites through the
-standalone `agent-browser` Chrome/CDP runtime.
+standalone `agbrowse` Chrome/CDP runtime.
 
 ## Preconditions
 
 - Use the existing headed Chrome profile when provider login is required.
 - Do not start a separate Chrome/profile unless the user explicitly asks for an
   isolated run.
-- Prefer `agent-browser status` before mutation.
+- Prefer `agbrowse status` before mutation.
 - For live provider smoke tests, pass `--url` so the runtime verifies the
   provider host before sending.
 
 ## Commands
 
 ```bash
-agent-browser web-ai render
-agent-browser web-ai status
-agent-browser web-ai send
-agent-browser web-ai poll
-agent-browser web-ai query
-agent-browser web-ai stop
-agent-browser web-ai context-dry-run
-agent-browser web-ai context-render
+agbrowse web-ai render
+agbrowse web-ai status
+agbrowse web-ai send
+agbrowse web-ai poll
+agbrowse web-ai query
+agbrowse web-ai stop
+agbrowse web-ai context-dry-run
+agbrowse web-ai context-render
 ```
 
 Direct script form is equivalent:
@@ -52,7 +52,7 @@ mutation.
 Use render to inspect the exact Oracle-style prompt shape:
 
 ```bash
-agent-browser web-ai render \
+agbrowse web-ai render \
   --vendor chatgpt \
   --project "project name" \
   --goal "what the provider should do" \
@@ -81,7 +81,7 @@ Envelope shape:
 ChatGPT Pro:
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor chatgpt \
   --url https://chatgpt.com/ \
   --model pro \
@@ -93,7 +93,7 @@ agent-browser web-ai query \
 Gemini:
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor gemini \
   --url https://gemini.google.com/app \
   --model fast \
@@ -104,7 +104,7 @@ agent-browser web-ai query \
 Grok:
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor grok \
   --url https://grok.com/ \
   --model expert \
@@ -115,7 +115,7 @@ agent-browser web-ai query \
 ## File Upload
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor gemini \
   --url https://gemini.google.com/app \
   --model fast \
@@ -129,7 +129,7 @@ provider exposes it. Input-only success is not enough.
 ## Context Package Upload
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor grok \
   --url https://grok.com/ \
   --context-from-files "web-ai/*.mjs" \
@@ -140,7 +140,7 @@ agent-browser web-ai query \
 Use `context-dry-run --json` before live mutation when the file set is large:
 
 ```bash
-agent-browser web-ai context-dry-run \
+agbrowse web-ai context-dry-run \
   --vendor chatgpt \
   --prompt "Review this context" \
   --context-from-files "web-ai/*.mjs" \
@@ -174,7 +174,7 @@ Grok:
 Use only when explicitly needed:
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor chatgpt \
   --inline-only \
   --allow-copy-markdown-fallback \
@@ -189,5 +189,5 @@ the provider Copy button click. It does not read the OS clipboard.
 - Never claim live web-ai success from render/dry-run alone.
 - Headed Chrome is the valid path for provider smoke tests.
 - Human verification and login screens must be completed by the user.
-- If the active tab is ambiguous, run `agent-browser tabs` and
-  `agent-browser tab-switch <targetId>` before mutation.
+- If the active tab is ambiguous, run `agbrowse tabs` and
+  `agbrowse tab-switch <targetId>` before mutation.

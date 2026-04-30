@@ -3,12 +3,12 @@
  * vision-click.mjs — Vision-based coordinate click via Codex CLI
  *
  * Usage:
- *   agent-browser-vision-click "<target>" [--port N] [--double] [--prepare-stable] [--region left-panel]
+ *   agbrowse-vision-click "<target>" [--port N] [--double] [--prepare-stable] [--region left-panel]
  *
  * Pipeline: screenshot → optional clip → codex exec (NDJSON) → optional verify crop → DPR correction → mouse click → verify
  *
  * Requires:
- *   - agent-browser running Chrome
+ *   - agbrowse running Chrome
  *   - codex CLI installed (npm install -g @openai/codex)
  */
 
@@ -253,10 +253,10 @@ const { target, opts } = parseVisionClickCliArgs(process.argv.slice(2), {
 
 if (opts.help || !target) {
     console.log(`
-  👁️ agent-browser-vision-click — Vision-based coordinate click via Codex CLI
+  👁️ agbrowse-vision-click — Vision-based coordinate click via Codex CLI
 
   Usage:
-    agent-browser-vision-click "<target description>" [options]
+    agbrowse-vision-click "<target description>" [options]
 
   Options:
     --double               Double-click instead of single click
@@ -272,14 +272,14 @@ if (opts.help || !target) {
     screenshot → optional clip → codex exec (NDJSON) → optional verify crop → DPR correction → mouse click → verify
 
   Prerequisites:
-    - agent-browser running Chrome (agent-browser start)
+    - agbrowse running Chrome (agbrowse start)
     - codex CLI installed (npm install -g @openai/codex)
 
   Examples:
-    agent-browser-vision-click "Login button"
-    agent-browser-vision-click "Submit" --double
-    agent-browser-vision-click "Play button" --port 9333
-    agent-browser-vision-click "first search result row" --prepare-stable --region left-panel --verify-before-click
+    agbrowse-vision-click "Login button"
+    agbrowse-vision-click "Submit" --double
+    agbrowse-vision-click "Play button" --port 9333
+    agbrowse-vision-click "first search result row" --prepare-stable --region left-panel --verify-before-click
 
   Environment:
     BROWSER_SCRIPT         Path to browser.mjs (overrides default)

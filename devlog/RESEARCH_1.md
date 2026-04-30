@@ -1,12 +1,12 @@
-# RESEARCH_1: Agent Browser Skill Comparison
+# RESEARCH_1: Agbrowse Skill Comparison
 
-> 작성: 2026-03-27 | 대상: Antigravity browser_subagent vs agent-browser(cli-jaw standalone) vs Claude Code
+> 작성: 2026-03-27 | 대상: Antigravity browser_subagent vs agbrowse(cli-jaw standalone) vs Claude Code
 
 ---
 
 ## 1. 분석 대상
 
-| 구분 | Antigravity (현재) | agent-browser (standalone) | Claude Code |
+| 구분 | Antigravity (현재) | agbrowse (standalone) | Claude Code |
 |------|-------------------|---------------------------|-------------|
 | **소스** | `.agents/skills/browser/SKILL.md` | `30_browser/skills/browser/browser.mjs` (600L) | 브라우저 도구 없음 (텍스트 에이전트 전용) |
 | **엔진** | cli-jaw HTTP 서버 → playwright-core | playwright-core 직접 (서버 제거) | N/A |
@@ -42,7 +42,7 @@
 - cli-jaw npm 패키지 전체 설치 필요
 - 포트 관리 복잡 (서버 포트 + CDP 포트)
 
-### 2.2 agent-browser (standalone)
+### 2.2 agbrowse (standalone)
 
 ```
 ┌─────────────────────┐                  ┌───────────────────────┐
@@ -87,7 +87,7 @@ Go 바이너리의 내장 브라우저는 CLI 스킬과 별개로 동작하며, 
 
 ## 3. 기능 매트릭스
 
-| 기능 | Antigravity (cli-jaw) | agent-browser | Antigravity Go Binary |
+| 기능 | Antigravity (cli-jaw) | agbrowse | Antigravity Go Binary |
 |------|:-----:|:-----:|:-----:|
 | 서버 필요 | ✅ 필수 | ❌ 불필요 | ❌ 내장 |
 | Snapshot (ref ID) | ✅ | ✅ (2-fallback) | ✅ (내장) |
@@ -107,7 +107,7 @@ Go 바이너리의 내장 브라우저는 CLI 스킬과 별개로 동작하며, 
 
 ---
 
-## 4. 코드 분석: agent-browser 핵심
+## 4. 코드 분석: agbrowse 핵심
 
 ### 4.1 browser.mjs 구조 (600L)
 
@@ -150,7 +150,7 @@ nodes = parseCdpAxTree(axNodes);
 |------|:---:|
 | `@playwright/mcp` | ~13,000 (스키마 3K + 스냅샷 10K) |
 | `cli-jaw browser` (현재 Antigravity) | ~500 (CLI stdout) |
-| `agent-browser` | ~500 (CLI stdout, 동일) |
+| `agbrowse` | ~500 (CLI stdout, 동일) |
 
 > MCP 도구 스키마는 **매 턴마다** 컨텍스트에 주입됨 → 브라우저를 안 쓰는 턴에서도 토큰 과세. CLI 방식은 0.
 
@@ -169,7 +169,7 @@ nodes = parseCdpAxTree(axNodes);
 
 ## 7. 참고 리소스
 
-- [agent-browser 소스](file:///Users/jun/Developer/codex/30_browser)
+- [agbrowse 소스](file:///Users/jun/Developer/codex/30_browser)
 - [현재 browser SKILL.md](file:///Users/jun/Developer/codex/.agents/skills/browser/SKILL.md)
 - [vision-click SKILL.md](file:///Users/jun/Developer/codex/.agents/skills/vision-click/SKILL.md)  
 - [Antigravity agent map](file:///Users/jun/Developer/codex/00_AGENT_MAP/ag/index.md) — browser/ 모듈 (L61-65)

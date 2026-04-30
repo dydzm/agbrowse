@@ -6,7 +6,7 @@ import { createTempBrowserEnv, getAvailablePort } from '../helpers/temp-env.mjs'
 import { extractRef, extractRefs } from '../helpers/snapshot-utils.mjs';
 
 describe.sequential('browser DOM commands', () => {
-    const temp = createTempBrowserEnv('agent-browser-dom-');
+    const temp = createTempBrowserEnv('agbrowse-dom-');
     const env = temp.env;
     let port;
     let server;

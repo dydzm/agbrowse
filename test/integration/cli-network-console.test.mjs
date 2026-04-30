@@ -4,7 +4,7 @@ import { startFixtureServer } from '../helpers/fixture-server.mjs';
 import { createTempBrowserEnv, getAvailablePort } from '../helpers/temp-env.mjs';
 
 describe.sequential('browser console and network semantics', () => {
-    const temp = createTempBrowserEnv('agent-browser-observe-');
+    const temp = createTempBrowserEnv('agbrowse-observe-');
     const env = temp.env;
     let port;
     let server;

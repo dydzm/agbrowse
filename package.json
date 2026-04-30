@@ -1,29 +1,33 @@
 {
-  "name": "agent-browser",
+  "name": "agbrowse",
   "version": "0.1.0",
   "description": "Standalone Chrome/CDP browser automation and web-ai workflow skills for AI agents.",
   "license": "MIT",
   "private": false,
   "type": "module",
   "bin": {
-    "agent-browser": "./skills/browser/browser.mjs",
-    "agent-browser-vision-click": "./skills/vision-click/vision-click.mjs"
+    "agbrowse": "bin/agbrowse.mjs",
+    "agbrowse-vision-click": "bin/agbrowse-vision-click.mjs"
   },
   "files": [
     "README.md",
+    "bin/",
     "skills/",
     "web-ai/",
     "devlog/",
     "vitest.config.mjs"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lidge-jun/agent-browser.git"
+    "url": "git+https://github.com/lidge-jun/agbrowse.git"
   },
   "bugs": {
-    "url": "https://github.com/lidge-jun/agent-browser/issues"
+    "url": "https://github.com/lidge-jun/agbrowse/issues"
   },
-  "homepage": "https://github.com/lidge-jun/agent-browser#readme",
+  "homepage": "https://github.com/lidge-jun/agbrowse#readme",
   "engines": {
     "node": ">=18"
   },

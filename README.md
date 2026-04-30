@@ -1,8 +1,8 @@
-# agent-browser
+# agbrowse
 
 Standalone Chrome/CDP browser automation for AI agents.
 
-`agent-browser` is a serverless extraction of the cli-jaw / 30_browser browser
+`agbrowse` is a serverless extraction of the cli-jaw / 30_browser browser
 workflow. It gives an agent a small CLI surface for:
 
 - DOM/ref based browser control
@@ -21,7 +21,7 @@ This repository is packaged as a standalone skill/runtime.
 
 What is considered ready:
 
-- `agent-browser` CLI bin
+- `agbrowse` CLI bin
 - persistent Chrome profile under `BROWSER_AGENT_HOME`
 - stable default CDP port `9222`
 - explicit `--port` / `CDP_PORT` override
@@ -46,14 +46,14 @@ a contractual API from the providers.
 From npm or GitHub once published:
 
 ```bash
-npm install -g agent-browser
+npm install -g agbrowse
 ```
 
 From this repository:
 
 ```bash
-git clone https://github.com/lidge-jun/agent-browser.git
-cd agent-browser
+git clone https://github.com/lidge-jun/agbrowse.git
+cd agbrowse
 npm install
 npm link
 ```
@@ -91,20 +91,20 @@ The default port does not fluctuate. It stays `9222` unless you pass `--port` or
 set `CDP_PORT`.
 
 ```bash
-agent-browser start
-agent-browser status
-agent-browser stop
+agbrowse start
+agbrowse status
+agbrowse stop
 ```
 
 Use a custom home and port when running multiple isolated instances:
 
 ```bash
-BROWSER_AGENT_HOME="$HOME/.browser-agent-work" CDP_PORT=9333 agent-browser start
-BROWSER_AGENT_HOME="$HOME/.browser-agent-work" CDP_PORT=9333 agent-browser web-ai status --vendor chatgpt
+BROWSER_AGENT_HOME="$HOME/.browser-agent-work" CDP_PORT=9333 agbrowse start
+BROWSER_AGENT_HOME="$HOME/.browser-agent-work" CDP_PORT=9333 agbrowse web-ai status --vendor chatgpt
 ```
 
 If Chrome is already listening on the selected CDP port and responds to
-`/json/version`, `agent-browser` reuses it. If another non-CDP process owns the
+`/json/version`, `agbrowse` reuses it. If another non-CDP process owns the
 port, startup fails instead of silently choosing a different port.
 
 ## First Login
@@ -112,10 +112,10 @@ port, startup fails instead of silently choosing a different port.
 Provider web-ai flows need a logged-in browser profile. Do this once:
 
 ```bash
-agent-browser start
-agent-browser navigate "https://chatgpt.com/"
-agent-browser navigate "https://gemini.google.com/app"
-agent-browser navigate "https://grok.com/"
+agbrowse start
+agbrowse navigate "https://chatgpt.com/"
+agbrowse navigate "https://gemini.google.com/app"
+agbrowse navigate "https://grok.com/"
 ```
 
 Complete login manually in the headed Chrome window. The profile is reused for
@@ -126,38 +126,38 @@ Do not commit or share `~/.browser-agent`; it contains browser session state.
 ## Core Browser Commands
 
 ```bash
-agent-browser start [--port 9222] [--headless] [--chrome-path /path/to/chrome]
-agent-browser stop
-agent-browser status
-agent-browser reset --force
+agbrowse start [--port 9222] [--headless] [--chrome-path /path/to/chrome]
+agbrowse stop
+agbrowse status
+agbrowse reset --force
 ```
 
 Observe:
 
 ```bash
-agent-browser snapshot --interactive --max-nodes 80
-agent-browser screenshot --json
-agent-browser screenshot --full-page
-agent-browser text
-agent-browser text --format html
-agent-browser get-dom --selector "main" --max-chars 4000
-agent-browser console --clear --reload --duration 3000
-agent-browser network --reload --duration 2000 --filter api
+agbrowse snapshot --interactive --max-nodes 80
+agbrowse screenshot --json
+agbrowse screenshot --full-page
+agbrowse text
+agbrowse text --format html
+agbrowse get-dom --selector "main" --max-chars 4000
+agbrowse console --clear --reload --duration 3000
+agbrowse network --reload --duration 2000 --filter api
 ```
 
 Act:
 
 ```bash
-agent-browser click e3
-agent-browser type e5 "hello" --submit
-agent-browser press Enter
-agent-browser hover e7
-agent-browser mouse-click 400 300
-agent-browser resize 1440 900
-agent-browser tabs
-agent-browser tab-switch 2
-agent-browser tab-switch <targetId>
-agent-browser evaluate "document.title"
+agbrowse click e3
+agbrowse type e5 "hello" --submit
+agbrowse press Enter
+agbrowse hover e7
+agbrowse mouse-click 400 300
+agbrowse resize 1440 900
+agbrowse tabs
+agbrowse tab-switch 2
+agbrowse tab-switch <targetId>
+agbrowse evaluate "document.title"
 ```
 
 Recommended loop:
@@ -175,8 +175,8 @@ Use `vision-click` only when a target is visible in a screenshot but has no
 usable DOM/ref target, such as canvas/WebGL-heavy UIs.
 
 ```bash
-agent-browser screenshot --json
-agent-browser-vision-click "the visible Submit button"
+agbrowse screenshot --json
+agbrowse-vision-click "the visible Submit button"
 ```
 
 The vision path handles device-pixel-ratio correction before sending
@@ -189,14 +189,14 @@ The `web-ai` command drives provider websites through the same browser session.
 Supported commands:
 
 ```bash
-agent-browser web-ai render
-agent-browser web-ai status
-agent-browser web-ai send
-agent-browser web-ai poll
-agent-browser web-ai query
-agent-browser web-ai stop
-agent-browser web-ai context-dry-run
-agent-browser web-ai context-render
+agbrowse web-ai render
+agbrowse web-ai status
+agbrowse web-ai send
+agbrowse web-ai poll
+agbrowse web-ai query
+agbrowse web-ai stop
+agbrowse web-ai context-dry-run
+agbrowse web-ai context-render
 ```
 
 Supported providers:
@@ -212,9 +212,9 @@ Unsupported provider requests fail closed before browser mutation.
 ### Render First
 
 ```bash
-agent-browser web-ai render \
+agbrowse web-ai render \
   --vendor chatgpt \
-  --project "agent-browser" \
+  --project "agbrowse" \
   --goal "review the upload flow" \
   --prompt "Find the riskiest edge case."
 ```
@@ -239,7 +239,7 @@ The envelope is Oracle-style:
 ### ChatGPT
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor chatgpt \
   --url https://chatgpt.com/ \
   --model pro \
@@ -257,7 +257,7 @@ Model aliases:
 ### Gemini
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor gemini \
   --url https://gemini.google.com/app \
   --model fast \
@@ -274,7 +274,7 @@ Model aliases:
 ### Grok
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor grok \
   --url https://grok.com/ \
   --model expert \
@@ -293,7 +293,7 @@ Model aliases:
 ## File Upload
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor gemini \
   --url https://gemini.google.com/app \
   --model fast \
@@ -313,7 +313,7 @@ want Oracle-style untrusted file separation.
 Dry run:
 
 ```bash
-agent-browser web-ai context-dry-run \
+agbrowse web-ai context-dry-run \
   --vendor chatgpt \
   --prompt "Review these files" \
   --context-from-files "web-ai/*.mjs" \
@@ -323,7 +323,7 @@ agent-browser web-ai context-dry-run \
 Live upload:
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor grok \
   --url https://grok.com/ \
   --context-from-files "web-ai/*.mjs" \
@@ -334,7 +334,7 @@ agent-browser web-ai query \
 Inline context:
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor chatgpt \
   --inline-only \
   --context-from-files "web-ai/question.mjs" \
@@ -350,7 +350,7 @@ page's `navigator.clipboard.writeText/write` call and does not read the OS
 clipboard.
 
 ```bash
-agent-browser web-ai query \
+agbrowse web-ai query \
   --vendor chatgpt \
   --model pro \
   --inline-only \
@@ -367,9 +367,9 @@ change.
 page by that target id before falling back to page order.
 
 ```bash
-agent-browser tabs
-agent-browser tab-switch 0DD58EC9517DB9514D37AE74AC21829F
-agent-browser web-ai status --vendor gemini
+agbrowse tabs
+agbrowse tab-switch 0DD58EC9517DB9514D37AE74AC21829F
+agbrowse web-ai status --vendor gemini
 ```
 
 For live web-ai work, prefer passing `--url` so the provider runtime can verify
@@ -390,7 +390,7 @@ the target host before mutation.
 
 | Symptom | Likely cause | Action |
 | --- | --- | --- |
-| `CDP connection failed` | Chrome is not running on the selected port | `agent-browser start` |
+| `CDP connection failed` | Chrome is not running on the selected port | `agbrowse start` |
 | port in use but not CDP | another process owns `9222` | choose `CDP_PORT=9333` or stop the process |
 | provider says sign in | profile is not logged in | open the provider URL and log in manually |
 | wrong tab was used | stale active target | run `tabs`, then `tab-switch <targetId>` |

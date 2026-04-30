@@ -1,4 +1,4 @@
-# PLAN_1: agent-browser Skills 업그레이드 계획
+# PLAN_1: agbrowse Skills 업그레이드 계획
 
 > 작성: 2026-03-27 | 기반: RESEARCH_1.md
 > 대상: `30_browser/skills/` (browser.mjs + vision-click.mjs)
