@@ -2,6 +2,13 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
+import {
+    generateSessionId,
+    insertSession,
+    listStoredSessions,
+    patchSession,
+    pruneSessions,
+} from './session-store.mjs';
 
 const baselines = new Map();
 let loaded = false;
@@ -88,4 +95,76 @@ function loadStore() {
 function saveStore() {
     mkdirSync(dirname(STORE_PATH), { recursive: true });
     writeFileSync(STORE_PATH, `${JSON.stringify({ baselines: Array.from(baselines.values()) }, null, 2)}\n`);
+}
+
+// ─── Phase 1 PR1: session API on top of session-store.mjs ─────────────────
+// Legacy `saveBaseline`/`getBaseline`/`getLatestBaseline`/`clearBaseline` keep
+// writing `web-ai-baselines.json` for one minor release. New code should
+// prefer `createSession` / `findActiveSession` / `getSession` / `updateSession`.
+
+export function createSession(envelope, meta = {}) {
+    const now = new Date().toISOString();
+    const session = {
+        sessionId: generateSessionId(),
+        vendor: envelope?.vendor || meta.vendor || null,
+        createdAt: now,
+        updatedAt: now,
+        deadlineAt: meta.deadlineAt || null,
+        targetId: meta.targetId || null,
+        originalUrl: meta.originalUrl || null,
+        conversationUrl: meta.conversationUrl || meta.originalUrl || null,
+        promptHash: `sha256:${hashPrompt(envelope || {})}`,
+        envelopeSummary: meta.envelopeSummary || {},
+        status: 'sent',
+        answer: null,
+        lastError: null,
+        warnings: [],
+    };
+    return insertSession(session);
+}
+
+export function updateSession(sessionId, patch = {}) {
+    return patchSession(sessionId, { ...patch, updatedAt: new Date().toISOString() });
+}
+
+export function getSession(sessionId) {
+    if (!sessionId) return null;
+    return listStoredSessions({ sessionId, limit: 1 })[0] || null;
+}
+
+export function listSessions(filter = {}) {
+    return listStoredSessions(filter);
+}
+
+export function findActiveSession({ vendor, targetId, conversationUrl } = {}) {
+    if (!vendor) return null;
+    const active = listStoredSessions({ vendor, active: true });
+    if (active.length === 0) return null;
+    if (targetId) {
+        const byTarget = active.find(s => s.targetId && s.targetId === targetId);
+        if (byTarget) return byTarget;
+    }
+    if (conversationUrl) {
+        const byConvo = active.find(s => s.conversationUrl && s.conversationUrl === conversationUrl);
+        if (byConvo) return byConvo;
+    }
+    return active.at(-1) || null;
+}
+
+export function pruneSessionsOlderThan(input = {}) {
+    return pruneSessions(input);
+}
+
+export function sessionToBaseline(session) {
+    if (!session) return null;
+    return {
+        vendor: session.vendor,
+        url: session.conversationUrl || session.originalUrl,
+        promptHash: typeof session.promptHash === 'string' && session.promptHash.startsWith('sha256:')
+            ? session.promptHash.slice('sha256:'.length)
+            : session.promptHash,
+        assistantCount: Number(session.envelopeSummary?.assistantCount) || 0,
+        textHash: '0',
+        capturedAt: session.createdAt,
+    };
 }
