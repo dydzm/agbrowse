@@ -13,30 +13,31 @@ Usage:
 Commands:
   render              Render the prompt envelope without opening a browser
   status              Check active provider tab state
-  send                Send a prompt and save a polling session
-  poll                Poll the saved session for completion
-  query               Send and poll in one command
-  stop                Stop a saved session
+  send                Send a prompt; returns a sessionId for later resume
+  poll                Poll a session (or the latest baseline) for completion
+  query               send + poll in one call
+  stop                Send Escape to the active provider tab
   context-dry-run     Build a context package without sending
   context-render      Render full prompt/context package text
 
-Provider options:
-  --vendor <name>     chatgpt, gemini, or grok (default: chatgpt)
+Provider:
+  --vendor <name>     chatgpt | gemini | grok (default: chatgpt)
   --url <url>         Navigate or verify the provider URL before mutation
-  --model <alias>     Provider model alias; Gemini also accepts deepthink tool alias
-                       ChatGPT: instant, thinking, pro
-                       Gemini models: fast, thinking, pro
-                       Gemini tool: deepthink
-                       Grok: auto, fast, expert, thinking, beta
-  --timeout <sec>     Wait timeout for send/query/poll
+  --model <alias>     Provider model alias; aliases below
+                        ChatGPT: instant, thinking, pro
+                        Gemini  models: fast, thinking, pro
+                        Gemini  tool:   deepthink
+                        Grok:   auto, fast, expert, thinking, heavy
+  --timeout <sec>     Polling timeout. Defaults: ChatGPT 1200, Gemini 1200, Grok 600.
 
-Prompt envelope:
-  --prompt <text>     Main user prompt/question
-  --system <text>     System or role instruction
+Prompt envelope (every prompt also gets a [INSTRUCTIONS] block telling the
+model to use web search and cite sources inline):
+  --prompt <text>     Main user prompt/question (required)
+  --system <text>     System / role instruction
   --project <text>    Project name
   --goal <text>       Task goal
   --context <text>    Inline context
-  --question <text>   Alias/detail question text
+  --question <text>   Alias for prompt detail
   --output <text>     Output preference
   --constraints <txt> Constraints to include in the prompt
 
@@ -44,30 +45,50 @@ Attachments and context:
   --inline-only                     Required for send/query without files
   --file <path>                     Upload a single file
   --context-from-files <glob|path>  Add files to a context package; repeatable
-  --context-exclude <glob>          Exclude files from context package; repeatable
+  --context-exclude <glob>          Exclude from the package; repeatable
   --context-file <path>             Use a prebuilt context package file
-  --context-transport <mode>        upload or inline
+  --context-transport <upload|inline>
   --max-input <chars>               Inline prompt budget
   --max-file-size <bytes>           Per-file context budget
   --files-report                    Include file report metadata
   --allow-copy-markdown-fallback    Capture provider Copy button output after DOM response
-  --allow-grok-context-pack         Override Grok context-pack hard-gate (Grok prefers inline)
+  --allow-grok-context-pack         Override Grok hard-gate (Grok prefers inline + single --file)
 
-Sessions (Phase 1):
-  --session <id>      Resume an existing session (Phase 1 PR2). poll/query priority: --session > active target > vendor latest.
-  --deadline <iso>    Override the session deadline (default derived from --timeout / vendor poll default)
-  --navigate          Allow sessions resume to switch tabs when conversationUrl mismatches (PR3)
+Sessions (durable across shells):
+  --session <id>      Resume a session by id. poll/query resolves in priority:
+                      --session > active target > vendor latest > legacy baseline.
+  --deadline <iso>    Override the session deadline (default = now + --timeout
+                      or the vendor polling default).
+  --navigate          When resuming, allow the runtime to switch tabs if the
+                      conversationUrl differs from the current tab.
 
 Output:
-  --json             Print JSON
-  --full             Print full context dry-run/render output
-  --dry-run <mode>   summary, full, or json for context-dry-run
+  --json              Print JSON (or set AGBROWSE_JSON_ERRORS=1 to force JSON
+                      failure envelopes regardless of --json).
+  --full              Print full context dry-run/render output
+  --dry-run <mode>    summary | full | json for context-dry-run
+
+Failure envelope (when --json or AGBROWSE_JSON_ERRORS=1):
+  { ok:false, status:"error", error:{ name, errorCode, stage, message,
+    retryHint, vendor?, mutationAllowed, selectorsTried, evidence } }
+  Codes: cdp.target-mismatch | provider.composer-not-visible |
+         provider.attachment-preflight | provider.attachment-evidence-missing |
+         provider.commit-not-verified | provider.poll-timeout |
+         provider.runtime-disabled | capability.unsupported |
+         context.over-budget | context.symlink-rejected |
+         grok.context-pack-not-allowed | internal.unhandled
 
 Examples:
-  agbrowse web-ai render --vendor chatgpt --prompt "hello" --json
-  agbrowse web-ai query --vendor grok --inline-only --prompt "Reply OK"
-  agbrowse web-ai query --vendor gemini --model deepthink --inline-only --prompt "Reply OK"
-  agbrowse web-ai query --vendor chatgpt --context-from-files "src/**/*.ts" --context-transport upload --prompt "Review this"
+  agbrowse web-ai render  --vendor chatgpt --prompt "hello" --json
+  agbrowse web-ai query   --vendor grok    --inline-only --prompt "Reply OK"
+  agbrowse web-ai query   --vendor gemini  --model deepthink --inline-only --prompt "Reply OK"
+  agbrowse web-ai query   --vendor chatgpt --context-from-files "src/**/*.ts" \\
+                                          --context-transport upload --prompt "Review this"
+
+  # Long-running Pro: send returns sessionId; resume from any shell later.
+  SID=$(agbrowse web-ai send --vendor chatgpt --inline-only \\
+          --prompt "..." --json | jq -r .sessionId)
+  agbrowse web-ai poll --vendor chatgpt --session "$SID" --timeout 1800
 `;
 
 export async function runWebAiCli(argv = [], deps) {

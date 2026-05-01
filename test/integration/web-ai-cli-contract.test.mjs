@@ -6,9 +6,9 @@ describe('web-ai CLI contract', () => {
         const result = await execBrowser(['web-ai', '--help']);
         expect(result.code).toBe(0);
         expect(result.stdout).toContain('Usage:');
-        expect(result.stdout).toContain('Provider options:');
+        expect(result.stdout).toContain('Provider:');
         expect(result.stdout).toContain('--context-from-files');
-        expect(result.stdout).toContain('agbrowse web-ai query --vendor grok');
+        expect(result.stdout).toMatch(/agbrowse web-ai query\s+--vendor grok/);
     });
 
     it('supports render command without a running browser', async () => {

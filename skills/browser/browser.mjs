@@ -1617,36 +1617,57 @@ try {
   Web AI:
     web-ai render          Render the provider prompt without a browser
     web-ai status          Check active provider tab state
-    web-ai send            Send a prompt and save a polling session
-    web-ai poll            Poll the saved session for completion
-    web-ai query           Send and poll in one command
-    web-ai stop            Stop a saved session
+    web-ai send            Send a prompt; returns a sessionId for later resume
+    web-ai poll            Poll a session (or latest baseline) for completion
+    web-ai query           send + poll in one call
+    web-ai stop            Send Escape to the active provider tab
     web-ai context-dry-run Build a context package without sending
     web-ai context-render  Render full prompt/context package text
 
       Common flags:
         --vendor <chatgpt|gemini|grok>
-        --model <alias>
+        --model <alias>                ChatGPT: pro/thinking/instant
+                                       Gemini:  pro/thinking/fast + tool deepthink
+                                       Grok:    heavy/expert/thinking/fast/auto
         --url <conversation-or-provider-url>
-        --inline-only
-        --file <path>
-        --context-from-files <path-or-glob>
+        --inline-only | --file <path> | --context-from-files <glob>
         --context-transport <upload|inline>
-        --allow-copy-markdown-fallback
-        --json
+        --allow-copy-markdown-fallback Capture provider Copy button output
+        --allow-grok-context-pack      Override Grok hard-gate (prefer inline)
+        --timeout <sec>                Default 1200 ChatGPT/Gemini · 600 Grok
+        --session <id>                 Resume a previous session; surviving
+                                       shell exit + OS sleep
+        --deadline <iso>               Override session deadline
+        --navigate                     Allow resume to switch tabs if needed
+        --json                         JSON output (or AGBROWSE_JSON_ERRORS=1)
+
+      Failure envelope when --json or AGBROWSE_JSON_ERRORS=1:
+        { ok:false, status:"error", error:{ name, errorCode, stage, message,
+          retryHint, vendor?, mutationAllowed, selectorsTried, evidence } }
+
+      Sessions persist at $BROWSER_AGENT_HOME/web-ai-sessions.json
+      (default ~/.browser-agent). Use --session to resume long Pro / Deep
+      Think runs from a fresh shell.
 
       Examples:
         agbrowse web-ai render --vendor chatgpt --prompt "hello" --json
-        agbrowse web-ai query --vendor grok --inline-only --prompt "Reply OK"
-        agbrowse web-ai query --vendor gemini --model deepthink --inline-only --prompt "Reply OK"
-        agbrowse web-ai query --vendor chatgpt --context-from-files "src/**/*.ts" --context-transport upload --prompt "Review this"
+        agbrowse web-ai query  --vendor grok    --inline-only --prompt "Reply OK"
+        agbrowse web-ai query  --vendor gemini  --model deepthink --inline-only --prompt "Reply OK"
+        agbrowse web-ai query  --vendor chatgpt --context-from-files "src/**/*.ts" \\
+                                                --context-transport upload --prompt "Review this"
+        SID=$(agbrowse web-ai send --vendor chatgpt --inline-only \\
+                --prompt "long Pro prompt" --json | jq -r .sessionId)
+        agbrowse web-ai poll --vendor chatgpt --session "$SID" --timeout 1800
 
   Vision click:
     agbrowse-vision-click "<target description>" [--double] [--prepare-stable]
 
   Environment:
-    BROWSER_AGENT_HOME     Data directory (default: ~/.browser-agent)
+    BROWSER_AGENT_HOME     Data directory (default: ~/.browser-agent).
+                           Holds web-ai-sessions.json (Phase 1 store) +
+                           web-ai-baselines.json (legacy) + browser profile.
     CDP_PORT               Default CDP port (default: 9222)
+    AGBROWSE_JSON_ERRORS=1 Force JSON failure envelopes regardless of --json
     CHROME_HEADLESS=1      Force headless mode
     CHROME_NO_SANDBOX=1    Disable sandbox (Docker/CI)
     CHROME_BINARY_PATH     Custom Chrome/Chromium binary path

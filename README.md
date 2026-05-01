@@ -42,8 +42,17 @@ agbrowse web-ai query \
   --prompt "Reply exactly AGBROWSE_OK"
 ```
 
+For long Pro / Deep Think runs that should survive shell exit:
+
+```bash
+SID=$(agbrowse web-ai send --vendor chatgpt --inline-only \
+        --prompt "..." --json | jq -r .sessionId)
+agbrowse web-ai poll --vendor chatgpt --session "$SID" --timeout 1800
+```
+
 Agent rule: observe before acting. Use `status`, `tabs`, `snapshot
---interactive`, and `web-ai status` before mutating a page.
+--interactive`, and `web-ai status` before mutating a page. Set
+`AGBROWSE_JSON_ERRORS=1` for parseable failure envelopes.
 
 ## Status
 
@@ -254,48 +263,113 @@ The vision path handles device-pixel-ratio correction before sending
 
 ## Web AI
 
-The `web-ai` command drives provider websites through the same browser session.
-It uses provider UIs, so it is intentionally smoke-test oriented and fails
-closed when required selectors or capabilities are not observed.
+The `web-ai` command drives ChatGPT / Gemini / Grok web UIs through the same
+Chrome that `agbrowse start` spawns. It treats provider DOM as untrusted and
+fails closed when required selectors, models, or capabilities are not
+observed.
 
-Supported commands:
+Commands:
 
 ```bash
-agbrowse web-ai render
-agbrowse web-ai status
-agbrowse web-ai send
-agbrowse web-ai poll
-agbrowse web-ai query
-agbrowse web-ai stop
-agbrowse web-ai context-dry-run
-agbrowse web-ai context-render
+agbrowse web-ai render            # render the prompt envelope only
+agbrowse web-ai status            # check active tab + composer
+agbrowse web-ai send              # submit and return a sessionId
+agbrowse web-ai poll              # wait for completion
+agbrowse web-ai query             # send + poll
+agbrowse web-ai stop              # press Escape on the active tab
+agbrowse web-ai context-dry-run   # preview a context package
+agbrowse web-ai context-render    # render full prompt + context text
 ```
 
-Supported providers:
+Provider matrix:
 
-| Provider | Inline | File upload | Context package upload | Model select | Copy fallback |
+| Provider | Inline | File upload | Context package | Model select | Copy fallback |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | ChatGPT | yes | yes | yes | yes | yes |
-| Gemini | yes | yes | yes | yes | yes |
-| Grok | yes | yes | avoid (see Context Packages) | yes | yes |
+| Gemini  | yes | yes | yes | yes | yes |
+| Grok    | yes | yes | **fail-closed** (see Context Packages) | yes | yes |
 
-Unsupported provider requests fail closed before browser mutation.
+Unsupported vendors and unsupported model aliases fail closed before any
+browser mutation.
+
+Every prompt automatically appends an `[INSTRUCTIONS]` block telling the
+model to use web search and cite sources inline. Run `web-ai render` to
+inspect the exact text that is typed into the composer.
 
 ### Polling Timeouts
 
-`web-ai poll` and `web-ai query` accept `--timeout <seconds>`. When omitted,
-the runtime uses these defaults so heavy reasoning models (ChatGPT Pro/Heavy,
-Gemini Deep Think, Grok Expert/Heavy) have room to finish:
+`web-ai poll` / `query` / `watch` accept `--timeout <seconds>`. Default:
 
 | Vendor | Default `--timeout` | Roughly |
 | --- | ---: | --- |
 | ChatGPT | 1200 | 20 minutes |
-| Gemini | 1200 | 20 minutes |
-| Grok | 600 | 10 minutes |
+| Gemini  | 1200 | 20 minutes |
+| Grok    | 600  | 10 minutes |
 
-Pass `--timeout 1800` (30 min) or higher for unusually long Pro/Deep Think
-runs. The provider tab and the agbrowse Chrome process stay open across a
-poll timeout — only the polling loop gives up.
+Pass `--timeout 1800` for unusually long Pro/Deep Think runs. The provider
+tab and the agbrowse Chrome process stay open across a poll timeout —
+only the polling loop gives up.
+
+### Sessions
+
+`web-ai send` returns a 26-char ULID `sessionId` that survives shell exit,
+OS sleep, and Bash timeouts. Sessions persist at
+`$BROWSER_AGENT_HOME/web-ai-sessions.json` (default `~/.browser-agent`).
+
+```bash
+# Long Pro / Deep Think run — fire-and-forget from one shell, resume from another.
+SID=$(agbrowse web-ai send --vendor chatgpt --inline-only \
+        --prompt "long Pro prompt..." --json | jq -r .sessionId)
+
+# Later, in any shell, on the same machine:
+agbrowse web-ai poll --vendor chatgpt --session "$SID" --timeout 1800
+```
+
+`poll` resolves the session in priority order: `--session <id>` > active
+target id > vendor latest > legacy baseline. Each completion / timeout
+updates the session record with `status`, `conversationUrl`, and `answer`.
+
+Add `--deadline <iso>` to override the default deadline (now + `--timeout`)
+and `--navigate` to allow `sessions resume` to switch tabs when the saved
+`conversationUrl` differs from the current tab.
+
+### Failure envelope
+
+Set `AGBROWSE_JSON_ERRORS=1` (or pass `--json`) for machine-readable
+failures. Every error becomes:
+
+```json
+{
+  "ok": false,
+  "status": "error",
+  "error": {
+    "name": "WebAiError",
+    "errorCode": "cdp.target-mismatch",
+    "stage": "connect",
+    "message": "active tab is not ChatGPT: https://example.com/",
+    "retryHint": "tab-switch",
+    "vendor": "chatgpt",
+    "mutationAllowed": false,
+    "selectorsTried": [],
+    "evidence": { "url": "https://example.com/" }
+  }
+}
+```
+
+Initial `errorCode` catalog:
+
+- `cdp.unreachable`, `cdp.target-mismatch`
+- `provider.composer-not-visible`, `provider.model-mismatch`,
+  `provider.attachment-preflight`, `provider.attachment-evidence-missing`,
+  `provider.commit-not-verified`, `provider.poll-timeout`,
+  `provider.runtime-disabled`
+- `capability.unsupported`
+- `context.over-budget`, `context.symlink-rejected`
+- `grok.context-pack-not-allowed`
+- `internal.unhandled`
+
+Exit code is `1` on every failure; `--json` always lands a single parseable
+envelope on `stderr` (no double-printing).
 
 ### Render First
 
@@ -485,8 +559,9 @@ the target host before mutation.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `BROWSER_AGENT_HOME` | `~/.browser-agent` | profile, screenshots, state |
+| `BROWSER_AGENT_HOME` | `~/.browser-agent` | profile, screenshots, state, **`web-ai-sessions.json`** session store |
 | `CDP_PORT` | `9222` | default DevTools port |
+| `AGBROWSE_JSON_ERRORS` | unset | set `1` to force JSON failure envelopes regardless of `--json` |
 | `CHROME_HEADLESS` | unset | set `1` for headless startup |
 | `CHROME_NO_SANDBOX` | unset | set `1` only in Docker/CI if needed |
 | `CHROME_BINARY_PATH` | auto-detect | custom Chrome executable |
