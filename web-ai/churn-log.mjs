@@ -63,6 +63,7 @@ function changedFeatureRecords(report, priorRecords) {
             previousHash: last?.domHash || null,
             state: f.state,
             capturedAt: report.capturedAt || new Date().toISOString(),
+            ...(f.healing ? { healing: f.healing } : {}),
         });
     }
     return changed;

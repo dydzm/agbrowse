@@ -8,6 +8,7 @@ export const WEB_AI_STATUS = Object.freeze({
     READY: 'ready',
     RENDERED: 'rendered',
     SENT: 'sent',
+    POLLING: 'polling',
     STREAMING: 'streaming',
     COMPLETE: 'complete',
     BLOCKED: 'blocked',
@@ -24,7 +25,7 @@ export const ATTACHMENT_POLICY = Object.freeze({
 /**
  * @typedef {'chatgpt'|'gemini'|'grok'} WebAiVendor
  * @typedef {'inline-only'|'upload'|'auto'} AttachmentPolicy
- * @typedef {'ready'|'rendered'|'sent'|'streaming'|'complete'|'blocked'|'timeout'|'error'} WebAiStatus
+ * @typedef {'ready'|'rendered'|'sent'|'polling'|'streaming'|'complete'|'blocked'|'timeout'|'error'} WebAiStatus
  *
  * @typedef {Object} QuestionEnvelope
  * @property {WebAiVendor} vendor
@@ -62,4 +63,23 @@ export const ATTACHMENT_POLICY = Object.freeze({
  * @property {CommittedTurnBaseline=} baseline
  * @property {string[]} warnings
  * @property {string=} error
+ *
+ * @typedef {Object} ElementRef
+ * @property {string} ref
+ * @property {string} role
+ * @property {string} name
+ * @property {string|null} selector
+ * @property {string[]} framePath
+ * @property {string[]} shadowPath
+ * @property {string} signatureHash
+ *
+ * @typedef {Object} WebAiSnapshot
+ * @property {string} snapshotId
+ * @property {WebAiVendor|null} provider
+ * @property {string|null} url
+ * @property {string|null} domHash
+ * @property {string} axHash
+ * @property {string} text
+ * @property {Record<string, ElementRef>} refs
+ * @property {{nodeCount:number, interactiveCount:number, tokenEstimate:number}} stats
  */

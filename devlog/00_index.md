@@ -23,8 +23,8 @@ surface plus a 10-line skeleton.
 | 3 | `04_phase3_capabilities.md` | Capability probe rows | 2 | 3–5 |
 | 4 | `05_phase4_diagnostics.md` | DOM diagnostics (`web-ai doctor`) | 2 | 3–4 |
 | 5 | `06_phase5_adoption.md` | Adoption hardening | 3 | 2.5–4 |
-| 6 | `07_phase6_watcher.md` | Watcher reattach (deferred) | TBD | TBD |
-| 7 | `08_phase7_snapshot_substrate.md` | Agent snapshot substrate | 2 | 3–5 |
+| 6 | `07_phase6_watcher.md` | Watcher (standalone CLI poll loop) | 1 | 2.5–3.5 |
+| 7 | `08_phase7_snapshot_substrate.md` | Agent snapshot substrate | 2 | 4–5.5 |
 | 8 | `09_phase8_self_healing.md` | Self-healing selectors + action cache | 2 | 4–6 |
 | 9 | `10_phase9_visual_fallback.md` | Visual fallback / annotated screenshot | 1 | 1–2 |
 | 10 | `11_phase10_mcp_bridge.md` | MCP / AI SDK bridge | 2 | 3–5 |

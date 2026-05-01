@@ -119,6 +119,11 @@ export function createSession(envelope, meta = {}) {
         answer: null,
         lastError: null,
         warnings: [],
+        lastDomHash: null,
+        lastAxHash: null,
+        lastStreamingState: 'unknown',
+        lastResponseCharCount: 0,
+        trace: [],
     };
     return insertSession(session);
 }

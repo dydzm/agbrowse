@@ -46,10 +46,11 @@ describe('web-ai parseDurationToMs', () => {
 
 describe('web-ai sessions CLI surface (source-string contracts)', () => {
     const cliSrc = readSrc('web-ai/cli.mjs');
+    const sessionsSrc = readSrc('web-ai/cli-sessions.mjs');
 
     it('declares sessions in COMMANDS and a sessions subcommand whitelist', () => {
         expect(cliSrc).toMatch(/COMMANDS = new Set\(\[[\s\S]*?'sessions'/);
-        expect(cliSrc).toMatch(/SESSIONS_SUBCOMMANDS = new Set\(\['list', 'show', 'resume', 'reattach', 'prune'\]\)/);
+        expect(sessionsSrc).toMatch(/SESSIONS_SUBCOMMANDS = new Set\(\['list', 'show', 'resume', 'reattach', 'prune'\]\)/);
     });
 
     it('dispatches sessions before context and runCommand', () => {
@@ -58,22 +59,22 @@ describe('web-ai sessions CLI surface (source-string contracts)', () => {
 
     it('list/show/resume/reattach/prune subcommands are handled', () => {
         for (const sub of ['list', 'show', 'resume', 'reattach', 'prune']) {
-            expect(cliSrc).toMatch(new RegExp(`sub === '${sub}'`));
+            expect(sessionsSrc).toMatch(new RegExp(`sub === '${sub}'`));
         }
     });
 
     it('resume forwards to vendor-specific poll function', () => {
-        expect(cliSrc).toMatch(/session\.vendor === 'gemini' \? geminiPollWebAi : session\.vendor === 'grok' \? grokPollWebAi : pollWebAi/);
+        expect(sessionsSrc).toMatch(/session\.vendor === 'gemini' \? geminiPollWebAi : session\.vendor === 'grok' \? grokPollWebAi : pollWebAi/);
     });
 
     it('reattach respects --navigate when conversationUrl differs', () => {
-        expect(cliSrc).toMatch(/input\.navigate === true/);
-        expect(cliSrc).toMatch(/reattach-mismatch/);
-        expect(cliSrc).toMatch(/pass --navigate to switch tabs/);
+        expect(sessionsSrc).toMatch(/input\.navigate === true/);
+        expect(sessionsSrc).toMatch(/reattach-mismatch/);
+        expect(sessionsSrc).toMatch(/pass --navigate to switch tabs/);
     });
 
     it('prune defaults --older-than to 30d when omitted', () => {
-        expect(cliSrc).toMatch(/30 \* 86_400_000/);
+        expect(sessionsSrc).toMatch(/30 \* 86_400_000/);
     });
 
     it('exposes --older-than / --status / --limit options', () => {

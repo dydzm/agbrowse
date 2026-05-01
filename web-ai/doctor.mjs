@@ -1,7 +1,11 @@
+import { createHash } from 'node:crypto';
 import { domHashAround, selectorMatchSummary } from './dom-hash.mjs';
 import { findActiveSession } from './session.mjs';
 import { CHATGPT_COPY_SELECTORS, GEMINI_COPY_SELECTORS, GROK_COPY_SELECTORS } from './copy-markdown.mjs';
 import { CHATGPT_MODEL_SELECTOR_BUTTONS } from './chatgpt-model.mjs';
+import { buildWebAiSnapshot, summarizeSnapshotForDoctor } from './ax-snapshot.mjs';
+import { observeProviderTargets } from './observe-targets.mjs';
+import { editorContractForVendor } from './vendor-editor-contract.mjs';
 
 const CHATGPT_FEATURES = [
     { feature: 'composer', selectors: ['#prompt-textarea', '[data-testid="composer-textarea"]', 'div[contenteditable="true"]'] },
@@ -87,12 +91,43 @@ export async function runDoctor(deps, options = {}) {
             state: 'fail', domHash: null,
         }));
 
+    let snapshotSummary = null;
+    let semanticTargets = null;
+    if (options.snapshot === true || options.snapshot === 'interactive') {
+        try {
+            const snapshot = await buildWebAiSnapshot(page, {
+                provider: vendor,
+                compact: true,
+                interactiveOnly: true,
+                maxDepth: options.snapshotMaxDepth || 6,
+            });
+            snapshotSummary = summarizeSnapshotForDoctor(snapshot);
+            semanticTargets = sanitizeObservedTargetsForDoctor(
+                await observeProviderTargets(page, {
+                    provider: vendor,
+                    featureMap: editorContractForVendor(vendor),
+                    snapshot,
+                }),
+            );
+        } catch (err) {
+            warnings.push(`snapshot-failed:${err?.errorCode || err?.message || String(err)}`);
+            snapshotSummary = {
+                enabled: false,
+                contentSafe: true,
+                errorCode: err?.errorCode || 'snapshot.failed',
+                retryHint: err?.retryHint || 're-run-without-snapshot',
+            };
+        }
+    }
+
     const lastSession = findActiveSession({ vendor, conversationUrl: url });
     const report = {
         vendor,
         url: redactUrl(url),
         capturedAt: new Date().toISOString(),
         features,
+        ...(snapshotSummary ? { snapshot: snapshotSummary } : {}),
+        ...(semanticTargets ? { semanticTargets } : {}),
         lastSession: lastSession ? summarizeSessionForDoctor(lastSession, options) : null,
         warnings,
     };
@@ -117,6 +152,27 @@ function summarizeSessionForDoctor(session) {
         composerBeforeChars: session.composerBefore?.length ?? null,
         composerAfterChars: session.composerAfter?.length ?? null,
     };
+}
+
+function sanitizeObservedTargetsForDoctor(observed = {}) {
+    const out = {};
+    for (const [feature, candidates] of Object.entries(observed)) {
+        out[feature] = (candidates || []).slice(0, 8).map(candidate => {
+            const { name, ...rest } = candidate;
+            return {
+                ...rest,
+                ...(name !== undefined ? {
+                    nameHash: name ? doctorHashField(name) : null,
+                    nameChars: name ? String(name).length : 0,
+                } : {}),
+            };
+        });
+    }
+    return out;
+}
+
+function doctorHashField(value) {
+    return `sha256:${createHash('sha256').update(String(value)).digest('hex').slice(0, 12)}`;
 }
 
 function byteLength(str) {

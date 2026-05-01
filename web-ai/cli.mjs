@@ -4,16 +4,19 @@ import { geminiStatusWebAi, geminiSendWebAi, geminiPollWebAi, geminiQueryWebAi, 
 import { grokStatusWebAi, grokSendWebAi, grokPollWebAi, grokQueryWebAi, grokStopWebAi } from './grok-live.mjs';
 import { buildContextPackageResult, prepareContextForBrowser, renderContextDryRunReport } from './context-pack/index.mjs';
 import { WebAiError, wrapError } from './errors.mjs';
-import { getSession, listSessions, pruneSessionsOlderThan } from './session.mjs';
 import { runDoctor } from './doctor.mjs';
 import { maybeRecordChurn } from './churn-log.mjs';
+import { watchSession } from './watcher.mjs';
+import { buildWebAiSnapshot } from './ax-snapshot.mjs';
+import { runSessionsCommand, printSessionsHuman, parseDurationToMs } from './cli-sessions.mjs';
+export { parseDurationToMs };
 
 const COMMANDS = new Set([
     'render', 'status', 'send', 'poll', 'query', 'stop',
+    'watch', 'snapshot',
     'sessions', 'doctor',
     'context-dry-run', 'context-render',
 ]);
-const SESSIONS_SUBCOMMANDS = new Set(['list', 'show', 'resume', 'reattach', 'prune']);
 export const WEB_AI_USAGE = `
 Usage:
   agbrowse web-ai <command> --vendor <chatgpt|gemini|grok> [options]
@@ -25,6 +28,8 @@ Commands:
   poll                Poll a session (or the latest baseline) for completion
   query               send + poll in one call
   stop                Send Escape to the active provider tab
+  watch               Watch a persisted session until terminal status
+  snapshot            Print a compact accessibility snapshot for the active provider tab
   sessions <sub>      Manage persisted sessions: list | show | resume | reattach | prune
   context-dry-run     Build a context package without sending
   context-render      Render full prompt/context package text
@@ -80,6 +85,19 @@ Sessions subcommands:
   agbrowse web-ai sessions prune  [--older-than 30d] [--status <s>]
                       Duration accepts s | m | h | d | w (default unit d).
 
+Watcher:
+  agbrowse web-ai watch --session <id> [--interval 15s] [--poll-timeout 30] [--navigate] [--json]
+                      Long-running stdout notifier for one persisted session.
+                      One watcher per session is enforced by a lock file.
+
+Snapshot:
+  agbrowse web-ai snapshot --vendor <v> [--interactive] [--compact] [--json]
+                      Compact Playwright-MCP-style accessibility snapshot.
+
+Doctor snapshot:
+  agbrowse web-ai doctor --vendor <v> --snapshot interactive [--json]
+                      Adds content-safe snapshot stats and semantic target candidates.
+
 Output:
   --json              Print JSON (or set AGBROWSE_JSON_ERRORS=1 to force JSON
                       failure envelopes regardless of --json).
@@ -93,6 +111,8 @@ Failure envelope (when --json or AGBROWSE_JSON_ERRORS=1):
          provider.attachment-preflight | provider.attachment-evidence-missing |
          provider.commit-not-verified | provider.poll-timeout |
          provider.runtime-disabled | capability.unsupported |
+         watcher.session-missing | watcher.already-running |
+         snapshot.unavailable | snapshot.ref-stale |
          context.over-budget | context.symlink-rejected |
          grok.context-pack-not-allowed | internal.unhandled
 
@@ -107,6 +127,9 @@ Examples:
   SID=$(agbrowse web-ai send --vendor chatgpt --inline-only \\
           --prompt "..." --json | jq -r .sessionId)
   agbrowse web-ai poll --vendor chatgpt --session "$SID" --timeout 1800
+
+  # Watch from a supervisor or terminal until complete.
+  agbrowse web-ai watch --session "$SID" --interval 15s --poll-timeout 30 --navigate
 `;
 
 export async function runWebAiCli(argv = [], deps) {
@@ -133,7 +156,11 @@ function emitCliError(err, argv = []) {
 
 async function runWebAiCliInner(argv = [], deps) {
     const command = argv[0];
-    if (!command || command === '--help' || command === 'help' || argv.includes('--help')) {
+    if (!command || command === '--help' || command === 'help') {
+        console.log(WEB_AI_USAGE.trim());
+        return { ok: true, status: 'help' };
+    }
+    if (argv.includes('--help')) {
         console.log(WEB_AI_USAGE.trim());
         return { ok: true, status: 'help' };
     }
@@ -176,6 +203,15 @@ async function runWebAiCliInner(argv = [], deps) {
             status: { type: 'string' },
             limit: { type: 'string' },
             probe: { type: 'string' },
+            interval: { type: 'string' },
+            'poll-timeout': { type: 'string' },
+            'max-iterations': { type: 'string' },
+            once: { type: 'boolean', default: false },
+            interactive: { type: 'boolean', default: true },
+            compact: { type: 'boolean', default: true },
+            snapshot: { type: 'string' },
+            'max-depth': { type: 'string' },
+            'root-selector': { type: 'string' },
             full: { type: 'boolean', default: false },
             json: { type: 'boolean', default: false },
         },
@@ -183,6 +219,7 @@ async function runWebAiCliInner(argv = [], deps) {
     });
 
     rejectFutureScope(values);
+    const vendorExplicit = argv.slice(1).includes('--vendor') || argv.slice(1).some(a => a.startsWith('--vendor='));
     const hasContextPackage = Boolean(values['context-file'] || (Array.isArray(values['context-from-files']) && values['context-from-files'].length > 0));
     if (['send', 'query'].includes(command) && !values['inline-only'] && !values.file && !hasContextPackage) {
         throw new WebAiError({
@@ -194,7 +231,7 @@ async function runWebAiCliInner(argv = [], deps) {
     }
 
     const input = {
-        vendor: values.vendor,
+        vendor: (command === 'watch' && !vendorExplicit) ? null : values.vendor,
         url: values.url,
         prompt: values.prompt,
         system: values.system,
@@ -223,15 +260,29 @@ async function runWebAiCliInner(argv = [], deps) {
         allowCopyMarkdownFallback: values['allow-copy-markdown-fallback'] === true,
         allowGrokContextPack: values['allow-grok-context-pack'] === true,
         probe: values.probe,
+        interval: values.interval,
+        pollTimeoutSec: values['poll-timeout'],
+        maxIterations: values['max-iterations'],
+        once: values.once === true,
+        json: values.json === true,
+        interactive: values.interactive !== false,
+        compact: values.compact !== false,
+        snapshotOption: values.snapshot,
+        maxDepth: values['max-depth'],
+        rootSelector: values['root-selector'],
     };
 
-    const result = command === 'doctor'
-        ? await runDoctorWithChurn(deps, { vendor: input.vendor, full: values.full })
-        : command === 'sessions'
-            ? await runSessionsCommand(argv.slice(1), values, deps, input)
-            : isContextCommand(command)
-                ? await runContextCommand(command, input, values)
-                : await runCommand(command, deps, input);
+    const result = command === 'watch'
+        ? await watchSession(deps, input)
+        : command === 'snapshot'
+            ? await runSnapshotCommand(deps, input, values)
+            : command === 'doctor'
+                ? await runDoctorWithChurn(deps, { vendor: input.vendor, full: values.full, snapshot: values.snapshot })
+                : command === 'sessions'
+                    ? await runSessionsCommand(argv.slice(1), values, deps, input)
+                    : isContextCommand(command)
+                        ? await runContextCommand(command, input, values)
+                        : await runCommand(command, deps, input);
     if (isContextCommand(command) && values.json) console.log(renderContextDryRunReport(result, {
         mode: 'json',
         full: values.full || command === 'context-render',
@@ -244,167 +295,12 @@ async function runWebAiCliInner(argv = [], deps) {
         full: values.full || command === 'context-render',
         json: false,
     }));
+    else if (command === 'watch') printWatchHuman(result);
+    else if (command === 'snapshot') printSnapshotHuman(result);
     else if (command === 'doctor') printDoctorHuman(result);
     else if (command === 'sessions') printSessionsHuman(result);
     else printHuman(command, result);
     return result;
-}
-
-const SESSION_DURATION_RE = /^(\d+)\s*([smhdw]?)$/i;
-const DURATION_MS = { '': 1000, s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000, w: 604_800_000 };
-
-export function parseDurationToMs(value) {
-    if (value === undefined || value === null || value === '') return null;
-    const match = SESSION_DURATION_RE.exec(String(value).trim());
-    if (!match) {
-        throw new WebAiError({
-            errorCode: 'internal.unhandled',
-            stage: 'internal',
-            retryHint: 'report',
-            message: `invalid duration: ${value} (expected e.g. 30d, 12h, 90m, 600s)`,
-            evidence: { value },
-        });
-    }
-    const [, num, unitRaw] = match;
-    const unit = (unitRaw || 'd').toLowerCase();
-    const factor = DURATION_MS[unit];
-    if (!factor) {
-        throw new WebAiError({
-            errorCode: 'internal.unhandled',
-            stage: 'internal',
-            retryHint: 'report',
-            message: `unsupported duration unit: ${unit}`,
-            evidence: { value, unit },
-        });
-    }
-    return Number(num) * factor;
-}
-
-async function runSessionsCommand(args, values, deps, input) {
-    const [sub, ...rest] = args; // args[0] is the subcommand
-    if (!sub) {
-        return {
-            ok: true,
-            status: 'help',
-            commands: ['list', 'show', 'resume', 'reattach', 'prune'],
-            usage: 'agbrowse web-ai sessions <list|show|resume|reattach|prune> [options]',
-        };
-    }
-    if (!SESSIONS_SUBCOMMANDS.has(sub)) {
-        throw new WebAiError({
-            errorCode: 'internal.unhandled',
-            stage: 'internal',
-            retryHint: 'report',
-            message: `unknown sessions subcommand: ${sub} (expected list|show|resume|reattach|prune)`,
-        });
-    }
-    if (sub === 'list') {
-        const filter = {};
-        const vendorExplicit = args.includes('--vendor') || args.some(a => a.startsWith('--vendor='));
-        if (vendorExplicit && values.vendor) filter.vendor = values.vendor;
-        if (values.status) filter.status = values.status;
-        if (values.limit) filter.limit = Number(values.limit);
-        const rows = listSessions(filter);
-        return { ok: true, status: 'list', sessions: rows };
-    }
-    if (sub === 'show') {
-        const id = rest[0];
-        if (!id) throw new WebAiError({ errorCode: 'internal.unhandled', stage: 'internal', retryHint: 'report', message: 'sessions show <id> requires a sessionId argument' });
-        const session = getSession(id);
-        if (!session) throw new WebAiError({ errorCode: 'internal.unhandled', stage: 'internal', retryHint: 'report', message: `no session record for ${id}`, evidence: { sessionId: id } });
-        return { ok: true, status: 'show', session };
-    }
-    if (sub === 'resume') {
-        const id = rest[0] || values.session;
-        if (!id) throw new WebAiError({ errorCode: 'internal.unhandled', stage: 'internal', retryHint: 'report', message: 'sessions resume <id> requires a sessionId (positional or --session)' });
-        const session = getSession(id);
-        if (!session) throw new WebAiError({ errorCode: 'internal.unhandled', stage: 'internal', retryHint: 'report', message: `no session record for ${id}`, evidence: { sessionId: id } });
-        const pollInput = {
-            ...input,
-            vendor: session.vendor,
-            session: id,
-            allowCopyMarkdownFallback: input.allowCopyMarkdownFallback === true,
-        };
-        const pollFn = session.vendor === 'gemini' ? geminiPollWebAi : session.vendor === 'grok' ? grokPollWebAi : pollWebAi;
-        const result = await pollFn(deps, pollInput);
-        return { ...result, status: result.status || 'resumed' };
-    }
-    if (sub === 'reattach') {
-        const id = rest[0] || values.session;
-        if (!id) throw new WebAiError({ errorCode: 'internal.unhandled', stage: 'internal', retryHint: 'report', message: 'sessions reattach <id> requires a sessionId' });
-        const session = getSession(id);
-        if (!session) throw new WebAiError({ errorCode: 'internal.unhandled', stage: 'internal', retryHint: 'report', message: `no session record for ${id}`, evidence: { sessionId: id } });
-        const page = await deps.getPage();
-        const currentUrl = page?.url?.() || null;
-        const targetUrl = session.conversationUrl || session.originalUrl;
-        if (!targetUrl) {
-            return { ok: false, status: 'reattach-failed', sessionId: id, error: 'session has no conversationUrl/originalUrl', warnings: [] };
-        }
-        if (currentUrl !== targetUrl) {
-            if (input.navigate === true) {
-                await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
-                return { ok: true, status: 'reattached', sessionId: id, url: targetUrl, warnings: [`navigated from ${currentUrl} to ${targetUrl}`] };
-            }
-            return {
-                ok: false,
-                status: 'reattach-mismatch',
-                sessionId: id,
-                url: currentUrl,
-                conversationUrl: targetUrl,
-                warnings: [`current tab ${currentUrl} does not match session conversationUrl ${targetUrl}; pass --navigate to switch tabs`],
-            };
-        }
-        return { ok: true, status: 'reattached', sessionId: id, url: targetUrl, warnings: ['already on conversationUrl'] };
-    }
-    if (sub === 'prune') {
-        const olderThanMs = values['older-than']
-            ? parseDurationToMs(values['older-than'])
-            : 30 * 86_400_000;
-        const result = pruneSessionsOlderThan({
-            olderThanMs,
-            ...(values.status ? { status: values.status } : {}),
-        });
-        return { ok: true, status: 'pruned', ...result, olderThanMs };
-    }
-}
-
-function printSessionsHuman(result) {
-    if (!result) return;
-    if (result.status === 'help') {
-        console.log(result.usage);
-        console.log(`subcommands: ${result.commands.join(', ')}`);
-        return;
-    }
-    if (result.status === 'list') {
-        const rows = result.sessions || [];
-        if (rows.length === 0) { console.log('(no sessions)'); return; }
-        for (const s of rows) {
-            console.log(`${s.sessionId}  ${s.vendor.padEnd(8)}  ${s.status.padEnd(10)}  ${s.createdAt}  ${s.conversationUrl || s.originalUrl || ''}`);
-        }
-        return;
-    }
-    if (result.status === 'show') {
-        console.log(JSON.stringify(result.session, null, 2));
-        return;
-    }
-    if (result.status === 'pruned') {
-        console.log(`pruned ${result.removed} (remaining ${result.remaining})`);
-        return;
-    }
-    if (result.status === 'reattached') {
-        console.log(`reattached to ${result.sessionId} at ${result.url}`);
-        return;
-    }
-    if (result.status === 'reattach-mismatch') {
-        console.log(`reattach mismatch: tab=${result.url} session=${result.conversationUrl}`);
-        console.log('pass --navigate to switch tabs');
-        return;
-    }
-    if (result.answerText) {
-        console.log(result.answerText);
-        return;
-    }
-    console.log(JSON.stringify(result, null, 2));
 }
 
 async function runContextCommand(command, input, values) {
@@ -528,6 +424,26 @@ function printDoctorHuman(report) {
     if (report.warnings?.length) {
         console.log(`  warnings: ${report.warnings.join(', ')}`);
     }
+}
+
+async function runSnapshotCommand(deps, input, values) {
+    const page = await deps.getPage();
+    return buildWebAiSnapshot(page, {
+        provider: input.vendor,
+        compact: values.compact !== false,
+        interactiveOnly: values.interactive !== false,
+        maxDepth: values['max-depth'] ? Number(values['max-depth']) : 6,
+        rootSelector: values['root-selector'] || null,
+    });
+}
+
+function printWatchHuman(result) {
+    if (!result || result.eventsPrinted) return;
+    console.log(`watch ${result.sessionId}: ${result.status}`);
+}
+
+function printSnapshotHuman(result) {
+    console.log(result.text);
 }
 
 function printHuman(command, result) {
