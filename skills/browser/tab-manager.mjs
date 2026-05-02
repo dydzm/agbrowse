@@ -2,6 +2,8 @@
  * Tab Manager — self-contained (no import from browser.mjs to avoid circular deps)
  */
 
+const cdpConnections = new Map(); // port -> { browser, connectedAt }
+
 async function loadPlaywright() {
     try {
         return await import('playwright-core');
@@ -16,15 +18,24 @@ async function loadPlaywright() {
     }
 }
 
-async function connectCdp(port) {
+async function getBrowserForPort(port) {
+    const existing = cdpConnections.get(port);
+    if (existing?.browser?.isConnected?.()) return existing.browser;
+
     const { chromium } = await loadPlaywright();
-    const cdpUrl = `http://127.0.0.1:${port}`;
-    const browser = await chromium.connectOverCDP(cdpUrl, { timeout: 10000 });
-    return { browser, cdpUrl };
+    const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`, { timeout: 10000 });
+    browser.on('disconnected', () => cdpConnections.delete(port));
+    cdpConnections.set(port, { browser, connectedAt: Date.now() });
+    return browser;
+}
+
+async function connectCdp(port) {
+    const browser = await getBrowserForPort(port);
+    return { browser, cdpUrl: `http://127.0.0.1:${port}` };
 }
 
 async function getActivePage(port) {
-    const { browser } = await connectCdp(port);
+    const browser = await getBrowserForPort(port);
     const pages = browser.contexts().flatMap(c => c.pages());
     return pages[pages.length - 1] || null;
 }
@@ -177,13 +188,30 @@ export async function isTabAlive(port, targetId) {
 }
 
 /**
- * Get Playwright page by targetId via CDP
+ * Wait for a page to be attached for a given targetId
+ * @param {number} port - CDP port
+ * @param {string} targetId - Tab target ID
+ * @param {number} timeoutMs - Max wait time
+ * @returns {Promise<Page>}
+ */
+export async function waitForPageByTargetId(port, targetId, timeoutMs = 10_000) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const page = await getPageByTargetId(port, targetId);
+        if (page && !page.isClosed?.()) return page;
+        await new Promise(r => setTimeout(r, 100));
+    }
+    throw new Error(`new tab page not found for targetId ${targetId}`);
+}
+
+/**
+ * Get Playwright page by targetId via CDP (uses cached browser connection)
  * @param {number} port - CDP port
  * @param {string} targetId - Tab target ID
  * @returns {Promise<Page|null>}
  */
 export async function getPageByTargetId(port, targetId) {
-    const { browser } = await connectCdp(port);
+    const browser = await getBrowserForPort(port);
     const contexts = browser.contexts();
     for (const context of contexts) {
         for (const page of context.pages()) {

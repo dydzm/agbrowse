@@ -72,9 +72,20 @@ export async function verifySessionTab(deps, session) {
     return { valid: false, targetId: session.targetId, needsRecovery: true };
 }
 
+function isPageDeathError(err) {
+    const msg = String(err?.message || err || '').toLowerCase();
+    return (
+        msg.includes('target closed') ||
+        msg.includes('page closed') ||
+        msg.includes('browser has been closed') ||
+        msg.includes('crash')
+    );
+}
+
 /**
  * Execute operation with session's bound page
  * GPT Pro recommendation: resolve page directly, don't use active tab routing
+ * Catches page death mid-operation and retries once after recovery
  * @param {Object} deps - Dependencies { getPort }
  * @param {string} sessionId - Session ID
  * @param {Function} fn - Callback({ page, targetId, session })
@@ -86,26 +97,37 @@ export async function withSessionPage(deps, sessionId, fn) {
 
     const port = deps.getPort();
 
-    // Verify tab is alive
-    const { valid, needsRecovery } = await verifySessionTab(deps, session);
+    async function resolvePage(forceRecover = false) {
+        const current = getSession(sessionId);
+        if (!current) throw new Error(`Session not found: ${sessionId}`);
 
-    if (!valid) {
-        if (needsRecovery && session.conversationUrl) {
-            const recovery = await recoverSessionTab(deps, session);
-            if (!recovery.recovered) {
-                throw new Error(`Session ${sessionId} tab recovery failed`);
+        const { valid, needsRecovery } = await verifySessionTab(deps, current);
+
+        if (!valid || forceRecover) {
+            if (needsRecovery && current.conversationUrl) {
+                const recovery = await recoverSessionTab(deps, current);
+                if (!recovery.recovered) {
+                    throw new Error(`Session ${sessionId} tab recovery failed`);
+                }
+                const recovered = getSession(sessionId);
+                const page = await getPageByTargetId(port, recovered.targetId);
+                if (!page) throw new Error(`Session ${sessionId} page not found after recovery`);
+                return { page, targetId: recovered.targetId, session: recovered };
             }
-            // Refresh session after recovery
-            const recoveredSession = getSession(sessionId);
-            const page = await getPageByTargetId(port, recoveredSession.targetId);
-            if (!page) throw new Error(`Session ${sessionId} page not found after recovery`);
-            return fn({ page, targetId: recoveredSession.targetId, session: recoveredSession });
+            throw new Error(`Session ${sessionId} tab is not valid and cannot be recovered`);
         }
-        throw new Error(`Session ${sessionId} tab is not valid and cannot be recovered`);
+
+        const page = await getPageByTargetId(port, current.targetId);
+        if (!page) throw new Error(`Session ${sessionId} page not found for targetId ${current.targetId}`);
+        return { page, targetId: current.targetId, session: current };
     }
 
-    const page = await getPageByTargetId(port, session.targetId);
-    if (!page) throw new Error(`Session ${sessionId} page not found for targetId ${session.targetId}`);
-
-    return fn({ page, targetId: session.targetId, session });
+    const first = await resolvePage();
+    try {
+        return await fn(first);
+    } catch (err) {
+        if (!isPageDeathError(err)) throw err;
+        const recovered = await resolvePage(true);
+        return fn(recovered);
+    }
 }

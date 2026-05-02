@@ -9,7 +9,8 @@ import { maybeRecordChurn } from './churn-log.mjs';
 import { watchSession } from './watcher.mjs';
 import { buildWebAiSnapshot } from './ax-snapshot.mjs';
 import { runSessionsCommand, printSessionsHuman, parseDurationToMs } from './cli-sessions.mjs';
-import { createTab, switchToTab } from '../skills/browser/tab-manager.mjs';
+import { createTab, waitForPageByTargetId } from '../skills/browser/tab-manager.mjs';
+import { withSessionPage } from './tab-recovery.mjs';
 export { parseDurationToMs };
 
 const VENDOR_DEFAULT_URLS = {
@@ -341,12 +342,36 @@ async function ensureProviderTab(deps, input) {
     if (!input.newTab || input.reuseTab) return deps;
     const vendorUrl = input.url || VENDOR_DEFAULT_URLS[input.vendor || 'chatgpt'];
     const port = deps.getPort?.() || 9222;
-    const tab = await createTab(port, vendorUrl, { activate: true });
-    await switchToTab(port, tab.targetId);
+    // Phase 9.1 fix: create tab WITHOUT activate (avoids focus race)
+    const tab = await createTab(port, vendorUrl, { activate: false });
+    const page = await waitForPageByTargetId(port, tab.targetId);
     return {
         ...deps,
+        getPage: async () => {
+            if (page.isClosed?.()) throw new Error(`bound tab closed: ${tab.targetId}`);
+            return page;
+        },
         getTargetId: async () => tab.targetId,
+        getCdpSession: async () => page.context().newCDPSession(page),
     };
+}
+
+async function runBoundCommand(command, deps, input, pollFn, stopFn) {
+    if (['poll', 'stop'].includes(command) && input.session) {
+        return withSessionPage(deps, input.session, async ({ page, targetId, session }) => {
+            const sessionDeps = {
+                ...deps,
+                getPage: async () => page,
+                getTargetId: async () => targetId,
+                getCdpSession: async () => page.context().newCDPSession(page),
+            };
+            if (command === 'poll') return pollFn(sessionDeps, { ...input, vendor: session.vendor, session: session.sessionId });
+            if (command === 'stop') return stopFn(sessionDeps, { ...input, vendor: session.vendor, session: session.sessionId });
+        });
+    }
+    if (command === 'poll') return pollFn(deps, input);
+    if (command === 'stop') return stopFn(deps, input);
+    throw new Error(`runBoundCommand: unsupported command ${command}`);
 }
 
 async function runCommand(command, deps, input) {
@@ -360,9 +385,9 @@ async function runCommand(command, deps, input) {
             case 'render': return renderWebAi(input);
             case 'status': return geminiStatusWebAi(deps, input);
             case 'send': return geminiSendWebAi(deps, input);
-            case 'poll': return geminiPollWebAi(deps, input);
+            case 'poll': return runBoundCommand(command, deps, input, geminiPollWebAi, geminiStopWebAi);
             case 'query': return geminiQueryWebAi(deps, input);
-            case 'stop': return geminiStopWebAi(deps, input);
+            case 'stop': return runBoundCommand(command, deps, input, geminiPollWebAi, geminiStopWebAi);
             default: throw new Error(`unknown web-ai command: ${command}`);
         }
     }
@@ -371,9 +396,9 @@ async function runCommand(command, deps, input) {
             case 'render': return renderWebAi(input);
             case 'status': return grokStatusWebAi(deps, input);
             case 'send': return grokSendWebAi(deps, input);
-            case 'poll': return grokPollWebAi(deps, input);
+            case 'poll': return runBoundCommand(command, deps, input, grokPollWebAi, grokStopWebAi);
             case 'query': return grokQueryWebAi(deps, input);
-            case 'stop': return grokStopWebAi(deps, input);
+            case 'stop': return runBoundCommand(command, deps, input, grokPollWebAi, grokStopWebAi);
             default: throw new Error(`unknown web-ai command: ${command}`);
         }
     }
@@ -381,9 +406,9 @@ async function runCommand(command, deps, input) {
         case 'render': return renderWebAi(input);
         case 'status': return statusWebAi(deps, input);
         case 'send': return sendWebAi(deps, input);
-        case 'poll': return pollWebAi(deps, input);
+        case 'poll': return runBoundCommand(command, deps, input, pollWebAi, stopWebAi);
         case 'query': return queryWebAi(deps, input);
-        case 'stop': return stopWebAi(deps, input);
+        case 'stop': return runBoundCommand(command, deps, input, pollWebAi, stopWebAi);
         default: throw new Error(`unknown web-ai command: ${command}`);
     }
 }
