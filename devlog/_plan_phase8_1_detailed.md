@@ -203,6 +203,32 @@ export function updateCacheEntry(cache, ctx, resolvedTarget, fingerprint, {
         },
     };
 }
+
+export function getCachedTarget(cache, { provider, intent, actionKind, urlHost, fingerprint }) {
+    if (!cache?.entries) return null;
+    const key = cacheKey({
+        provider,
+        urlHost,
+        intent,
+        actionKind,
+        domHashPrefix: fingerprint?.domHashPrefix || null,
+        axHashPrefix: fingerprint?.axHashPrefix || null,
+    });
+    const entry = cache.entries[key];
+    if (!entry) return null;
+    // Merge entry metadata into target for validation
+    return {
+        target: {
+            ...entry.target,
+            schemaVersion: entry.schemaVersion,
+            contractVersion: entry.contractVersion,
+            framePath: entry.framePath,
+            browserConfigHash: entry.browserConfigHash,
+        },
+        key,
+        entry,
+    };
+}
 ```
 
 ---
@@ -674,8 +700,10 @@ export async function assertPostAction(page, action, target, options = {}) {
     switch (action) {
         case 'fill': {
             const locator = page.locator(target.selector);
-            const value = await locator.inputValue?.().catch(() => null)
-                || await locator.evaluate(el => el.textContent || el.value || '').catch(() => '');
+            const inputValue = typeof locator.inputValue === 'function'
+                ? await locator.inputValue().catch(() => null)
+                : null;
+            const value = inputValue ?? await locator.evaluate(el => el.textContent || el.value || '').catch(() => '');
             const expected = options.expectedValue;
             if (expected && value !== expected) {
                 return { ok: false, reason: 'value-mismatch', expected, actual: value };
@@ -871,6 +899,67 @@ export function createMetricsCollector({ sink }) {
 }
 ```
 
+#### MODIFY `web-ai/self-heal.mjs`
+
+**Add metrics recording to `resolveActionTarget`:**
+```js
+import { recordCacheEvent } from './cache-metrics.mjs';
+
+const homeDir = process.env.BROWSER_AGENT_HOME || join(homedir(), '.browser-agent');
+
+export async function resolveActionTarget(page, ctx) {
+    // ... existing destructuring ...
+    const startMs = Date.now();
+    
+    recordCacheEvent(homeDir, { type: 'lookup', provider, intent, actionKind });
+    
+    if (cache && typeof cache.get === 'function') {
+        const cached = cache.get({ provider, intent, actionKind, urlHost, fingerprint });
+        if (cached) {
+            const validation = await validateResolvedTarget(page, cached.target, {
+                semanticTarget, actionKind, registry,
+                contractVersion: ctx.contractVersion,
+                framePath: ctx.framePath,
+                browserConfigHash: ctx.browserConfigHash,
+            });
+            attempts.push({ source: ResolutionSource.CACHE, validation });
+            if (validation.ok) {
+                recordCacheEvent(homeDir, { type: 'cache-hit-valid', provider, intent, actionKind, durationMs: Date.now() - startMs });
+                return { ok: true, target: { ...cached.target, resolution: ResolutionSource.CACHE }, attempts };
+            } else {
+                recordCacheEvent(homeDir, { type: 'cache-hit-rejected', provider, intent, actionKind, reason: validation.reason });
+            }
+        } else {
+            recordCacheEvent(homeDir, { type: 'cache-miss', provider, intent, actionKind, reason: 'no-entry' });
+        }
+    }
+    
+    // ... rest of candidate resolution ...
+    for (const candidate of ranked) {
+        const validation = await validateResolvedTarget(page, candidate, { semanticTarget, actionKind, registry });
+        attempts.push({ source: candidate.source, ref: candidate.ref || null, selector: candidate.selector || null, validation });
+        if (validation.ok) {
+            recordCacheEvent(homeDir, { type: 'resolved', provider, intent, actionKind, source: candidate.source, durationMs: Date.now() - startMs });
+            return { ok: true, target: { ...candidate, resolution: candidate.source }, attempts };
+        }
+    }
+    
+    recordCacheEvent(homeDir, { type: 'cache-miss', provider, intent, actionKind, reason: 'all-failed' });
+    return { ok: false, errorCode: 'TARGET_UNRESOLVED', provider, intent, actionKind, feature, required: semanticTarget?.required || false, attempts };
+}
+```
+
+#### MODIFY `web-ai/browser-primitives.mjs`
+
+**Add false-heal metric recording to wrappers (via post-action-assert):**
+```js
+import { recordCacheEvent } from './cache-metrics.mjs';
+
+// Inside clickWithPostAssert / fillWithPostAssert, when false-heal detected:
+const homeDir = process.env.BROWSER_AGENT_HOME || join(homedir(), '.browser-agent');
+recordCacheEvent(homeDir, { type: 'false-heal', action, reason: failure.reason });
+```
+
 ---
 
 ### 8.1-PR5b: Doctor reporting
@@ -908,21 +997,31 @@ export async function runDoctor(deps, options = {}) {
 
 **Add `--cache-metrics` flag to doctor command parsing:**
 ```js
-// In doctor command option parsing, add:
-const cacheMetrics = argv['cache-metrics'] === true;
-// Pass to runDoctor:
-await runDoctorWithChurn(deps, { vendor, full, snapshot, cacheMetrics });
+// In parseArgs options for doctor command, add:
+'cache-metrics': { type: 'boolean', default: false },
+
+// In doctor command handler, pass to runDoctorWithChurn:
+? await runDoctorWithChurn(deps, {
+    vendor: input.vendor,
+    full: values.full,
+    snapshot: values.snapshot,
+    cacheMetrics: values['cache-metrics'] === true,
+  })
 ```
 
-**Add cacheMetrics to human printer:**
+**Add cacheMetrics to human printer (`printDoctorHuman`):**
 ```js
-if (report.cacheMetrics) {
-    out.push('');
-    out.push('Cache Metrics (last 7 days):');
-    out.push(`  Hit rate: ${(report.cacheMetrics.cacheHitRate * 100).toFixed(1)}%`);
-    out.push(`  Self-heal rate: ${(report.cacheMetrics.selfHealRate * 100).toFixed(1)}%`);
-    out.push(`  False heals: ${report.cacheMetrics.falseHeals}`);
-    out.push(`  Avg duration: ${report.cacheMetrics.avgDurationMs.toFixed(0)}ms`);
+function printDoctorHuman(report) {
+  // ... existing code ...
+  if (report.cacheMetrics) {
+    console.log('');
+    console.log('Cache Metrics (last 7 days):');
+    console.log(`  Hit rate: ${(report.cacheMetrics.cacheHitRate * 100).toFixed(1)}%`);
+    console.log(`  Self-heal rate: ${(report.cacheMetrics.selfHealRate * 100).toFixed(1)}%`);
+    console.log(`  False heals: ${report.cacheMetrics.falseHeals}`);
+    console.log(`  Avg duration: ${report.cacheMetrics.avgDurationMs.toFixed(0)}ms`);
+  }
+  // ... rest ...
 }
 ```
 
