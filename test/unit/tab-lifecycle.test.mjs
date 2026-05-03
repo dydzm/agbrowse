@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { parseDuration, selectTabsForCleanup } from '../../skills/browser/tab-lifecycle.mjs';
 
 describe('tab lifecycle cleanup selection', () => {
@@ -62,5 +63,11 @@ describe('tab lifecycle cleanup selection', () => {
         expect(selectTabsForCleanup({ ...base, includeUntracked: true })).toMatchObject([
             { targetId: 'untracked', cleanupReason: 'untracked' },
         ]);
+    });
+
+    it('does not pass Array.map index as tab display timestamp', () => {
+        const source = readFileSync(new URL('../../skills/browser/browser.mjs', import.meta.url), 'utf8');
+        expect(source).toContain('.map(tab => tabDisplayState(tab))');
+        expect(source).not.toContain('.map(tabDisplayState)');
     });
 });

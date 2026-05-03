@@ -1389,7 +1389,7 @@ try {
         }
         case 'tabs': {
             const json = process.argv.includes('--json');
-            const tabs = (await listManagedTabs(getPort())).map(tabDisplayState);
+            const tabs = (await listManagedTabs(getPort())).map(tab => tabDisplayState(tab));
             if (json) {
                 console.log(JSON.stringify(tabs.map((t, i) => ({ index: i + 1, ...t })), null, 2));
             } else {
