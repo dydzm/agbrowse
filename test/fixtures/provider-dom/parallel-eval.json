@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "taskId": "phase11-parallel-fixture-isolation",
+  "maxFixtureConcurrency": 4,
+  "fixtures": [
+    {
+      "id": "chatgpt-parallel-a",
+      "vendor": "chatgpt",
+      "variant": "parallel-a",
+      "htmlPath": "chatgpt-parallel-a.html",
+      "mustContain": ["CHATGPT_PARALLEL_A_OK"],
+      "mustNotContain": ["CHATGPT_PARALLEL_B_OK", "GEMINI_PARALLEL_A_OK"]
+    },
+    {
+      "id": "chatgpt-parallel-b",
+      "vendor": "chatgpt",
+      "variant": "parallel-b",
+      "htmlPath": "chatgpt-parallel-b.html",
+      "mustContain": ["CHATGPT_PARALLEL_B_OK"],
+      "mustNotContain": ["CHATGPT_PARALLEL_A_OK", "GEMINI_PARALLEL_A_OK"]
+    },
+    {
+      "id": "gemini-parallel-a",
+      "vendor": "gemini",
+      "variant": "parallel-a",
+      "htmlPath": "gemini-parallel-a.html",
+      "mustContain": ["GEMINI_PARALLEL_A_OK"],
+      "mustNotContain": ["CHATGPT_PARALLEL_A_OK", "CHATGPT_PARALLEL_B_OK"]
+    }
+  ]
+}

@@ -5,6 +5,9 @@ on:
       - 'web-ai/**'
       - 'test/fixtures/**'
       - 'test/unit/web-ai-contract-audit.test.mjs'
+      - 'test/unit/web-ai-eval*.test.mjs'
+      - 'test/unit/web-ai-dom-scrubber.test.mjs'
+      - 'scripts/run-web-ai-eval.mjs'
       - '.github/workflows/contract-drift.yml'
       - 'package.json'
       - 'package-lock.json'
@@ -24,6 +27,9 @@ jobs:
       - run: npm ci
       - run: npx playwright install chromium
       - run: npm run test:contract-drift
+      - run: npm run test:eval
+      - run: npm run test:eval-fixtures
+      - run: npm run eval:web-ai:fixtures
         env:
           AGBROWSE_DRIFT_MODE: fixture
 

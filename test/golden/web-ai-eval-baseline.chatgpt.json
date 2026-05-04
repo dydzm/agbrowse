@@ -1,0 +1,134 @@
+{
+  "ok": true,
+  "status": "pass",
+  "schemaVersion": 1,
+  "runId": "c5ecd532ea2edda0",
+  "gitCommit": "836f0a35dceff478b84718fdd17ed3d70711023a",
+  "startedAt": "2026-05-04T14:15:13.523Z",
+  "finishedAt": "2026-05-04T14:15:13.526Z",
+  "options": {
+    "vendor": "chatgpt",
+    "fixtures": "test/fixtures/provider-dom",
+    "config": null,
+    "variants": [
+      "baseline"
+    ],
+    "offline": true,
+    "javascriptEnabled": false,
+    "maxFixtureConcurrency": 1
+  },
+  "summary": {
+    "total": 1,
+    "passCount": 1,
+    "failCount": 0,
+    "knownFixturePassRate": {
+      "numerator": 1,
+      "denominator": 1,
+      "value": 1,
+      "threshold": 0.95
+    }
+  },
+  "results": [
+    {
+      "provider": "chatgpt",
+      "variant": "baseline",
+      "fixturePath": "/Users/jun/Developer/new/700_projects/agbrowse/test/fixtures/provider-dom/chatgpt-baseline.html",
+      "fixtureSha256": "8d41b9669abdd7cdfa407578d6228c06f2e87c519f89ce198eb4c6c3cfc8d3fe",
+      "snapshotId": "100c663e8d3f6877",
+      "metrics": {
+        "targetResolution": {
+          "numerator": 4,
+          "denominator": 4,
+          "value": 1,
+          "threshold": 0.9
+        },
+        "composerFill": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1,
+          "threshold": 1
+        },
+        "uploadOpen": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1,
+          "threshold": 0.9
+        },
+        "copyExactness": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1,
+          "threshold": 0.85
+        },
+        "snapshotTokenEstimate": {
+          "value": 13,
+          "threshold": 500
+        }
+      },
+      "thresholds": {
+        "knownFixturePassRate": 0.95,
+        "composerFill": 1,
+        "uploadOpen": 0.9,
+        "copyExactness": 0.85,
+        "snapshotTokenEstimateMax": 500
+      },
+      "probes": {
+        "composer.fill": {
+          "status": "resolved",
+          "refId": null,
+          "selector": "[data-eval-intent=\"composer.fill\"]",
+          "confidence": 1,
+          "evidence": {
+            "provider": "chatgpt",
+            "intent": "composer.fill",
+            "variant": "baseline",
+            "matches": 1
+          },
+          "error": null
+        },
+        "upload.open": {
+          "status": "resolved",
+          "refId": null,
+          "selector": "[data-eval-intent=\"upload.open\"]",
+          "confidence": 1,
+          "evidence": {
+            "provider": "chatgpt",
+            "intent": "upload.open",
+            "variant": "baseline",
+            "matches": 1
+          },
+          "error": null
+        },
+        "send.click": {
+          "status": "resolved",
+          "refId": null,
+          "selector": "[data-eval-intent=\"send.click\"]",
+          "confidence": 1,
+          "evidence": {
+            "provider": "chatgpt",
+            "intent": "send.click",
+            "variant": "baseline",
+            "matches": 1
+          },
+          "error": null
+        },
+        "copy.click": {
+          "status": "resolved",
+          "refId": null,
+          "selector": "[data-eval-intent=\"copy.click\"]",
+          "confidence": 1,
+          "evidence": {
+            "provider": "chatgpt",
+            "intent": "copy.click",
+            "variant": "baseline",
+            "matches": 1
+          },
+          "error": null
+        }
+      },
+      "status": "pass",
+      "errors": []
+    }
+  ],
+  "regressions": []
+}

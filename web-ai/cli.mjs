@@ -15,6 +15,7 @@ import { withSessionPage } from './tab-recovery.mjs';
 import { withSessionCommandLock } from './session-store.mjs';
 import { cleanupPoolTabs, getPooledTab } from './tab-pool.mjs';
 import { runMcpServer } from './mcp-server.mjs';
+import { runWebAiEval } from './eval-runner.mjs';
 export { parseDurationToMs };
 
 const VENDOR_DEFAULT_URLS = {
@@ -28,7 +29,7 @@ const COMMANDS = new Set([
     'watch', 'snapshot',
     'sessions', 'doctor',
     'context-dry-run', 'context-render',
-    'mcp-server',
+    'mcp-server', 'eval',
 ]);
 
 const BROWSER_REQUIRED_COMMANDS = new Set(['status', 'send', 'poll', 'query', 'stop', 'watch', 'snapshot', 'doctor']);
@@ -50,6 +51,7 @@ Commands:
   context-dry-run     Build a context package without sending
   context-render      Render full prompt/context package text
   mcp-server          Run stdio MCP bridge exposing web-ai tools
+  eval                Run offline provider DOM fixture evals; never opens Chrome
 
 Provider:
   --vendor <name>     chatgpt | gemini | grok (default: chatgpt)
@@ -135,6 +137,17 @@ MCP:
                       Starts a stdio JSON-RPC MCP server with tools/list and
                       tools/call. Tool schemas are exported from
                       web-ai/tool-schema.mjs for AI SDK consumers.
+
+Eval:
+  agbrowse web-ai eval --vendor <v> --fixtures test/fixtures/provider-dom [--json]
+                      Offline, non-mutating provider DOM fixture harness.
+                      Does not use the persisted Chrome profile, provider tabs,
+                      sessions, tab pool, clipboard, downloads, screenshots, or
+                      live provider modules.
+  --config <path>     Run an explicit eval fixture config JSON.
+  --variant <name>    Restrict fixture variants; repeatable.
+  --concurrency <n>   Bounded fixture concurrency, integer 1..4 (default 1).
+  --update-golden     Update ChatGPT golden eval JSON from the current run.
 
 Doctor snapshot:
   agbrowse web-ai doctor --vendor <v> --snapshot interactive [--json]
@@ -246,6 +259,11 @@ async function runWebAiCliInner(argv = [], deps) {
             'max-file-size': { type: 'string' },
             'files-report': { type: 'boolean', default: false },
             'context-transport': { type: 'string' },
+            config: { type: 'string' },
+            fixtures: { type: 'string' },
+            variant: { type: 'string', multiple: true },
+            concurrency: { type: 'string' },
+            'update-golden': { type: 'boolean', default: false },
             'dry-run': { type: 'string' },
             'older-than': { type: 'string' },
             status: { type: 'string' },
@@ -324,6 +342,11 @@ async function runWebAiCliInner(argv = [], deps) {
         rootSelector: values['root-selector'],
         newTab: values['new-tab'] === true || (['send', 'query'].includes(command) && values['reuse-tab'] !== true && process.env.AGBROWSE_REUSE_TAB !== '1'),
         reuseTab: values['reuse-tab'] === true || process.env.AGBROWSE_REUSE_TAB === '1',
+        evalConfig: values.config,
+        evalFixtures: values.fixtures,
+        evalVariants: values.variant,
+        evalConcurrency: values.concurrency,
+        updateGolden: values['update-golden'] === true,
     };
 
     await ensureHeadedBrowserForWebAi(deps, command, argv);
@@ -332,13 +355,15 @@ async function runWebAiCliInner(argv = [], deps) {
         ? await watchSession(deps, input)
         : command === 'snapshot'
             ? await runSnapshotCommand(deps, input, values)
-            : command === 'doctor'
-                ? await runDoctorWithChurn(deps, { vendor: input.vendor, full: values.full, snapshot: values.snapshot, cacheMetrics: values['cache-metrics'] })
-                : command === 'sessions'
-                    ? await runSessionsCommand(argv.slice(1), values, deps, input)
-                    : isContextCommand(command)
-                        ? await runContextCommand(command, input, values)
-                        : await runCommand(command, deps, input);
+            : command === 'eval'
+                ? await runEvalCommand(input)
+                : command === 'doctor'
+                    ? await runDoctorWithChurn(deps, { vendor: input.vendor, full: values.full, snapshot: values.snapshot, cacheMetrics: values['cache-metrics'] })
+                    : command === 'sessions'
+                        ? await runSessionsCommand(argv.slice(1), values, deps, input)
+                        : isContextCommand(command)
+                            ? await runContextCommand(command, input, values)
+                            : await runCommand(command, deps, input);
     if (isContextCommand(command) && values.json) console.log(renderContextDryRunReport(result, {
         mode: 'json',
         full: values.full || command === 'context-render',
@@ -353,9 +378,33 @@ async function runWebAiCliInner(argv = [], deps) {
     }));
     else if (command === 'watch') printWatchHuman(result);
     else if (command === 'snapshot') printSnapshotHuman(result);
+    else if (command === 'eval') printEvalHuman(result);
     else if (command === 'doctor') printDoctorHuman(result);
     else if (command === 'sessions') printSessionsHuman(result);
     else printHuman(command, result);
+    return result;
+}
+
+async function runEvalCommand(input) {
+    const result = await runWebAiEval({
+        config: input.evalConfig,
+        vendor: input.vendor || 'chatgpt',
+        fixtures: input.evalFixtures || 'test/fixtures/provider-dom',
+        variants: input.evalVariants,
+        concurrency: input.evalConcurrency,
+    });
+    if (input.updateGolden) {
+        if ((input.vendor || 'chatgpt') !== 'chatgpt' || input.evalConfig) {
+            throw new WebAiError({
+                errorCode: 'eval.golden-unsupported',
+                stage: 'eval',
+                mutationAllowed: false,
+                message: '--update-golden currently supports only --vendor chatgpt without --config',
+            });
+        }
+        const fs = await import('node:fs/promises');
+        await fs.writeFile('test/golden/web-ai-eval-baseline.chatgpt.json', `${JSON.stringify(result, null, 2)}\n`);
+    }
     return result;
 }
 
@@ -714,6 +763,13 @@ function printWatchHuman(result) {
 
 function printSnapshotHuman(result) {
     console.log(result.text);
+}
+
+function printEvalHuman(result) {
+    console.log(`web-ai eval ${result.status}: ${result.summary.passCount}/${result.summary.total} fixtures passed`);
+    for (const regression of result.regressions || []) {
+        console.log(`regression ${regression.provider}/${regression.variant} ${regression.metric}: ${regression.value} < ${regression.threshold}`);
+    }
 }
 
 function printHuman(command, result) {

@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+  <body data-provider="chatgpt" data-variant="structural-churn">
+    <aside>sidebar moved</aside>
+    <main>
+      <form aria-label="new composer form">
+        <div role="textbox" contenteditable="true" data-eval-intent="composer.fill" data-eval-ref="chatgpt-composer-structural">Draft</div>
+        <menu>
+          <button type="button" data-eval-intent="upload.open" data-eval-ref="chatgpt-upload-structural">Upload</button>
+          <button type="submit" data-eval-intent="send.click" data-eval-ref="chatgpt-send-structural">Submit</button>
+        </menu>
+      </form>
+      <article>
+        <button data-eval-intent="copy.click" data-eval-ref="chatgpt-copy-structural">Copy markdown</button>
+      </article>
+      <p>CHATGPT_STRUCTURAL_OK</p>
+    </main>
+  </body>
+</html>
