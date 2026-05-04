@@ -157,6 +157,9 @@ export async function withSessionPage(deps, sessionId, fn) {
 
         const page = await getPageByTargetId(port, current.targetId);
         if (!page) throw new Error(`Session ${sessionId} page not found for targetId ${current.targetId}`);
+        if (current.conversationUrl && page.url() !== current.conversationUrl) {
+            await page.goto(current.conversationUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+        }
         return { page, targetId: current.targetId, session: current };
     }
 

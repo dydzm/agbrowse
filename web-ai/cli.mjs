@@ -444,7 +444,42 @@ async function runBoundCommand(command, deps, input, pollFn, stopFn) {
     throw new Error(`runBoundCommand: unsupported command ${command}`);
 }
 
+async function runBoundSendOrQuery(command, deps, input) {
+    if (!['send', 'query'].includes(command) || !input.session) return null;
+    return withSessionCommandLock(input.session, async () => {
+        return withSessionPage(deps, input.session, async ({ page, targetId, session }) => {
+            const sessionDeps = {
+                ...deps,
+                getPage: async () => page,
+                getTargetId: async () => targetId,
+                getCdpSession: async () => page.context().newCDPSession(page),
+            };
+            const sessionInput = {
+                ...input,
+                vendor: session.vendor,
+                session: session.sessionId,
+                url: undefined,
+                newTab: false,
+                reuseTab: true,
+            };
+            if (session.vendor === 'gemini') {
+                if (command === 'send') return geminiSendWebAi(sessionDeps, sessionInput);
+                return geminiQueryWebAi(sessionDeps, sessionInput);
+            }
+            if (session.vendor === 'grok') {
+                if (command === 'send') return grokSendWebAi(sessionDeps, sessionInput);
+                return grokQueryWebAi(sessionDeps, sessionInput);
+            }
+            if (command === 'send') return sendWebAi(sessionDeps, sessionInput);
+            return queryWebAi(sessionDeps, sessionInput);
+        });
+    });
+}
+
 async function runCommand(command, deps, input) {
+    const boundSendOrQuery = await runBoundSendOrQuery(command, deps, input);
+    if (boundSendOrQuery) return boundSendOrQuery;
+
     // Phase 9.1: create new tab per session for send/query
     if (['send', 'query'].includes(command)) {
         deps = await ensureProviderTab(deps, input);

@@ -28,11 +28,22 @@ surface plus a 10-line skeleton.
 | 8 | `09_phase8_self_healing.md` | Self-healing selectors + action cache | 2 | 4–6 |
 | 9 | `10_phase9_visual_fallback.md` | Visual fallback / annotated screenshot | 1 | 1–2 |
 | 10 | `11_phase10_mcp_bridge.md` | MCP / AI SDK bridge | 2 | 3–5 |
-| 11 | `12_phase11_eval_harness.md` | DOM churn eval harness | 2 | 2–3 |
+| 11 | `12_phase11_eval_harness.md` | DOM churn eval harness | 2 | 3–5 |
+| 12 | `13_phase12_trace_replay.md` | Trace, replay, evidence | 2 | 2–4 |
+| 13 | `14_phase13_safety_policy.md` | Safety policy + prompt boundaries | 2 | 2–4 |
+| 14 | `15_phase14_active_command_ownership.md` | Active command ownership | 2 | 2–3 |
+| 15 | `16_phase15_browser_primitives.md` | Browser primitive parity | 3 | 4–7 |
+| 16 | `17_phase16_semantic_resolver.md` | Semantic action resolver | 2 | 3–5 |
+| 17 | `18_phase17_provider_contracts_source_audit.md` | Provider contracts + source audit | 4 | 4–6 |
+| 18 | `19_phase18_mcp_ai_sdk_hardening.md` | MCP + AI SDK hardening | 3 | 3–5 |
+| 19 | `20_phase19_remote_cdp_adapters.md` | Remote CDP adapters | 2 | 2–4 |
+| 20 | `21_phase20_benchmarks.md` | Benchmarks + trajectory format | 3 | 3–5 |
+| 21 | `22_phase21_release_gates.md` | Docs + release gates | 2 | 2–3 |
 
 Total core estimate (Phase 0–6): 17–25 engineer-days.
 Total extended estimate (Phase 7–11): 13–21 engineer-days.
 Grand total: 30–46 engineer-days.
+Post-Phase-10 competitive hardening estimate (Phase 11–21): 31–51 engineer-days.
 
 ## Sequencing (revised after critique)
 
@@ -102,6 +113,47 @@ Phase 11 (eval harness)                ← uses all prior phases
 Key insight from research: the progression is "DOM hash" → "agent repair
 substrate". Accessibility snapshots + @eN refs become the primary agent
 interface; raw DOM selectors become fallback.
+
+## Phase 11+ competitive roadmap
+
+Added 2026-05-04 after asking GPT Pro and Grok through `agbrowse` to compare
+the current repo against Vercel Labs agent-browser, Browser Use, Playwright
+MCP, Chrome DevTools MCP, Stagehand, AgentQL, and WebVoyager-style evals.
+
+The detailed plan is split by phase:
+
+- `12_phase11_eval_harness.md`
+- `13_phase12_trace_replay.md`
+- `14_phase13_safety_policy.md`
+- `15_phase14_active_command_ownership.md`
+- `16_phase15_browser_primitives.md`
+- `17_phase16_semantic_resolver.md`
+- `18_phase17_provider_contracts_source_audit.md`
+- `19_phase18_mcp_ai_sdk_hardening.md`
+- `20_phase19_remote_cdp_adapters.md`
+- `21_phase20_benchmarks.md`
+- `22_phase21_release_gates.md`
+
+Strict blocker sequence:
+
+```
+Phase 11 (DOM churn evals)
+   ↓
+Phase 12 (trace/replay/evidence)
+   ↓
+Phase 13 (safety policy)
+   ↓
+Phase 14 (concurrency/leases)
+   ↓
+Phase 16 (semantic resolver)
+   ↓
+Phase 17 (provider contracts/source audit)
+```
+
+Phase 15 general browser primitive parity is required before calling agbrowse
+general browser-agent infrastructure. Phase 18 is required before calling the
+MCP bridge production-grade. Phases 19–21 are hosted/cloud, benchmark, and
+release polish.
 
 ## Out of scope (current iteration)
 

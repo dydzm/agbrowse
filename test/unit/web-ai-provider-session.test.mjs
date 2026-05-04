@@ -118,4 +118,20 @@ describe('web-ai cli session flags', () => {
         expect(cliSrc).toMatch(/deadline: values\.deadline/);
         expect(cliSrc).toMatch(/navigate: values\.navigate === true/);
     });
+
+    it('binds send/query --session to the saved session tab instead of creating a new provider tab', () => {
+        expect(cliSrc).toMatch(/async function runBoundSendOrQuery\(command, deps, input\)/);
+        expect(cliSrc).toMatch(/withSessionCommandLock\(input\.session/);
+        expect(cliSrc).toMatch(/withSessionPage\(deps, input\.session/);
+        expect(cliSrc).toMatch(/url: undefined/);
+        expect(cliSrc).toMatch(/newTab: false/);
+        expect(cliSrc).toMatch(/reuseTab: true/);
+        expect(cliSrc).toMatch(/const boundSendOrQuery = await runBoundSendOrQuery\(command, deps, input\)/);
+    });
+
+    it('repairs bound session pages that are alive but navigated to another conversation', () => {
+        const recoverySrc = readFileSync(join(process.cwd(), 'web-ai/tab-recovery.mjs'), 'utf8');
+        expect(recoverySrc).toMatch(/current\.conversationUrl && page\.url\(\) !== current\.conversationUrl/);
+        expect(recoverySrc).toMatch(/page\.goto\(current\.conversationUrl/);
+    });
 });
