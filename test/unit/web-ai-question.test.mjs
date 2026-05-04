@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RESEARCH_INSTRUCTIONS, normalizeEnvelope, renderQuestionEnvelope, renderQuestionEnvelopeWithContext } from '../../web-ai/question.mjs';
+import { DEFAULT_RESEARCH_INSTRUCTIONS, GROK_RESEARCH_INSTRUCTIONS, normalizeEnvelope, renderQuestionEnvelope, renderQuestionEnvelopeWithContext } from '../../web-ai/question.mjs';
 import { ATTACHMENT_POLICY, WEB_AI_STATUS, WEB_AI_VENDOR } from '../../web-ai/types.mjs';
 
 describe('web-ai question envelope', () => {
@@ -32,6 +32,20 @@ describe('web-ai question envelope', () => {
         );
         expect(renderedWithContext.composerText).toContain('[INSTRUCTIONS]');
         expect(renderedWithContext.composerText).toContain(DEFAULT_RESEARCH_INSTRUCTIONS);
+    });
+
+    it('adds strict inline source discipline only for Grok research prompts', () => {
+        const grok = renderQuestionEnvelope({ vendor: 'grok', prompt: 'Research Google COSMO leak.' });
+        const chatgpt = renderQuestionEnvelope({ vendor: 'chatgpt', prompt: 'Research Google COSMO leak.' });
+        const gemini = renderQuestionEnvelope({ vendor: 'gemini', prompt: 'Research Google COSMO leak.' });
+
+        expect(grok.composerText).toContain(GROK_RESEARCH_INSTRUCTIONS);
+        expect(grok.composerText).toContain('do not rely on source buttons');
+        expect(grok.composerText).toContain('bottom-only source list');
+        expect(grok.composerText).toContain('mark the claim as UNSOURCED');
+        expect(grok.composerText).toContain('source-quality table');
+        expect(chatgpt.composerText).not.toContain(GROK_RESEARCH_INSTRUCTIONS);
+        expect(gemini.composerText).not.toContain(GROK_RESEARCH_INSTRUCTIONS);
     });
 
     it('rejects empty prompts', () => {

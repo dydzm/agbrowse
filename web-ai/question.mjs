@@ -4,6 +4,16 @@ import { WebAiError } from './errors.mjs';
 
 export const DEFAULT_RESEARCH_INSTRUCTIONS = 'Use web search whenever possible to verify facts and gather up-to-date information. Cite the sources inline in the response body next to the claims they support (for example: [Source: <url-or-title>]).';
 
+export const GROK_RESEARCH_INSTRUCTIONS = [
+    'Grok-specific source discipline: do not rely on source buttons, source drawers, footnotes, hidden citations, or a bottom-only source list as evidence.',
+    'For every non-trivial factual claim, copy the source URL or source title into the answer inline in the same sentence or bullet.',
+    'If a source is visible only in Grok UI, still write that source into the answer text inline; if you cannot, mark the claim as UNSOURCED.',
+    'Do not write CONFIRMED unless that same sentence or bullet has an inline supporting source.',
+    'For community reaction claims, include direct X/Reddit/thread URLs and observable metrics when available; otherwise mark the claim anecdotal.',
+    'For “no official response” claims, state the sources checked and the check scope/date.',
+    'End research answers with a source-quality table: claim | source | source type (official/primary/secondary/community) | confidence | gaps.',
+].join(' ');
+
 const SUPPORTED_VENDORS = new Set([WEB_AI_VENDOR.CHATGPT, WEB_AI_VENDOR.GEMINI, WEB_AI_VENDOR.GROK]);
 const SUPPORTED_ATTACHMENT_POLICIES = new Set([
     ATTACHMENT_POLICY.INLINE_ONLY,
@@ -84,7 +94,7 @@ function renderNormalizedEnvelope(envelope) {
         field('Output', envelope.output),
         field('Constraints', envelope.constraints),
     ].filter(Boolean).join('\n\n')));
-    blocks.push(section('[INSTRUCTIONS]', DEFAULT_RESEARCH_INSTRUCTIONS));
+    blocks.push(section('[INSTRUCTIONS]', researchInstructionsForVendor(envelope.vendor)));
 
     if (!envelope.project) warnings.push('project omitted');
     if (!envelope.goal) warnings.push('goal omitted');
@@ -113,6 +123,13 @@ function cleanOptional(value) {
     if (value === undefined || value === null) return undefined;
     const text = String(value).trim();
     return text || undefined;
+}
+
+function researchInstructionsForVendor(vendor) {
+    if (vendor === WEB_AI_VENDOR.GROK) {
+        return `${DEFAULT_RESEARCH_INSTRUCTIONS}\n\n${GROK_RESEARCH_INSTRUCTIONS}`;
+    }
+    return DEFAULT_RESEARCH_INSTRUCTIONS;
 }
 
 function section(title, body) {
