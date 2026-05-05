@@ -26,6 +26,10 @@ import {
 import { selectChatGptModel, chatGptModelCapabilityProbe } from './chatgpt-model.mjs';
 import { prepareContextForBrowser } from './context-pack/index.mjs';
 import { captureCopiedResponseText, CHATGPT_COPY_SELECTORS, preferCopiedText } from './copy-markdown.mjs';
+import { withAnswerArtifact } from './answer-artifact.mjs';
+import { resolveTargetForIntent } from './target-resolver.mjs';
+import { createTraceContext, getSessionTrace, recordTraceStep, summarizeTraceSteps } from './action-trace.mjs';
+import { appendTraceToSession } from './trace-persistence.mjs';
 
 const CHATGPT_HOSTS = new Set(['chatgpt.com', 'chat.openai.com']);
 const ASSISTANT_SELECTORS = [
@@ -157,7 +161,7 @@ export async function sendWebAi(deps, input = {}) {
         port: deps.getPort?.() || 9222,
     });
 
-    const adapter = createChatGptEditorAdapter(page, {
+    const editorOptions = {
         insertText: async (text) => {
             const cdp = await deps.getCdpSession?.();
             if (!cdp) throw new Error('CDP session unavailable for Input.insertText');
@@ -167,71 +171,92 @@ export async function sendWebAi(deps, input = {}) {
                 await cdp.detach?.().catch(() => undefined);
             }
         },
-    });
-    await adapter.waitForReady();
-    const commitBaseline = await adapter.getCommitBaseline();
-    await adapter.insertPrompt(rendered.composerText);
-    let attachmentWarnings = [];
-    let usedFallbacks = [];
-    const contextAttachmentPath = contextPack?.attachments?.[0]?.path;
-    if (contextAttachmentPath && input.filePath) {
-        throw new WebAiError({
-            errorCode: 'provider.attachment-preflight',
-            stage: 'attachment-preflight',
-            vendor: 'chatgpt',
-            retryHint: 'inline-only-or-file',
-            message: 'context package upload and --file upload cannot be combined yet',
-        });
-    }
-    const uploadPath = input.filePath || contextAttachmentPath;
-    if (uploadPath) {
-        const upload = await attachLocalFileLive(page, fileInfoFromPath(uploadPath));
-        if (!upload.ok) throw new WebAiError({
-            errorCode: 'provider.attachment-evidence-missing',
-            stage: 'attachment-verify',
-            vendor: 'chatgpt',
-            retryHint: 're-upload',
-            message: upload.error,
-            mutationAllowed: true,
-        });
-        attachmentWarnings = upload.warnings || [];
-        usedFallbacks = upload.usedFallbacks || [];
-    }
-    await adapter.submitPrompt();
-    await adapter.verifyPromptCommitted(rendered.composerText, commitBaseline);
-    if (uploadPath) {
-        const sentAttachment = await verifySentTurnAttachmentLive(page, fileInfoFromPath(uploadPath));
-        if (!sentAttachment.ok) throw new WebAiError({
-            errorCode: 'provider.attachment-evidence-missing',
-            stage: 'attachment-verify',
-            vendor: 'chatgpt',
-            retryHint: 're-upload',
-            message: sentAttachment.error,
-            mutationAllowed: true,
-        });
-    }
-    const finalUrl = page.url();
-    if (session && finalUrl !== session.conversationUrl) {
-        updateSession(session.sessionId, { conversationUrl: finalUrl });
-    }
-    return {
-        ok: true,
-        vendor: envelope.vendor,
-        status: 'sent',
-        url: finalUrl,
-        sessionId: session.sessionId,
-        baseline,
-        usedFallbacks: [...usedFallbacks, ...(selectedModel?.usedFallbacks || [])],
-        contextPack: contextPack ? summarizeContextPack(contextPack) : undefined,
-        warnings: [
-            ...rendered.warnings,
-            ...(contextPack?.warnings || []),
-            ...(contextAttachmentPath ? [`context package attached: ${contextPack.attachments[0].displayPath}`] : []),
-            ...attachmentWarnings,
-            ...(selectedModel ? [`model selected: ${selectedModel.selected}${selectedModel.alreadySelected ? ' (already selected)' : ''}`] : []),
-            ...(selectedModel?.effort ? [`reasoning effort selected: ${selectedModel.effort}`] : []),
-        ],
     };
+    const readinessAdapter = createChatGptEditorAdapter(page, editorOptions);
+    await readinessAdapter.waitForReady();
+    const traceCtx = createTraceContext(session.sessionId);
+    let tracePersisted = false;
+    try {
+        const composerResolution = await resolveChatGptComposerTarget(page, traceCtx);
+        const adapter = createChatGptEditorAdapter(page, {
+            ...editorOptions,
+            composerTarget: composerResolution.target,
+        });
+        const commitBaseline = await adapter.getCommitBaseline();
+        await adapter.insertPrompt(rendered.composerText);
+        let attachmentWarnings = [];
+        let usedFallbacks = [];
+        const contextAttachmentPath = contextPack?.attachments?.[0]?.path;
+        if (contextAttachmentPath && input.filePath) {
+            throw new WebAiError({
+                errorCode: 'provider.attachment-preflight',
+                stage: 'attachment-preflight',
+                vendor: 'chatgpt',
+                retryHint: 'inline-only-or-file',
+                message: 'context package upload and --file upload cannot be combined yet',
+            });
+        }
+        const uploadPath = input.filePath || contextAttachmentPath;
+        if (uploadPath) {
+            const uploadResolution = await resolveOptionalChatGptUploadTarget(page, traceCtx);
+            const upload = await attachLocalFileLive(page, fileInfoFromPath(uploadPath), {
+                uploadTarget: uploadResolution?.target || null,
+            });
+            if (!upload.ok) throw new WebAiError({
+                errorCode: 'provider.attachment-evidence-missing',
+                stage: 'attachment-verify',
+                vendor: 'chatgpt',
+                retryHint: 're-upload',
+                message: upload.error,
+                mutationAllowed: true,
+            });
+            attachmentWarnings = upload.warnings || [];
+            usedFallbacks = upload.usedFallbacks || [];
+        }
+        const sendResolution = await resolveOptionalChatGptSendTarget(page, traceCtx);
+        await adapter.submitPrompt({
+            sendTarget: sendResolution?.target || null,
+        });
+        await adapter.verifyPromptCommitted(rendered.composerText, commitBaseline);
+        if (uploadPath) {
+            const sentAttachment = await verifySentTurnAttachmentLive(page, fileInfoFromPath(uploadPath));
+            if (!sentAttachment.ok) throw new WebAiError({
+                errorCode: 'provider.attachment-evidence-missing',
+                stage: 'attachment-verify',
+                vendor: 'chatgpt',
+                retryHint: 're-upload',
+                message: sentAttachment.error,
+                mutationAllowed: true,
+            });
+        }
+        const finalUrl = page.url();
+        if (session && finalUrl !== session.conversationUrl) {
+            updateSession(session.sessionId, { conversationUrl: finalUrl });
+        }
+        const traceSummary = persistResolverTrace(session.sessionId, traceCtx);
+        tracePersisted = true;
+        return {
+            ok: true,
+            vendor: envelope.vendor,
+            status: 'sent',
+            url: finalUrl,
+            sessionId: session.sessionId,
+            baseline,
+            usedFallbacks: [...usedFallbacks, ...(selectedModel?.usedFallbacks || [])],
+            ...(traceSummary ? { traceSummary } : {}),
+            contextPack: contextPack ? summarizeContextPack(contextPack) : undefined,
+            warnings: [
+                ...rendered.warnings,
+                ...(contextPack?.warnings || []),
+                ...(contextAttachmentPath ? [`context package attached: ${contextPack.attachments[0].displayPath}`] : []),
+                ...attachmentWarnings,
+                ...(selectedModel ? [`model selected: ${selectedModel.selected}${selectedModel.alreadySelected ? ' (already selected)' : ''}`] : []),
+                ...(selectedModel?.effort ? [`reasoning effort selected: ${selectedModel.effort}`] : []),
+            ],
+        };
+    } finally {
+        if (!tracePersisted) persistResolverTrace(session.sessionId, traceCtx);
+    }
 }
 
 export async function pollWebAi(deps, input = {}) {
@@ -257,6 +282,9 @@ export async function pollWebAi(deps, input = {}) {
         retryHint: 'poll-or-resume',
         message: 'baseline required. Run web-ai send or query first.',
     });
+    const copyTraceCtx = session && input.allowCopyMarkdownFallback === true
+        ? createTraceContext(session.sessionId)
+        : null;
 
     const deadline = Date.now() + timeout * 1000;
     let stableText = '';
@@ -272,8 +300,13 @@ export async function pollWebAi(deps, input = {}) {
                     const usedFallbacks = [];
                     const warnings = [];
                     let answerText = latest;
+                    let traceSummary = null;
                     if (input.allowCopyMarkdownFallback === true) {
-                        const copied = await captureCopiedResponseText(page, CHATGPT_COPY_SELECTORS);
+                        const copyResolution = await resolveOptionalChatGptCopyTarget(page, copyTraceCtx);
+                        const copied = await captureCopiedResponseText(page, CHATGPT_COPY_SELECTORS, {
+                            copyTarget: copyResolution?.target || null,
+                        });
+                        traceSummary = persistResolverTraceForSession(session, copyTraceCtx);
                         const copiedText = preferCopiedText(latest, copied);
                         if (copiedText) {
                             answerText = cleanAssistantText(copiedText);
@@ -285,7 +318,7 @@ export async function pollWebAi(deps, input = {}) {
                     if (session) {
                         await finalizeProviderTab(deps, { vendor, session, page, answerText, warnings });
                     }
-                    return {
+                    return withAnswerArtifact({
                         ok: true,
                         vendor,
                         status: 'complete',
@@ -295,7 +328,9 @@ export async function pollWebAi(deps, input = {}) {
                         baseline,
                         usedFallbacks,
                         warnings,
-                    };
+                        ...(traceSummary ? { traceSummary } : {}),
+                        responseStableMs: Date.now() - stableSince,
+                    });
                 }
             } else {
                 stableText = latest;
@@ -309,14 +344,18 @@ export async function pollWebAi(deps, input = {}) {
     }
 
     if (input.allowCopyMarkdownFallback === true && stableText) {
-        const copied = await captureCopiedResponseText(page, CHATGPT_COPY_SELECTORS);
+        const copyResolution = await resolveOptionalChatGptCopyTarget(page, copyTraceCtx);
+        const copied = await captureCopiedResponseText(page, CHATGPT_COPY_SELECTORS, {
+            copyTarget: copyResolution?.target || null,
+        });
+        const traceSummary = persistResolverTraceForSession(session, copyTraceCtx);
         const copiedText = preferCopiedText(stableText, copied);
         if (copiedText) {
             const answerText = cleanAssistantText(copiedText);
             if (session) {
                 await finalizeProviderTab(deps, { vendor, session, page, answerText });
             }
-            return {
+            return withAnswerArtifact({
                 ok: true,
                 vendor,
                 status: 'complete',
@@ -326,7 +365,8 @@ export async function pollWebAi(deps, input = {}) {
                 baseline,
                 usedFallbacks: ['copy-markdown'],
                 warnings: [],
-            };
+                ...(traceSummary ? { traceSummary } : {}),
+            });
         }
         if (session) updateSession(session.sessionId, { status: 'timeout' });
         return {
@@ -336,6 +376,7 @@ export async function pollWebAi(deps, input = {}) {
             url: page.url(),
             ...(session ? { sessionId: session.sessionId } : {}),
             baseline,
+            ...(traceSummary ? { traceSummary } : {}),
             warnings: [`copy-markdown-fallback-unavailable:${copied.status || 'unknown'}`],
             usedFallbacks: [],
             error: 'timed out waiting for answer',
@@ -364,6 +405,7 @@ export async function queryWebAi(deps, input = {}) {
     return {
         ...result,
         sessionId: result.sessionId || sent.sessionId,
+        ...(result.traceSummary || sent.traceSummary ? { traceSummary: result.traceSummary || sent.traceSummary } : {}),
         usedFallbacks: [...(sent.usedFallbacks || []), ...(result.usedFallbacks || [])],
         warnings: [...(sent.warnings || []), ...(result.warnings || [])],
     };
@@ -402,6 +444,112 @@ async function requireChatGptPage(deps) {
         });
     }
     return page;
+}
+
+async function resolveChatGptComposerTarget(page, traceCtx = null) {
+    const result = await resolveTargetForIntent(page, {
+        provider: 'chatgpt',
+        intentId: 'composer.fill',
+    });
+    recordResolverTrace(traceCtx, result, 'composer.fill');
+    if (result.ok && result.target?.selector) return result;
+    throw new WebAiError({
+        errorCode: 'provider.composer-not-visible',
+        stage: 'composer-prereq',
+        vendor: 'chatgpt',
+        retryHint: 're-snapshot',
+        message: 'ChatGPT composer target resolver did not find a verified composer',
+        selectorsTried: result.intent?.cssFallbacks || [...CHATGPT_COMPOSER_SELECTORS],
+        evidence: {
+            intentId: result.intent?.intentId || 'composer.fill',
+            errorCode: result.errorCode || null,
+            attempts: summarizeResolverAttempts(result.attempts),
+        },
+    });
+}
+
+async function resolveOptionalChatGptSendTarget(page, traceCtx = null) {
+    const result = await resolveTargetForIntent(page, {
+        provider: 'chatgpt',
+        intentId: 'send.click',
+    });
+    recordResolverTrace(traceCtx, result, 'send.click');
+    if (result.ok && result.target?.selector) return result;
+    return result;
+}
+
+async function resolveOptionalChatGptUploadTarget(page, traceCtx = null) {
+    const result = await resolveTargetForIntent(page, {
+        provider: 'chatgpt',
+        intentId: 'upload.attach',
+    });
+    recordResolverTrace(traceCtx, result, 'upload.attach');
+    if (result.ok && result.target?.selector) return result;
+    return result;
+}
+
+async function resolveOptionalChatGptCopyTarget(page, traceCtx = null) {
+    const result = await resolveTargetForIntent(page, {
+        provider: 'chatgpt',
+        intentId: 'copy.lastResponse',
+    });
+    recordResolverTrace(traceCtx, result, 'copy.lastResponse');
+    if (result.ok && result.target?.selector) return result;
+    return result;
+}
+
+function summarizeResolverAttempts(attempts = []) {
+    return attempts.map(attempt => ({
+        source: attempt.source || null,
+        selector: attempt.selector || null,
+        ref: attempt.ref || null,
+        validation: attempt.validation ? {
+            ok: attempt.validation.ok === true,
+            reason: attempt.validation.reason || null,
+            confidence: attempt.validation.confidence ?? null,
+            count: attempt.validation.count ?? null,
+        } : null,
+    }));
+}
+
+function recordResolverTrace(traceCtx, result, fallbackIntentId) {
+    if (!traceCtx || !result) return;
+    recordTraceStep(traceCtx, {
+        action: 'target-resolve',
+        provider: result.intent?.provider || 'chatgpt',
+        intentId: result.intent?.intentId || fallbackIntentId,
+        operation: result.intent?.operation || null,
+        status: result.ok ? 'ok' : 'unresolved',
+        target: scrubResolverTarget(result.target),
+        confidence: result.confidence ?? null,
+        resolutionSource: result.resolutionSource || null,
+        errorCode: result.errorCode || null,
+        attempts: summarizeResolverAttempts(result.attempts),
+    });
+}
+
+function scrubResolverTarget(target) {
+    if (!target) return null;
+    return {
+        resolution: target.resolution || null,
+        source: target.source || null,
+        ref: target.ref || null,
+        selector: target.selector || null,
+        role: target.role || null,
+    };
+}
+
+function persistResolverTrace(sessionId, traceCtx) {
+    const steps = getSessionTrace(traceCtx);
+    if (!steps.length) return null;
+    appendTraceToSession(sessionId, steps);
+    const session = getSession(sessionId);
+    return summarizeTraceSteps(sessionId, session?.trace?.length ? session.trace : steps);
+}
+
+function persistResolverTraceForSession(session, traceCtx) {
+    if (!session?.sessionId || !traceCtx) return null;
+    return persistResolverTrace(session.sessionId, traceCtx);
 }
 
 async function countAssistantMessages(page) {

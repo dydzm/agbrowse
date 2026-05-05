@@ -58,7 +58,12 @@ Agent rule: observe before acting. Use `status`, `tabs`, `snapshot
 
 This repository is packaged as a standalone skill/runtime.
 
-What is considered ready:
+Architecture and release-claim source of truth live in
+[`structure/INDEX.md`](structure/INDEX.md) and the Phase 11+ truth table lives
+in [`structure/phase_status.md`](structure/phase_status.md). Update that folder
+when CLI, web-ai, MCP, eval, or release-gate behavior changes.
+
+Ready surfaces:
 
 - `agbrowse` CLI bin
 - persistent Chrome profile under `BROWSER_AGENT_HOME`
@@ -67,7 +72,25 @@ What is considered ready:
 - active tab persistence via CDP target id
 - browser primitive tests
 - web-ai contract tests
-- ChatGPT, Gemini, and Grok core web-ai flows
+- source-audit and answer-artifact gates for research workflows
+- narrow MCP bridge surface: `web_ai_*`, `browser_snapshot`, and
+  `browser_click_ref`
+- offline DOM churn eval fixtures
+- trace and safety-policy schemas
+- benchmark trajectory schema and offline bundle writer
+
+Beta surfaces:
+
+- ChatGPT, Gemini, and Grok live web-ai send/poll/query flows
+- provider model and reasoning-effort selection
+- provider source/citation quality checks
+
+Experimental or deferred surfaces:
+
+- hosted/cloud browser operation
+- remote `external-cdp` provider mode
+- broader MCP production bridge beyond the listed tools
+- leaderboard or competitor benchmark score claims
 
 What remains intentionally out of scope for the standalone runtime:
 
@@ -586,6 +609,28 @@ agbrowse web-ai query \
 The fallback is opt-in because provider copy buttons are UI details and can
 change.
 
+## Source Audit
+
+Use `--require-source-audit` on `poll` or `query` when a research answer must
+carry inline sources next to factual claims. The audit checks completed
+`answerText` locally and fails closed when claims are unsourced.
+
+```bash
+agbrowse web-ai query \
+  --vendor grok \
+  --model expert \
+  --inline-only \
+  --require-source-audit \
+  --source-audit-scope "official product docs and release notes" \
+  --source-audit-date "2026-05-05" \
+  --prompt "Summarize the latest official product changes with sources."
+```
+
+Absence claims such as "no official response was found" require
+`--source-audit-scope` and `--source-audit-date`. Use
+`--source-audit-ratio <0..1>` only when partial sourcing is deliberate; the
+default requires every detected claim to carry an inline source.
+
 ## Active Tab Safety
 
 `tab-switch` stores a CDP target id, and mutating commands resolve the active
@@ -661,6 +706,11 @@ npm run release:preview -- 0.2.0
 The default script verifies the package, pushes a git tag, then runs
 `npm publish --access public`. If the npm account requires browser-based
 authentication, npm will print the auth URL during that publish step.
+
+The release path includes named claim gates for MCP, source audit, trace/policy,
+structure drift, fixture evals, package dry-run, and high-severity dependency
+audit. Use `npm run test:mcp`, `npm run test:source-audit`, and
+`npm run test:release-gates` when checking those surfaces directly.
 
 For npm trusted publishing through GitHub Actions, configure npm's trusted
 publisher for:

@@ -48,6 +48,15 @@ describe('web-ai ChatGPT composer hardening', () => {
         expect(candidate.selector).toBe('.ProseMirror');
     });
 
+    it('uses a resolver-selected composer target when provided', async () => {
+        const page = createFakePage();
+        await insertPromptIntoComposer(page, 'resolver composer', {
+            composerTarget: { selector: '[data-testid="composer-textarea"]', resolution: 'css-fallback' },
+        });
+        expect(page.locatorSelectors[0]).toBe('[data-testid="composer-textarea"]');
+        expect(page.insertedText).toBe('resolver composer');
+    });
+
     it('falls back to Enter only when no enabled send button exists', async () => {
         const page = createFakePage({ hasSendButton: false });
         const result = await submitPromptFromComposer(page);
@@ -59,6 +68,21 @@ describe('web-ai ChatGPT composer hardening', () => {
         const page = createFakePage();
         const result = await submitPromptFromComposer(page);
         expect(result.method).toBe('button');
+        expect(page.clickedSend).toBe(true);
+        expect(page.keys).not.toContain('Enter');
+    });
+
+    it('prefers a resolver-selected send button target when provided', async () => {
+        const page = createFakePage();
+        const result = await submitPromptFromComposer(page, {
+            sendTarget: { selector: 'button[data-testid="send-button"]', resolution: 'css-fallback' },
+        });
+        expect(result).toMatchObject({
+            method: 'button',
+            selector: 'button[data-testid="send-button"]',
+            resolution: 'css-fallback',
+        });
+        expect(page.locatorSelectors[0]).toBe('button[data-testid="send-button"]');
         expect(page.clickedSend).toBe(true);
         expect(page.keys).not.toContain('Enter');
     });
@@ -80,6 +104,7 @@ function createFakePage(options = {}) {
         clickedSend: false,
         hasSendButton: options.hasSendButton !== false,
         readComposerValue: options.readComposerValue || (value => value),
+        locatorSelectors: [],
         turnTexts: [],
         assistantTexts: [],
         keyboard: {
@@ -99,7 +124,10 @@ function createFakePage(options = {}) {
             page.clickedSend = true;
             return 'clicked';
         },
-        locator: selector => createFakeLocator(page, selector),
+        locator: selector => {
+            page.locatorSelectors.push(selector);
+            return createFakeLocator(page, selector);
+        },
     };
     return page;
 }
@@ -126,7 +154,7 @@ function createVisibilityLocator(selector) {
 }
 
 function createFakeLocator(page, selector) {
-    const isComposer = selector.includes('prompt-textarea') || selector.includes('ProseMirror') || selector.includes('contenteditable');
+    const isComposer = selector.includes('prompt-textarea') || selector.includes('composer-textarea') || selector.includes('ProseMirror') || selector.includes('contenteditable');
     const isSend = selector.includes('send-button') || selector.includes('button[type="submit"]') || selector.includes('aria-label*="Send"');
     const isAssistant = selector.includes('assistant');
     const isTurn = selector.includes('conversation-turn') || selector.includes('data-message-author-role') || selector.includes('data-turn');
@@ -140,6 +168,8 @@ function createFakeLocator(page, selector) {
             return 0;
         },
         waitFor: async () => undefined,
+        isVisible: async () => isComposer || isSend,
+        isEnabled: async () => isComposer || (isSend && page.hasSendButton),
         click: async () => {
             if (isSend) page.clickedSend = true;
         },

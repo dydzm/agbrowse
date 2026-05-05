@@ -1,4 +1,6 @@
 import {
+    INPUT_SELECTORS as CHATGPT_INPUT_SELECTORS,
+    SEND_BUTTON_SELECTORS as CHATGPT_SEND_BUTTON_SELECTORS,
     countConversationTurns,
     insertPromptIntoComposer,
     submitPromptFromComposer,
@@ -6,12 +8,14 @@ import {
 } from './chatgpt-composer.mjs';
 import { CHATGPT_COPY_SELECTORS, GEMINI_COPY_SELECTORS, GROK_COPY_SELECTORS } from './copy-markdown.mjs';
 import { CHATGPT_MODEL_SELECTOR_BUTTONS } from './chatgpt-model.mjs';
+import { UPLOAD_BUTTON_SELECTORS as CHATGPT_UPLOAD_BUTTON_SELECTORS } from './chatgpt-attachments.mjs';
 
 export function createChatGptEditorAdapter(page, options = {}) {
     return {
         vendor: 'chatgpt',
         async waitForReady() {
-            await page.locator('#prompt-textarea, .ProseMirror, [contenteditable="true"]').first().waitFor({ state: 'visible', timeout: 10_000 });
+            const selector = options.composerTarget?.selector || '#prompt-textarea, .ProseMirror, [contenteditable="true"]';
+            await page.locator(selector).first().waitFor({ state: 'visible', timeout: 10_000 });
         },
         async getCommitBaseline() {
             return { turnsCount: await countConversationTurns(page) };
@@ -19,8 +23,8 @@ export function createChatGptEditorAdapter(page, options = {}) {
         async insertPrompt(text) {
             await insertPromptIntoComposer(page, text, options);
         },
-        async submitPrompt() {
-            return submitPromptFromComposer(page);
+        async submitPrompt(submitOptions = {}) {
+            return submitPromptFromComposer(page, { ...options, ...submitOptions });
         },
         async verifyPromptCommitted(prompt, baseline = {}) {
             return verifyPromptCommitted(page, prompt, { baselineTurns: baseline.turnsCount });
@@ -42,8 +46,9 @@ export const GEMINI_DEEP_THINK_CONSTRAINTS = {
 
 // --- Phase 7: Semantic target contracts per vendor ---
 
-export const CHATGPT_COMPOSER_SELECTORS = ['#prompt-textarea', '[data-testid="composer-textarea"]', 'div[contenteditable="true"]'];
-export const CHATGPT_UPLOAD_SELECTORS = ['button[aria-label*="Upload" i]', 'button[aria-label*="Attach" i]', 'button[data-testid*="plus" i]'];
+export const CHATGPT_COMPOSER_SELECTORS = CHATGPT_INPUT_SELECTORS;
+export const CHATGPT_SEND_SELECTORS = CHATGPT_SEND_BUTTON_SELECTORS;
+export const CHATGPT_UPLOAD_SELECTORS = CHATGPT_UPLOAD_BUTTON_SELECTORS;
 export const CHATGPT_RESPONSE_SELECTORS = ['[data-message-author-role="assistant"]', '[data-turn="assistant"]', 'article[data-testid^="conversation-turn"]'];
 export const CHATGPT_STREAMING_SELECTORS = ['button[data-testid="stop-button"]', 'button[aria-label*="Stop" i]'];
 
@@ -63,6 +68,7 @@ export const CHATGPT_EDITOR_CONTRACT = Object.freeze({
     vendor: 'chatgpt',
     semanticTargets: {
         composer: { roles: ['textbox'], names: [/message/i, /prompt/i, /chatgpt/i], excludeNames: [/search/i], cssFallbacks: CHATGPT_COMPOSER_SELECTORS, required: true },
+        sendButton: { roles: ['button'], names: [/send/i, /submit/i], cssFallbacks: CHATGPT_SEND_SELECTORS },
         modelPicker: { roles: ['button', 'combobox'], names: [/model/i, /gpt/i], cssFallbacks: CHATGPT_MODEL_SELECTOR_BUTTONS },
         uploadSurface: { roles: ['button'], names: [/attach/i, /upload/i, /file/i, /add/i], cssFallbacks: CHATGPT_UPLOAD_SELECTORS },
         responseFeed: { roles: ['article', 'region', 'group'], names: [/assistant/i, /response/i], cssFallbacks: CHATGPT_RESPONSE_SELECTORS },

@@ -67,6 +67,24 @@ repair is considered.
 - Provider actions expose `intentId`, selected candidate, confidence, and
   fallback path in diagnostics.
 
+### Progress
+
+- 2026-05-05: ChatGPT `composer.fill` now resolves through the ActionIntent
+  target resolver before prompt insertion.
+- 2026-05-05: ChatGPT `send.click` now resolves through the ActionIntent
+  target resolver before falling back to legacy submit behavior.
+- 2026-05-05: ChatGPT `upload.attach` now resolves through the ActionIntent
+  target resolver before falling back to legacy upload surface scanning.
+- 2026-05-05: ChatGPT `copy.lastResponse` now resolves through the ActionIntent
+  target resolver when unambiguous, then stays scoped to the last assistant turn.
+- 2026-05-05: ChatGPT send path now persists `composer.fill`, `send.click`,
+  and optional `upload.attach` resolver metadata in the session trace without
+  prompt or answer text.
+- 2026-05-05: ChatGPT copy fallback now persists `copy.lastResponse` resolver
+  metadata and returns a trace summary covering the full persisted session trace.
+- 2026-05-05: ChatGPT reasoning effort selection now tolerates model-first
+  effort labels and generic effort controls for hero/new-chat model menus.
+
 ## Not now
 
 - No embedding service.

@@ -14,6 +14,9 @@
     "bin/",
     "skills/",
     "web-ai/",
+    "benchmarks/",
+    "docs/",
+    "structure/",
     "devlog/",
     "vitest.config.mjs"
   ],
@@ -41,16 +44,28 @@
     "test:contract-drift": "vitest run test/unit/web-ai-contract-audit.test.mjs",
     "test:eval": "vitest run test/unit/web-ai-eval*.test.mjs test/unit/web-ai-dom-scrubber.test.mjs",
     "test:eval-fixtures": "node scripts/run-web-ai-eval.mjs --vendor chatgpt --fixtures test/fixtures/provider-dom --json",
+    "docs:drift": "bash structure/check-doc-drift.sh",
+    "docs:counts": "bash structure/verify-counts.sh",
     "eval:web-ai:fixtures": "node scripts/run-web-ai-eval.mjs --config test/fixtures/provider-dom/parallel-eval.json --concurrency 4 --json",
     "test:trace-policy": "vitest run test/unit/web-ai-trace*.test.mjs test/unit/web-ai-policy.test.mjs test/unit/content-boundary.test.mjs test/integration/web-ai-policy-cli.test.mjs test/integration/web-ai-policy-mcp.test.mjs test/integration/web-ai-trace-fixture.test.mjs",
+    "test:mcp": "vitest run test/integration/web-ai-mcp-server.test.mjs test/integration/web-ai-policy-mcp.test.mjs test/unit/browser-tool-schema.test.mjs test/unit/web-ai-tool-schema.test.mjs",
+    "test:source-audit": "vitest run test/unit/web-ai-source-audit*.test.mjs test/unit/web-ai-answer-artifact.test.mjs",
+    "test:release-gates": "bash structure/check-doc-drift.sh && bash structure/verify-counts.sh",
+    "benchmark:trajectory": "node benchmarks/agbrowse/run-task.mjs",
     "release": "bash scripts/release.sh",
-    "release:preview": "bash scripts/release-preview.sh"
+    "release:preview": "bash scripts/release-preview.sh",
+    "typecheck": "tsc --noEmit",
+    "check:strict-baseline": "node scripts/check-strict-baseline.mjs",
+    "pack:dry": "npm pack --dry-run --json",
+    "smoke:bins": "node scripts/smoke-bins.mjs"
   },
   "dependencies": {
     "fast-glob": "^3.3.3",
     "playwright-core": "^1.58.2"
   },
   "devDependencies": {
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "typescript": "^5.6.0",
+    "@types/node": "^20.0.0"
   }
 }

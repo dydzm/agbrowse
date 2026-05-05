@@ -48,13 +48,27 @@ npm audit --audit-level=high
 
 echo "Running tests..."
 npm test
+npm run test:mcp
+npm run test:source-audit
+npm run test:trace-policy
+
+echo "Running structure documentation gates..."
+npm run test:release-gates
+
+echo "Running fixture evals..."
+npm run test:eval-fixtures
+npm run eval:web-ai:fixtures
+npm run benchmark:trajectory -- --help >/dev/null
+
+echo "Checking diff whitespace..."
+git diff --check
 
 echo "Verifying package contents..."
 npm pack --dry-run >/dev/null
 npm publish --dry-run --tag preview --access public >/dev/null
 
 git add package.json package-lock.json
-git commit -m "chore: preview release $TAG"
+git commit -m "[agent] chore: preview release $TAG"
 git tag "$TAG"
 
 CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
