@@ -1,7 +1,17 @@
+// @ts-check
 import { BROWSER_TOOLS, isKnownBrowserTool } from './browser-tool-schema.mjs';
+
+/**
+ * @typedef {{ description: string, inputSchema: Record<string, unknown> }} ToolDefinition
+ * @typedef {{ name: string, description?: string, inputSchema?: unknown, parameters?: unknown }} ToolSchema
+ */
 
 const providerEnum = ['chatgpt', 'gemini', 'grok'];
 
+/**
+ * @param {Record<string, unknown>} properties
+ * @param {string[]} [required]
+ */
 const objectSchema = (properties, required = []) => ({
     type: 'object',
     properties,
@@ -9,6 +19,7 @@ const objectSchema = (properties, required = []) => ({
     additionalProperties: false,
 });
 
+/** @type {Record<string, ToolDefinition>} */
 export const WEB_AI_TOOLS = {
     web_ai_snapshot: {
         description: 'Return compact accessibility snapshot with @eN refs.',
@@ -72,11 +83,18 @@ export const WEB_AI_TOOLS = {
     },
 };
 
+/** @type {Record<string, ToolDefinition>} */
+const browserToolsChecked = BROWSER_TOOLS;
+
+/** @type {Record<string, ToolDefinition>} */
 export const MCP_TOOLS = {
     ...WEB_AI_TOOLS,
-    ...BROWSER_TOOLS,
+    ...browserToolsChecked,
 };
 
+/**
+ * @param {string} toolName
+ */
 export function toolSchemaForMcp(toolName) {
     const tool = MCP_TOOLS[toolName];
     if (!tool) return null;
@@ -87,6 +105,9 @@ export function toolSchemaForMcp(toolName) {
     };
 }
 
+/**
+ * @param {string} toolName
+ */
 export function toolSchemaForAiSdk(toolName) {
     const tool = MCP_TOOLS[toolName];
     if (!tool) return null;
@@ -97,15 +118,28 @@ export function toolSchemaForAiSdk(toolName) {
     };
 }
 
+/**
+ * @param {string} [format]
+ * @returns {Array<ToolSchema|null>}
+ */
 export function allToolSchemas(format = 'mcp') {
+    /** @type {(name: string) => ToolSchema|null} */
     const mapper = format === 'ai-sdk' ? toolSchemaForAiSdk : toolSchemaForMcp;
-    return Object.keys(MCP_TOOLS).map(mapper);
+    return Object.keys(MCP_TOOLS).map((name) => mapper(name));
 }
 
+/**
+ * @param {string} toolName
+ * @returns {boolean}
+ */
 export function isKnownMcpTool(toolName) {
     return Boolean(MCP_TOOLS[toolName]);
 }
 
+/**
+ * @param {string} toolName
+ * @returns {boolean}
+ */
 export function isKnownWebAiTool(toolName) {
     return Boolean(WEB_AI_TOOLS[toolName]);
 }
