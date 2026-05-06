@@ -196,6 +196,11 @@ Failure envelope (when --json or AGBROWSE_JSON_ERRORS=1):
          context.over-budget | context.symlink-rejected |
          grok.context-pack-not-allowed | internal.unhandled
 
+Capability boundary: web-ai query uses the existing local browser automation
+skill for chatgpt, gemini, and grok. G09 does not add provider API clients,
+API-key auth, hosted model routing, or MCP model tools. API model adapters
+are explicitly deferred and unavailable in this release.
+
 Examples:
   agbrowse web-ai render  --vendor chatgpt --prompt "hello" --json
   agbrowse web-ai query   --vendor grok    --inline-only --prompt "Reply OK"
