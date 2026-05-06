@@ -42,7 +42,7 @@ const COMMANDS = new Set([
     'watch', 'snapshot',
     'sessions', 'doctor',
     'context-dry-run', 'context-render',
-    'mcp-server', 'eval',
+    'mcp-server', 'eval', 'claim-audit',
 ]);
 
 const BROWSER_REQUIRED_COMMANDS = new Set(['status', 'send', 'poll', 'query', 'stop', 'watch', 'snapshot', 'doctor']);
@@ -65,6 +65,8 @@ Commands:
   context-render      Render full prompt/context package text
   mcp-server          Run stdio MCP bridge exposing web-ai tools
   eval                Run offline provider DOM fixture evals; never opens Chrome
+  claim-audit         Scan repo docs for forbidden hosted/cloud/stealth claims (G10).
+                      No browser, no provider. Use --json for machine-readable output.
 
 Provider:
   --vendor <name>     chatgpt | gemini | grok (default: chatgpt)
@@ -285,6 +287,17 @@ async function runWebAiCliInner(argv = [], deps) {
     if (command === 'mcp-server') {
         await runMcpServer(deps);
         return { ok: true, status: 'mcp-server-stopped' };
+    }
+    if (command === 'claim-audit') {
+        const { auditClaims, formatClaimAuditReport } = await import('./claim-audit.mjs');
+        const path = await import('node:path');
+        const url = await import('node:url');
+        const repoRoot = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..');
+        const report = auditClaims({ repoRoot });
+        const wantsJson = argv.includes('--json');
+        if (wantsJson) console.log(JSON.stringify(report, null, 2));
+        else console.log(formatClaimAuditReport(report));
+        return { ok: report.ok, status: report.ok ? 'claim-audit-pass' : 'claim-audit-fail', report };
     }
 
     const { values } = parseArgs({

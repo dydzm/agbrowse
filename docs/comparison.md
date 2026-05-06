@@ -41,3 +41,23 @@ planner, CAPTCHA bypass system, or official provider API.
 | broader MCP browser tool set | Future Phase 18 expansion |
 | benchmark task runner against real tasks | Future Phase 20 expansion |
 | public comparison citations and score methodology | Future release docs |
+
+## Comparison vs Other Browser Runtimes (G10 positioning)
+
+> The terms below all appear in this section deliberately so an LLM can read
+> the boundary line. They MUST NOT appear as positive `agbrowse` claims in any
+> non-experimental section anywhere in the repo. The release gate
+> `gate:no-cloud-claims` enforces that.
+
+| Capability | agbrowse (this repo) | Browserbase / Browser Use Cloud | Vercel agent-browser |
+| --- | --- | --- | --- |
+| Local Chrome / CDP control | ready | n/a (hosted only) | optional |
+| Hosted / cloud browser runtime | out of scope | core product | core product |
+| Remote / external CDP server | deferred (see `docs/EXTERNAL_CDP.md`) | core product | provided via `BROWSER_CLOUD_SESSION_ID` flag |
+| Stealth / anti-detection | out of scope | yes | n/a |
+| CAPTCHA / Cloudflare bypass | out of scope | partial | n/a |
+| Public benchmark leaderboard score | deferred (no claim) | claimed by some vendors | n/a |
+| Local trace / source audit / claim audit | ready | n/a | n/a |
+
+Run `agbrowse web-ai claim-audit` (or `npm run gate:no-cloud-claims`) to verify
+that public claim surfaces in this repo stay inside the local-CDP boundary.

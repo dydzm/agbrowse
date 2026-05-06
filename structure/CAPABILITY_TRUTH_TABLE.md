@@ -40,7 +40,8 @@ mirror entry of `n/a` means the capability is intentionally agbrowse-only.
 | External / remote CDP adapter | deferred (experimental) | _no production code_; `docs/EXTERNAL_CDP.md` documents the deferral | none | deferred. See `docs/EXTERNAL_CDP.md` in both repos. |
 | Benchmark trajectory writer | ready (offline bundle only) | `benchmarks/agbrowse/trajectory.mjs`, `benchmarks/agbrowse/run-task.mjs` | `test/unit/benchmark-trajectory.test.mjs` if present; smoke via `npm run benchmark:trajectory -- --help` | planned — cli-jaw consumes agbrowse trajectory bundles; no native writer. |
 | Benchmark leaderboard / score claim | deferred | n/a | n/a | deferred. |
-| Release gates (named) | ready | `scripts/release.sh`, `scripts/release-preview.sh`, `scripts/release-gates.mjs` (Phase 22) | `npm run gate:*` series | mirrored via cli-jaw `scripts/release-gates.mjs`. ready in cli-jaw. |
+| Release gates (named) | ready | `scripts/release.sh`, `scripts/release-preview.sh`, `scripts/release-gates.mjs` (Phase 22, G10) | `npm run gate:*` series including `gate:no-cloud-claims` | mirrored via cli-jaw `scripts/release-gates.mjs`. ready in cli-jaw. |
+| Claim audit (`gate:no-cloud-claims`, `agbrowse web-ai claim-audit`) | ready | `web-ai/claim-audit.mjs`, `scripts/release-gates.mjs` (G10) | `test/unit/web-ai-claim-audit.test.mjs`, `npm run gate:no-cloud-claims` | mirrored via cli-jaw claim-audit module + gate. ready in cli-jaw. |
 
 ## Mirror Rules
 

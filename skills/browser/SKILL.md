@@ -8,6 +8,21 @@ description: "Chrome browser control: open pages, take ref snapshots, click, typ
 Control Chrome browser via `agbrowse` commands.
 Uses ref-based snapshots to identify page elements, then click/type by ref ID.
 
+## Positioning (first-run note)
+
+agbrowse is a **local Chrome / CDP** runtime. It deliberately does **not** offer:
+
+- hosted / cloud / managed browser sessions (see Browserbase, Browser Use Cloud,
+  Vercel agent-browser cloud-session flag for that shape)
+- remote / external CDP endpoints (deferred — see `docs/EXTERNAL_CDP.md`)
+- stealth, anti-detection, CAPTCHA bypass, or Cloudflare bypass
+- benchmark / leaderboard score claims
+
+If you need hosted infrastructure or detection evasion, agbrowse is not the
+tool — use a hosted browser provider. Compare positioning in
+[`docs/comparison.md`](../../docs/comparison.md). The release gate
+`gate:no-cloud-claims` enforces this in CI.
+
 ## Prerequisites
 
 - Node.js 18+

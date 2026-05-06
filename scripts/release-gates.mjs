@@ -13,6 +13,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { auditClaims, formatClaimAuditReport } from '../web-ai/claim-audit.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -141,6 +142,14 @@ const GATES = {
                 return { ok: false, detail: `forbidden terms in ready section:\n${offending.join('\n')}` };
             }
             return { ok: true, detail: 'README ready sections do not advertise experimental/unimplemented surfaces' };
+        },
+    },
+    'no-cloud-claims': {
+        description: 'no hosted/cloud/stealth/external-CDP/leaderboard claims outside experimental sections (G10)',
+        check() {
+            const report = auditClaims({ repoRoot });
+            const detail = formatClaimAuditReport(report);
+            return { ok: report.ok, detail };
         },
     },
 };

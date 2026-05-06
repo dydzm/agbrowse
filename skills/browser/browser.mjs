@@ -2121,6 +2121,11 @@ try {
             console.log(`
   🌐 agbrowse — agent-first browser automation and web-ai CLI
 
+  Positioning:
+    Local Chrome / CDP only. No hosted/cloud browser, no remote CDP server,
+    no stealth, no CAPTCHA/Cloudflare bypass, no benchmark leaderboard claim.
+    See docs/comparison.md and run "agbrowse web-ai claim-audit" to verify.
+
   Usage:
     agbrowse <command> [args] [--flags]
 
