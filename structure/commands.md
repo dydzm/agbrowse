@@ -41,6 +41,7 @@ aliases: [agbrowse commands, agbrowse CLI 표면, web-ai commands]
 | `snapshot` | Yes | active provider tab의 compact accessibility snapshot 출력 |
 | `observe-bundle` | Yes | URL/title/viewport/DPR/refs/boxes/screenshot/text를 묶은 ObservationBundleV1 출력 (G06) |
 | `observe-actions` | Yes | snapshot을 캡처해 instruction-aware ActionCandidate 랭킹 반환 (G02) |
+| `upload <ref> <file...>` | Yes | file input ref에 file을 set (Playwright `setInputFiles`, G03) |
 | `sessions list` | No | persisted session 목록 |
 | `sessions show` | No | session 상세 |
 | `sessions resume` | Yes | session poll resume |
@@ -174,6 +175,7 @@ JSON 모드에서는 실패가 parseable envelope로 나온다. 이 shape는 MCP
 
 ## 변경 기록
 
+- 2026-05-06: G03 — `agbrowse upload <ref> <file...>` CLI 추가. `web-ai/action-breadth.mjs`가 22개 local-CDP primitive (click/type/press/hover/select/check/uncheck/upload/drag/mouse-click/move-mouse/scroll/wait-for/wait-for-selector/wait-for-text/wait/navigate/reload/screenshot/snapshot/evaluate/text)를 카테고리화하고, `gate:browser-primitives-complete`가 모든 primitive에 CLI 핸들러가 wired되어 있는지를 검증한다.
 - 2026-05-06: G06 — `agbrowse observe-bundle`과 ObservationBundleV1 스키마를 추가했다. URL/title/viewport/DPR/refs/boxes/screenshot/text를 한 번에 묶어 multimodal benchmark step 재현성을 확보한다 (`gate:observation-bundle-fixtures`).
 - 2026-05-06: G02 — `agbrowse observe-actions <instruction>` CLI 추가. Pure `buildObserveActions(snapshot, instruction, opts)` API가 ranked `ActionCandidate[]`를 반환한다 (`gate:observe-actions-fixtures`).
 - 2026-05-06: G04 — MCP-ready vs CLI-ready matrix와 deferred-tool envelope 동작을 commands.md에 명시했다 (`structure/mcp_scope.md` 결정 기록과 `gate:mcp-deferred-metadata` 게이트 동기).

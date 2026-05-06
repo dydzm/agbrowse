@@ -1313,6 +1313,18 @@ async function drag(port, fromRef, toRef) {
 }
 
 /**
+ * @param {any} port
+ * @param {any} ref
+ * @param {string[]} files
+ */
+async function uploadFiles(port, ref, files) {
+    const page = await getReadyPage(port);
+    const locator = await refToLocator(page, port, ref);
+    await locator.setInputFiles(files);
+    return { ok: true, ref, files };
+}
+
+/**
  * @param {any} ms
  */
 async function waitMs(ms) {
@@ -2191,6 +2203,16 @@ try {
             if (!dFrom || !dTo) { console.error('Usage: browser.mjs drag <fromRef> <toRef>'); process.exit(1); }
             await drag(getPort(), dFrom, dTo);
             console.log(`dragged ${dFrom} → ${dTo}`);
+            break;
+        }
+        case 'upload': {
+            const json = process.argv.includes('--json');
+            const uRef = process.argv[3];
+            const uFiles = process.argv.slice(4).filter(arg => !arg.startsWith('--'));
+            if (!uRef || uFiles.length === 0) { console.error('Usage: browser.mjs upload <ref> <file>... [--json]'); process.exit(1); }
+            const result = await uploadFiles(getPort(), uRef, uFiles);
+            if (json) console.log(JSON.stringify(result, null, 2));
+            else console.log(`uploaded ${uFiles.length} file(s) to ${uRef}`);
             break;
         }
         case 'reset': {

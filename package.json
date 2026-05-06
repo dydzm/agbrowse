@@ -60,6 +60,7 @@
     "gate:mcp-deferred-metadata": "node scripts/release-gates.mjs mcp-deferred-metadata",
     "gate:observe-actions-fixtures": "node scripts/release-gates.mjs observe-actions-fixtures",
     "gate:observation-bundle-fixtures": "node scripts/release-gates.mjs observation-bundle-fixtures",
+    "gate:browser-primitives-complete": "node scripts/release-gates.mjs browser-primitives-complete",
     "gate:all": "node scripts/release-gates.mjs",
     "benchmark:trajectory": "node benchmarks/agbrowse/run-task.mjs",
     "release": "bash scripts/release.sh",

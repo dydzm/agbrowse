@@ -268,6 +268,33 @@ const GATES = {
             }
         },
     },
+    'browser-primitives-complete': {
+        description: 'all action-breadth primitives have a wired CLI subcommand (G03)',
+        async check() {
+            try {
+                const fs = await import('node:fs');
+                const path = await import('node:path');
+                const { fileURLToPath } = await import('node:url');
+                const here = path.dirname(fileURLToPath(import.meta.url));
+                const cliPath = path.resolve(here, '..', 'skills/browser/browser.mjs');
+                const source = fs.readFileSync(cliPath, 'utf8');
+                const mod = await import('../web-ai/action-breadth.mjs');
+                if (!Array.isArray(mod.BROWSER_PRIMITIVES) || mod.BROWSER_PRIMITIVES.length === 0) {
+                    return { ok: false, detail: 'web-ai/action-breadth.mjs has no BROWSER_PRIMITIVES' };
+                }
+                if (mod.BROWSER_PRIMITIVE_SCHEMA_VERSION !== 'browser-primitives-v1') {
+                    return { ok: false, detail: `unexpected schema version: ${mod.BROWSER_PRIMITIVE_SCHEMA_VERSION}` };
+                }
+                const r = mod.auditPrimitiveCoverage(source);
+                if (!r.ok) {
+                    return { ok: false, detail: `missing CLI cases for: ${r.missing.join(', ')}` };
+                }
+                return { ok: true, detail: `${r.found.length}/${r.total} browser primitives wired` };
+            } catch (err) {
+                return { ok: false, detail: `browser-primitives gate threw: ${(err && err.message) || err}` };
+            }
+        },
+    },
 };
 
 function printResult(name, result) {
