@@ -188,6 +188,43 @@ const GATES = {
             return { ok: true, detail: `${names.length} deferred browser tool(s) carry full metadata; structure/mcp_scope.md present` };
         },
     },
+    'observe-actions-fixtures': {
+        description: 'observe-actions module loads and produces ranked candidates from a fixture snapshot (G02)',
+        async check() {
+            try {
+                const mod = await import('../web-ai/observe-actions.mjs');
+                if (typeof mod.buildObserveActions !== 'function' || typeof mod.formatObserveActions !== 'function') {
+                    return { ok: false, detail: 'web-ai/observe-actions.mjs missing required exports' };
+                }
+                const fixture = {
+                    snapshotId: 'gate-fixture',
+                    url: 'https://example.com/login',
+                    refs: {
+                        '@e1': { role: 'button', name: 'Sign in' },
+                        '@e2': { role: 'textbox', name: 'Email' },
+                        '@e3': { role: 'link', name: 'Forgot password?' },
+                    },
+                };
+                const r = mod.buildObserveActions(fixture, 'click sign in');
+                if (!r || !Array.isArray(r.candidates) || r.candidates.length < 3) {
+                    return { ok: false, detail: 'observe-actions did not return ≥3 candidates from the 3-element fixture' };
+                }
+                if (r.candidates[0].ref !== '@e1' || r.candidates[0].action !== 'click') {
+                    return { ok: false, detail: 'observe-actions did not rank the matching button first' };
+                }
+                if (!r.candidates.every((c) => c.args && c.args.snapshotId === 'gate-fixture')) {
+                    return { ok: false, detail: 'observe-actions candidates missing snapshotId in args' };
+                }
+                const text = mod.formatObserveActions(r);
+                if (typeof text !== 'string' || text.length === 0) {
+                    return { ok: false, detail: 'formatObserveActions returned empty output' };
+                }
+                return { ok: true, detail: `observe-actions produced ${r.candidates.length} ranked candidates from fixture` };
+            } catch (err) {
+                return { ok: false, detail: `observe-actions fixture check threw: ${(err && err.message) || err}` };
+            }
+        },
+    },
 };
 
 function printResult(name, result) {
@@ -196,7 +233,7 @@ function printResult(name, result) {
     if (result.detail) process.stdout.write(`        ${result.detail.replace(/\n/g, '\n        ')}\n`);
 }
 
-function main() {
+async function main() {
     const target = process.argv[2];
     const names = target ? [target] : Object.keys(GATES);
     let failed = 0;
@@ -208,7 +245,7 @@ function main() {
         }
         let result;
         try {
-            result = GATES[name].check();
+            result = await GATES[name].check();
         } catch (err) {
             result = { ok: false, detail: `threw: ${err.message}` };
         }
@@ -219,4 +256,7 @@ function main() {
     process.exit(failed === 0 ? 0 : 1);
 }
 
-main();
+main().catch((err) => {
+    process.stderr.write(`release-gates threw: ${err.stack || err}\n`);
+    process.exit(1);
+});

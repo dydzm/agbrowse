@@ -42,6 +42,7 @@ mirror entry of `n/a` means the capability is intentionally agbrowse-only.
 | Benchmark leaderboard / score claim | deferred | n/a | n/a | deferred. |
 | Release gates (named) | ready | `scripts/release.sh`, `scripts/release-preview.sh`, `scripts/release-gates.mjs` (Phase 22, G10) | `npm run gate:*` series including `gate:no-cloud-claims` | mirrored via cli-jaw `scripts/release-gates.mjs`. ready in cli-jaw. |
 | Claim audit (`gate:no-cloud-claims`, `agbrowse web-ai claim-audit`) | ready | `web-ai/claim-audit.mjs`, `scripts/release-gates.mjs` (G10) | `test/unit/web-ai-claim-audit.test.mjs`, `npm run gate:no-cloud-claims` | mirrored via cli-jaw claim-audit module + gate. ready in cli-jaw. |
+| Observe actions API (`agbrowse observe-actions`, `buildObserveActions`) | ready | `web-ai/observe-actions.mjs`, `skills/browser/browser.mjs` (G02) | `test/unit/g02-observe-actions.test.mjs`, `npm run gate:observe-actions-fixtures` | mirrored via cli-jaw `src/browser/web-ai/observe-actions.ts` + gate. ready in cli-jaw. |
 
 ## Mirror Rules
 

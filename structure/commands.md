@@ -39,6 +39,7 @@ aliases: [agbrowse commands, agbrowse CLI 표면, web-ai commands]
 | `stop` | Yes | active provider tab에 Escape 전송 |
 | `watch` | Yes | persisted session을 terminal 상태까지 감시 |
 | `snapshot` | Yes | active provider tab의 compact accessibility snapshot 출력 |
+| `observe-actions` | Yes | snapshot을 캡처해 instruction-aware ActionCandidate 랭킹 반환 (G02) |
 | `sessions list` | No | persisted session 목록 |
 | `sessions show` | No | session 상세 |
 | `sessions resume` | Yes | session poll resume |
@@ -119,8 +120,36 @@ JSON 모드에서는 실패가 parseable envelope로 나온다. 이 shape는 MCP
 | Screenshot | ❌ deferred | `agbrowse screenshot --out <path>` ✅ | MCP planned with policy gating |
 | Extract visible text | ❌ deferred | covered by `browser_snapshot` interactive output | use snapshot ref text |
 
+## ActionCandidate Schema (G02)
+
+`agbrowse observe-actions <instruction> [--json] [--top-n N] [--include-disabled]`은 현재 active tab의 snapshot을 캡처하고 instruction과의 token overlap·role bucket·risk heuristic을 합쳐 ranked `ActionCandidate[]`를 반환한다. 외부 Vercel agent-browser/Browserbase의 `observeActions` 류 API와 같은 위치를 차지한다.
+
+```json
+{
+  "snapshotId": "snap-abc123",
+  "url": "https://example.com/login",
+  "instruction": "click sign in",
+  "candidates": [
+    {
+      "ref": "@e5",
+      "role": "button",
+      "name": "Sign in",
+      "action": "click",
+      "method": "browser_click_ref",
+      "args": { "snapshotId": "snap-abc123", "ref": "@e5" },
+      "confidence": 0.86,
+      "signals": ["role-bucket:click", "instruction-overlap:sign,in"],
+      "riskFlags": []
+    }
+  ]
+}
+```
+
+`method`는 항상 frozen MCP surface의 tool 이름 또는 CLI primitive (`type`/`select`/`check`)이다. `confidence`는 `[0,1]` 범위, `riskFlags`는 `destructive`, `crossOrigin`, `requiresAuth`, `fileUpload` 중 부분집합이다. Disabled 후보는 기본적으로 제외하고, `--include-disabled` 또는 `includeDisabled: true`로만 노출된다. snapshot은 `interactive` 모드로 캡처되어 token budget을 절약한다.
+
 ## 변경 기록
 
+- 2026-05-06: G02 — `agbrowse observe-actions <instruction>` CLI 추가. Pure `buildObserveActions(snapshot, instruction, opts)` API가 ranked `ActionCandidate[]`를 반환한다 (`gate:observe-actions-fixtures`).
 - 2026-05-06: G04 — MCP-ready vs CLI-ready matrix와 deferred-tool envelope 동작을 commands.md에 명시했다 (`structure/mcp_scope.md` 결정 기록과 `gate:mcp-deferred-metadata` 게이트 동기).
 - 2026-05-06: Phase 9.1 multi-tab의 `new-tab`, `tab-close` 명령을 root command 표에 추가해 README와 일치시켰다.
 - 2026-05-05: root CLI, web-ai, MCP tool, provider alias, failure envelope, drift 검사 기준을 source-of-truth 문서로 추가했다.

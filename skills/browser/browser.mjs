@@ -12,6 +12,7 @@
  *   stop                             Stop Chrome
  *   status                           Connection status
  *   snapshot [--interactive] [--max-nodes N]  Accessibility tree with ref IDs
+ *   observe-actions <instruction> [--json] [--top-n N] [--include-disabled]  Rank candidate next actions (G02)
  *   screenshot [--full-page] [--ref eN] [--json]  Capture screenshot
  *   mouse-click <x> <y> [--double]  Click at pixel coordinates
  *   move-mouse <x> <y>               Move mouse without clicking
@@ -1673,6 +1674,46 @@ try {
                 const indent = '  '.repeat(n.depth);
                 const val = (/** @type {any} */ (n)).value ? ` = "${(/** @type {any} */ (n)).value}"` : '';
                 console.log(`${n.ref.padEnd(4)} ${indent}${n.role.padEnd(10)} "${n.name}"${val}`);
+            }
+            break;
+        }
+        case 'observe-actions': {
+            const { values, positionals } = parseArgs({
+                args: process.argv.slice(3),
+                options: {
+                    json: { type: 'boolean', default: false },
+                    'top-n': { type: 'string' },
+                    'include-disabled': { type: 'boolean', default: false },
+                },
+                allowPositionals: true,
+                strict: false,
+            });
+            const instruction = positionals.join(' ').trim();
+            const topN = values['top-n'] ? parseInt(/** @type {string} */ (values['top-n'])) : 8;
+            const nodes = await snapshot(getPort(), { interactive: true, persist: true });
+            /** @type {Record<string, any>} */
+            const refs = {};
+            for (const n of nodes) {
+                if (!n.ref || n.ref === '...') continue;
+                refs[n.ref] = {
+                    role: n.role,
+                    name: n.name,
+                    occurrenceIndex: n.occurrenceIndex,
+                    disabled: Boolean(/** @type {any} */ (n).disabled),
+                    readonly: Boolean(/** @type {any} */ (n).readonly),
+                    required: Boolean(/** @type {any} */ (n).required),
+                };
+            }
+            const { buildObserveActions, formatObserveActions } = await import('../../web-ai/observe-actions.mjs');
+            const result = buildObserveActions(
+                { snapshotId: null, url: null, refs },
+                instruction,
+                { topN, includeDisabled: Boolean(values['include-disabled']) },
+            );
+            if (values.json) {
+                console.log(JSON.stringify(result, null, 2));
+            } else {
+                console.log(formatObserveActions(result));
             }
             break;
         }
