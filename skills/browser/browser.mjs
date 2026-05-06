@@ -1063,13 +1063,62 @@ async function hover(port, ref) {
  * @param {any} port
  * @param {any} url
  */
-async function navigate(port, url) {
+async function navigate(port, url, opts = {}) {
     const page = await getReadyPage(port);
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    const waitUntil = opts.waitUntil || 'domcontentloaded';
+    const timeout = Number.isFinite(opts.timeout) ? opts.timeout : 30000;
+    let degraded = null;
+    /** @param {any} e */
+    const isCoopBlock = (e) => /ERR_BLOCKED_BY_RESPONSE|Cross-Origin-Opener-Policy/i.test((e && e.message) || String(e));
+    /** @param {any} e */
+    const isTimeout = (e) => /Timeout|timeout/.test((e && e.message) || String(e));
+    /** Some sites (e.g. anti-bot interstitials, COOP-restrictive sites) leave
+     *  the destination page in a 0-width state where snapshot/screenshot/text
+     *  all return empty. Detect that and re-navigate via about:blank to
+     *  reset the viewport context. */
+    const checkHealthy = async () => {
+        try {
+            const dims = await page.evaluate(() => ({
+                w: (typeof window !== 'undefined' && window.innerWidth) || 0,
+                h: (typeof window !== 'undefined' && window.innerHeight) || 0,
+            }));
+            return dims && dims.w > 0 && dims.h > 0;
+        } catch { return false; }
+    };
+    try {
+        await page.goto(url, { waitUntil, timeout });
+    } catch (err) {
+        if (isCoopBlock(err)) {
+            try {
+                await page.goto('about:blank', { waitUntil: 'commit', timeout: 5000 });
+                await page.goto(url, { waitUntil, timeout });
+                degraded = `fallback:about:blank (COOP block on direct navigate)`;
+            } catch (err2) {
+                if (isTimeout(err2)) {
+                    await page.goto(url, { waitUntil: 'commit', timeout });
+                    degraded = `fallback:about:blank+commit (COOP + timeout)`;
+                } else {
+                    throw err2;
+                }
+            }
+        } else if (isTimeout(err) && waitUntil !== 'commit') {
+            await page.goto(url, { waitUntil: 'commit', timeout });
+            degraded = `fallback:commit (initial waitUntil=${waitUntil} timed out)`;
+        } else {
+            throw err;
+        }
+    }
+    if (!(await checkHealthy())) {
+        try {
+            await page.goto('about:blank', { waitUntil: 'commit', timeout: 5000 });
+            await page.goto(url, { waitUntil, timeout });
+            degraded = `${degraded ? degraded + '; ' : ''}fallback:about:blank (post-nav 0-width recovery)`;
+        } catch { /* ignore: keep whatever state we landed in */ }
+    }
     const targetId = await getPageTargetId(page).catch(() => null);
     clearPersistedSnapshot(targetId);
     clearPersistedSnapshot();
-    return { ok: true, url: page.url() };
+    return { ok: true, url: page.url(), degraded };
 }
 
 /**
@@ -1883,9 +1932,14 @@ try {
         }
         case 'navigate': {
             const url = process.argv[3];
-            if (!url) { console.error('Usage: browser.mjs navigate <url>'); process.exit(1); }
-            const r = await navigate(getPort(), url);
-            console.log(`navigated → ${r.url}`);
+            if (!url) { console.error('Usage: browser.mjs navigate <url> [--wait-until commit|load|domcontentloaded|networkidle] [--timeout ms]'); process.exit(1); }
+            const wuIdx = process.argv.indexOf('--wait-until');
+            const tIdx = process.argv.indexOf('--timeout');
+            const opts = {};
+            if (wuIdx > 0 && process.argv[wuIdx + 1]) opts.waitUntil = process.argv[wuIdx + 1];
+            if (tIdx > 0 && process.argv[tIdx + 1]) opts.timeout = parseInt(process.argv[tIdx + 1], 10);
+            const r = await navigate(getPort(), url, opts);
+            console.log(`navigated → ${r.url}${r.degraded ? ` [${r.degraded}]` : ''}`);
             break;
         }
         case 'reload': {

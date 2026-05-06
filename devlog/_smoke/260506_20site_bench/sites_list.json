@@ -1,0 +1,102 @@
+[
+  {
+    "url": "https://www.naver.com/",
+    "task": "Search for ",
+    "diff": "medium"
+  },
+  {
+    "url": "https://www.daum.net/",
+    "task": "Search for ",
+    "diff": "medium"
+  },
+  {
+    "url": "https://www.coupang.com/",
+    "task": "Search for ",
+    "diff": "hard"
+  },
+  {
+    "url": "https://www.kakao.com/",
+    "task": "Navigate to the KakaoTalk service card and extract the service title and short description.",
+    "diff": "medium"
+  },
+  {
+    "url": "https://www.google.com/",
+    "task": "Search for ",
+    "diff": "medium"
+  },
+  {
+    "url": "https://www.bing.com/",
+    "task": "Search for ",
+    "diff": "medium"
+  },
+  {
+    "url": "https://duckduckgo.com/",
+    "task": "Search for ",
+    "diff": "simple"
+  },
+  {
+    "url": "https://www.yahoo.com/search/web",
+    "task": "Search for ",
+    "diff": "medium"
+  },
+  {
+    "url": "https://x.com/",
+    "task": "Open Explore/Search, search for ",
+    "diff": "hard"
+  },
+  {
+    "url": "https://www.reddit.com/",
+    "task": "Search for ",
+    "diff": "hard"
+  },
+  {
+    "url": "https://github.com/",
+    "task": "Search repositories for ",
+    "diff": "medium"
+  },
+  {
+    "url": "https://www.youtube.com/",
+    "task": "Search for ",
+    "diff": "hard"
+  },
+  {
+    "url": "https://www.wikipedia.org/",
+    "task": "Search for ",
+    "diff": "simple"
+  },
+  {
+    "url": "https://www.bbc.com/news",
+    "task": "Open the Technology section or search for ",
+    "diff": "medium"
+  },
+  {
+    "url": "https://www.nytimes.com/",
+    "task": "Search for ",
+    "diff": "medium"
+  },
+  {
+    "url": "https://www.amazon.com/",
+    "task": "Search for ",
+    "diff": "hard"
+  },
+  {
+    "url": "https://www.ebay.com/",
+    "task": "Search for ",
+    "diff": "medium"
+  },
+  {
+    "url": "https://www.google.com/maps",
+    "task": "Search for ",
+    "diff": "canvas-or-iframe"
+  },
+  {
+    "url": "https://www.openstreetmap.org/",
+    "task": "Search for ",
+    "diff": "canvas-or-iframe"
+  },
+  {
+    "url": "https://www.tradingview.com/",
+    "task": "Search ticker ",
+    "diff": "canvas-or-iframe"
+  }
+]
