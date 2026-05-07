@@ -1,7 +1,7 @@
 // @ts-check
 import { createTab, isTabAlive, getPageByTargetId, waitForPageByTargetId, listManagedTabs } from '../skills/browser/tab-manager.mjs';
 import { updateSession, getSession, incrementRecoveryCount, listSessions } from './session.mjs';
-import { waitForConversationReady } from './navigation-ready.mjs';
+import { waitForConversationReady, isProviderUrl } from './navigation-ready.mjs';
 
 /** @typedef {import('./session-store.mjs').WebAiSession} WebAiSession */
 
@@ -39,9 +39,9 @@ export async function recoverSessionTab(deps, session) {
             const currentUrl = page.url();
             if (currentUrl !== session.conversationUrl) {
                 await page.goto(/** @type {string} */ (session.conversationUrl), { waitUntil: 'load', timeout: 30_000 });
-                await waitForConversationReady(page, session.conversationUrl);
                 const finalUrl = page.url();
-                if (finalUrl !== session.conversationUrl) {
+                await waitForConversationReady(page, finalUrl);
+                if (finalUrl !== session.conversationUrl && isProviderUrl(finalUrl)) {
                     await updateSession(session.sessionId, { conversationUrl: finalUrl });
                 }
             }
@@ -59,9 +59,10 @@ export async function recoverSessionTab(deps, session) {
     if (session.conversationUrl && session.conversationUrl !== 'about:blank') {
         const newPage = await waitForPageByTargetId(port, newTab.targetId).catch(() => null);
         if (newPage) {
-            await waitForConversationReady(newPage, session.conversationUrl);
+            await /** @type {any} */ (newPage).waitForLoadState?.('load').catch(() => undefined);
             const finalUrl = /** @type {any} */ (newPage).url();
-            if (finalUrl !== session.conversationUrl) {
+            await waitForConversationReady(newPage, finalUrl);
+            if (finalUrl !== session.conversationUrl && isProviderUrl(finalUrl)) {
                 recoveredConversationUrl = finalUrl;
             }
         }
@@ -213,10 +214,12 @@ export async function withSessionPage(deps, sessionId, fn) {
         if (!page) throw new Error(`Session ${sessionId} page not found for targetId ${current.targetId}`);
         if (current.conversationUrl && page.url() !== current.conversationUrl) {
             await page.goto(current.conversationUrl, { waitUntil: 'load', timeout: 30_000 });
-            await waitForConversationReady(page, current.conversationUrl);
             const finalUrl = page.url();
-            if (finalUrl !== current.conversationUrl) {
+            await waitForConversationReady(page, finalUrl);
+            if (finalUrl !== current.conversationUrl && isProviderUrl(finalUrl)) {
                 updateSession(sessionId, { conversationUrl: finalUrl });
+                const updated = /** @type {WebAiSession} */ (getSession(sessionId));
+                return { page, targetId: current.targetId, session: updated };
             }
         }
         return { page, targetId: current.targetId, session: current };
