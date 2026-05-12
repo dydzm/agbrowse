@@ -44,8 +44,9 @@ aliases: [agbrowse commands, agbrowse CLI 표면, web-ai commands]
 | `upload <ref> <file...>` | Yes | file input ref에 file을 set (Playwright `setInputFiles`, G03) |
 | `sessions list` | No | persisted session 목록 |
 | `sessions show` | No | session 상세 |
-| `sessions resume` | Yes | session poll resume |
-| `sessions reattach` | Yes | session과 tab 다시 연결 |
+| `sessions resume` | Yes | 저장된 session target을 resolve/recover한 뒤 provider poll resume |
+| `sessions reattach` | Yes | 저장된 targetId 기반으로 session과 tab 다시 연결; active tab을 truth로 쓰지 않음 |
+| `sessions doctor` | Yes | session target/lock/active command/recovery recommendation 진단 |
 | `sessions prune` | No | 오래된 session 정리 |
 | `context-dry-run` | No | context package 생성 결과 미리보기 |
 | `context-render` | No | prompt와 context package 전체 렌더링 |

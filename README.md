@@ -401,6 +401,14 @@ Add `--deadline <iso>` to override the default deadline (now + `--timeout`)
 and `--navigate` to allow `sessions resume` to switch tabs when the saved
 `conversationUrl` differs from the current tab.
 
+#### Durable session recovery
+
+Session recovery is target-bound. `poll --session`, `watch --session`,
+`sessions resume`, and `sessions reattach` resolve the session's stored target
+first, then recover/navigate only when the command permits it. Use
+`agbrowse web-ai sessions doctor <id> --json` when a shell was interrupted or
+a provider tab outlived a local timeout.
+
 ### Failure envelope
 
 Set `AGBROWSE_JSON_ERRORS=1` (or pass `--json`) for machine-readable

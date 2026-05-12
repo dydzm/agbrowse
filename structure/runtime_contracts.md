@@ -32,7 +32,9 @@ aliases: [agbrowse runtime contracts, agbrowse 런타임 계약, provider contra
 | Session store | `web-ai-sessions.json`에 `sessionId`, vendor, target, tab, deadline, status 저장 |
 | Resume priority | explicit `--session`이 active target, vendor latest, legacy baseline보다 우선한다 |
 | Tab ownership | provider send/query는 pooled 또는 새 provider tab을 소유하고 active command로 보호한다 |
-| Active command | 같은 target에 병렬 mutation이 들어오면 fail-closed 한다 |
+| Active command | 같은 target에 병렬 mutation이 들어오면 fail-closed 하며 heartbeat로 장기 작업 소유권을 유지한다 |
+| Session command lock | `web-ai-sessions.json.cmd.<session>.lock`은 PID/heartbeat/expiresAt 기반이며 dead PID lock은 stale로 회수한다 |
+| Session doctor | `sessions doctor <id>`는 target, URL, lock, active command, recovery recommendation을 prompt/answer 없이 출력한다 |
 | Lease cleanup | 완료된 provider tab은 warm lease이며 일정 시간 뒤 cleanup 대상이다 |
 | Recovery | bound tab이 닫혔거나 다른 conversation으로 이동하면 session recovery 경로를 쓴다 |
 
