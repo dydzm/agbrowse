@@ -1,5 +1,5 @@
 // @ts-check
-import { BROWSER_TOOLS, isKnownBrowserTool, validateSchema } from './browser-tool-schema.mjs';
+import { BROWSER_TOOLS, isKnownBrowserTool, policySchema, validateSchema } from './browser-tool-schema.mjs';
 
 /**
  * @typedef {{ description: string, inputSchema: Record<string, unknown> }} ToolDefinition
@@ -7,6 +7,8 @@ import { BROWSER_TOOLS, isKnownBrowserTool, validateSchema } from './browser-too
  */
 
 const providerEnum = ['chatgpt', 'gemini', 'grok'];
+const providerSchema = { type: 'string', enum: providerEnum };
+const optionalUrlSchema = { type: 'string' };
 
 /**
  * @param {Record<string, unknown>} properties
@@ -24,7 +26,8 @@ export const WEB_AI_TOOLS = {
     web_ai_snapshot: {
         description: 'Return compact accessibility snapshot with @eN refs.',
         inputSchema: objectSchema({
-            provider: { type: 'string', enum: providerEnum, default: 'chatgpt' },
+            provider: { ...providerSchema, default: 'chatgpt' },
+            vendor: providerSchema,
             compact: { type: 'boolean', default: true },
             interactive: { type: 'boolean', default: true },
             maxDepth: { type: 'number', minimum: 1, maximum: 12, default: 6 },
@@ -36,39 +39,53 @@ export const WEB_AI_TOOLS = {
         inputSchema: objectSchema({
             snapshotId: { type: 'string' },
             ref: { type: 'string', pattern: '^@e[0-9]+$' },
+            provider: providerSchema,
+            vendor: providerSchema,
+            url: optionalUrlSchema,
+            policy: policySchema,
         }, ['snapshotId', 'ref']),
     },
     web_ai_submit_prompt: {
         description: 'Submit prompt to ChatGPT/Gemini/Grok web UI.',
         inputSchema: objectSchema({
-            provider: { type: 'string', enum: providerEnum, default: 'chatgpt' },
+            provider: { ...providerSchema, default: 'chatgpt' },
+            vendor: providerSchema,
             model: { type: 'string' },
             effort: { type: 'string' },
+            reasoningEffort: { type: 'string' },
             prompt: { type: 'string', minLength: 1 },
             system: { type: 'string' },
             context: { type: 'string' },
+            filePath: { type: 'string' },
+            url: optionalUrlSchema,
             inlineOnly: { type: 'boolean', default: true },
             timeout: { type: 'number' },
+            policy: policySchema,
         }, ['prompt']),
     },
     web_ai_wait_response: {
         description: 'Wait for provider response completion.',
         inputSchema: objectSchema({
             sessionId: { type: 'string' },
-            provider: { type: 'string', enum: providerEnum },
+            provider: providerSchema,
+            vendor: providerSchema,
             timeout: { type: 'number' },
         }, ['sessionId']),
     },
     web_ai_copy_markdown: {
         description: 'Copy last response as markdown.',
         inputSchema: objectSchema({
-            provider: { type: 'string', enum: providerEnum, default: 'chatgpt' },
+            provider: { ...providerSchema, default: 'chatgpt' },
+            vendor: providerSchema,
+            url: optionalUrlSchema,
+            policy: policySchema,
         }),
     },
     web_ai_doctor: {
         description: 'Run provider diagnostics and return repair packet.',
         inputSchema: objectSchema({
-            provider: { type: 'string', enum: providerEnum, default: 'chatgpt' },
+            provider: { ...providerSchema, default: 'chatgpt' },
+            vendor: providerSchema,
             snapshot: { type: 'boolean', default: true },
             full: { type: 'boolean', default: false },
         }),
@@ -77,7 +94,8 @@ export const WEB_AI_TOOLS = {
         description: 'Resume a stored session by ID.',
         inputSchema: objectSchema({
             sessionId: { type: 'string' },
-            provider: { type: 'string', enum: providerEnum },
+            provider: providerSchema,
+            vendor: providerSchema,
             timeout: { type: 'number' },
         }, ['sessionId']),
     },
@@ -152,8 +170,7 @@ export function isKnownWebAiTool(toolName) {
 export function validateWebAiToolInput(toolName, input) {
     const tool = WEB_AI_TOOLS[toolName];
     if (!tool) throw new Error(`unknown web-ai tool: ${toolName}`);
-    const schema = { ...tool.inputSchema, additionalProperties: true };
-    validateSchema(toolName, schema, input ?? {});
+    validateSchema(toolName, tool.inputSchema, input ?? {});
     return true;
 }
 

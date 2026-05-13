@@ -21,6 +21,10 @@ export function resolveArchivePolicy({ archiveFlag = 'auto', session }) {
         return { shouldArchive: false, reason: 'no-conversation-url' };
     }
 
+    if (isTemporaryChatgptUrl(session?.originalUrl) || isTemporaryChatgptUrl(conversationUrl)) {
+        return { shouldArchive: false, reason: 'temporary-chat' };
+    }
+
     if (archiveFlag === 'always') {
         return { shouldArchive: true, reason: 'archive-forced' };
     }
@@ -39,6 +43,20 @@ export function resolveArchivePolicy({ archiveFlag = 'auto', session }) {
     }
 
     return { shouldArchive: true, reason: 'auto-archive-one-shot' };
+}
+
+/**
+ * @param {unknown} url
+ * @returns {boolean}
+ */
+export function isTemporaryChatgptUrl(url) {
+    if (!url) return false;
+    try {
+        const parsed = new URL(String(url));
+        return parsed.searchParams.get('temporary-chat')?.trim().toLowerCase() === 'true';
+    } catch {
+        return false;
+    }
 }
 
 const ARCHIVE_MENU_SELECTORS = [

@@ -192,6 +192,21 @@ describe('web-ai ChatGPT model selector policy', () => {
         }
     });
 
+    it('skips legacy explicit Pro model rows when selecting current Pro by text', async () => {
+        const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
+        const page = createFakeModelPage({
+            model: 'thinking',
+            missingModelTestIds: ['model-switcher-gpt-5-5-pro'],
+            strayModelMenuTexts: ['GPT-5.4 Pro'],
+            effortTexts: thinkingEffortTexts(),
+        });
+
+        await expect(selectChatGptModel(page, 'pro')).resolves.toMatchObject({
+            selected: 'pro',
+            alreadySelected: false,
+        });
+    });
+
     it('selects menuitem-only effort options for every supported effort', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const cases = [

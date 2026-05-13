@@ -108,6 +108,10 @@ JSON 모드에서는 실패가 parseable envelope로 나온다. 이 shape는 MCP
 | `web_ai_doctor` | provider diagnostics와 repair packet 반환 |
 | `web_ai_session_resume` | stored session poll resume |
 
+`web_ai_*` 입력은 strict schema로 검증한다. Runtime에서 쓰는 호환 alias
+(`vendor`, `policy`, submit의 `filePath`/`reasoningEffort` 등)만 명시적으로
+허용하고, 오탈자/미등록 top-level field는 command 실행 전에 fail-fast한다.
+
 ## MCP-ready vs CLI-ready Matrix (G04)
 
 `browser_*` MCP tools 외의 기능은 항상 CLI를 통해 노출된다. MCP에서는 의도적으로 좁힌 surface만 등록한다. 등록되지 않은 tool은 `tools/call` 시 deterministic `capability.unsupported` envelope를 반환하므로 probe-safe하다. 자세한 deferral 사유는 [`structure/mcp_scope.md`](mcp_scope.md) 참고.
@@ -180,5 +184,6 @@ JSON 모드에서는 실패가 parseable envelope로 나온다. 이 shape는 MCP
 - 2026-05-06: G06 — `agbrowse observe-bundle`과 ObservationBundleV1 스키마를 추가했다. URL/title/viewport/DPR/refs/boxes/screenshot/text를 한 번에 묶어 multimodal benchmark step 재현성을 확보한다 (`gate:observation-bundle-fixtures`).
 - 2026-05-06: G02 — `agbrowse observe-actions <instruction>` CLI 추가. Pure `buildObserveActions(snapshot, instruction, opts)` API가 ranked `ActionCandidate[]`를 반환한다 (`gate:observe-actions-fixtures`).
 - 2026-05-06: G04 — MCP-ready vs CLI-ready matrix와 deferred-tool envelope 동작을 commands.md에 명시했다 (`structure/mcp_scope.md` 결정 기록과 `gate:mcp-deferred-metadata` 게이트 동기).
+- 2026-05-13: Oracle follow-up guardrail — `web_ai_*` MCP 입력을 strict schema로 고정하고 documented compatibility alias만 허용하도록 명시했다.
 - 2026-05-06: Phase 9.1 multi-tab의 `new-tab`, `tab-close` 명령을 root command 표에 추가해 README와 일치시켰다.
 - 2026-05-05: root CLI, web-ai, MCP tool, provider alias, failure envelope, drift 검사 기준을 source-of-truth 문서로 추가했다.

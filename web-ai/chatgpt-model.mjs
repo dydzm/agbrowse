@@ -386,6 +386,7 @@ async function isModelOptionCandidate(loc, choice) {
     const text = (await loc.innerText({ timeout: 500 }).catch(() => '')).trim();
     if (!text) return false;
     if (isStandaloneEffortLabel(text) || CHATGPT_OBSERVED_PRO_PILL_LABELS.includes(text)) return false;
+    if (choice === 'pro' && isLegacyProModelLabel(text)) return false;
     return modelChoiceFromText(text) === choice;
 }
 
@@ -773,9 +774,39 @@ function effortLabelPattern(label) {
  */
 function modelChoiceFromText(text) {
     if (/\b(Instant|Fast)\b/i.test(text)) return 'instant';
+    if (isLegacyProModelLabel(text)) return null;
     if (/\b(Thinking|Think)\b/i.test(text)) return 'thinking';
     if (/\b(Pro|Heavy)\b/i.test(text)) return 'pro';
     return null;
+}
+
+/**
+ * @param {unknown} text
+ * @returns {string}
+ */
+function normalizeModelPickerText(text) {
+    return String(text || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+/**
+ * Reject legacy explicit GPT-5.x Pro model rows without blocking current Pro labels.
+ * @param {unknown} text
+ * @returns {boolean}
+ */
+function isLegacyProModelLabel(text) {
+    const normalized = normalizeModelPickerText(text);
+    return [
+        'gpt 5 pro',
+        'gpt 5 0 pro',
+        'gpt 5 1 pro',
+        'gpt 5 2 pro',
+        'gpt 5 3 pro',
+        'gpt 5 4 pro',
+    ].some(label => normalized.includes(label));
 }
 
 /** @param {string} text @returns {boolean} */

@@ -28,12 +28,34 @@ describe('web-ai tool input validation', () => {
         })).toBe(true);
     });
 
-    it('accepts web_ai tools with extra fields like policy (additionalProperties relaxed)', () => {
+    it('accepts documented web_ai compatibility fields', () => {
         expect(validateWebAiToolInput('web_ai_submit_prompt', {
             provider: 'chatgpt',
+            vendor: 'chatgpt',
             prompt: 'hello',
+            filePath: '/tmp/context.txt',
+            reasoningEffort: 'high',
             policy: { version: 1 },
         })).toBe(true);
+    });
+
+    it('rejects unknown web_ai input fields', () => {
+        expect(() => validateWebAiToolInput('web_ai_submit_prompt', {
+            provider: 'chatgpt',
+            prompt: 'hello',
+            polciy: { version: 1 },
+        })).toThrow(/unknown property polciy/i);
+    });
+
+    it('keeps provider aliases strict to supported vendors', () => {
+        expect(validateWebAiToolInput('web_ai_wait_response', {
+            sessionId: 'session-1',
+            vendor: 'grok',
+        })).toBe(true);
+        expect(() => validateWebAiToolInput('web_ai_wait_response', {
+            sessionId: 'session-1',
+            vendor: 'claude',
+        })).toThrow(/vendor not in enum/i);
     });
 
     it('throws for unknown tool name', () => {

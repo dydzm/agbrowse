@@ -38,6 +38,48 @@ describe('web-ai MCP server', () => {
         expect(listed.result.tools.map(tool => tool.name)).toContain('web_ai_submit_prompt');
         expect(listed.result.tools.map(tool => tool.name)).toContain('browser_snapshot');
         expect(listed.result.tools.map(tool => tool.name)).toContain('browser_click_ref');
+
+        const submitPrompt = listed.result.tools.find(tool => tool.name === 'web_ai_submit_prompt');
+        expect(submitPrompt.inputSchema.properties.vendor.enum).toContain('grok');
+        expect(submitPrompt.inputSchema.properties.policy.additionalProperties).toBe(false);
+        expect(submitPrompt.inputSchema.properties.filePath.type).toBe('string');
+        expect(submitPrompt.inputSchema.properties.reasoningEffort.type).toBe('string');
+    });
+
+    it('rejects unknown web_ai input fields before command execution', async () => {
+        const response = await handleMcpMessage({
+            jsonrpc: '2.0',
+            id: 21,
+            method: 'tools/call',
+            params: {
+                name: 'web_ai_submit_prompt',
+                arguments: {
+                    prompt: 'hello',
+                    polciy: { version: 1 },
+                },
+            },
+        }, {});
+
+        expect(response.result.isError).toBe(true);
+        expect(response.result.content[0].text).toContain('unknown property polciy');
+    });
+
+    it('rejects unsafeAllow before schema validation hides the policy error', async () => {
+        const response = await handleMcpMessage({
+            jsonrpc: '2.0',
+            id: 22,
+            method: 'tools/call',
+            params: {
+                name: 'web_ai_submit_prompt',
+                arguments: {
+                    prompt: 'hello',
+                    unsafeAllow: true,
+                },
+            },
+        }, {});
+
+        expect(response.result.isError).toBe(true);
+        expect(response.result.content[0].text).toContain('unsafeAllow is server-side policy');
     });
 
     it('runs web_ai_snapshot and rejects stale refs', async () => {

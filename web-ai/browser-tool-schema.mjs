@@ -11,7 +11,7 @@ const objectSchema = (properties, required = []) => ({
     additionalProperties: false,
 });
 
-const policySchema = {
+export const policySchema = {
     type: 'object',
     additionalProperties: false,
     properties: {

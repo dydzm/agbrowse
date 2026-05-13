@@ -144,10 +144,10 @@ async function callMcpTool(name, args, deps, state) {
         };
     }
     if (!isKnownMcpTool(name)) throw new Error(`unknown tool: ${name}`);
-    if (isKnownBrowserTool(name)) validateBrowserToolInput(name, args || {});
-    if (isKnownWebAiTool(name)) validateWebAiToolInput(name, args || {});
     rejectClientPolicyFields(args || {});
     const policy = normalizeMcpPolicy(args.policy === undefined ? {} : args.policy);
+    if (isKnownBrowserTool(name)) validateBrowserToolInput(name, args || {});
+    if (isKnownWebAiTool(name)) validateWebAiToolInput(name, args || {});
     if (name === 'browser_snapshot') {
         const page = await deps.getPage();
         const snapshot = await buildWebAiSnapshot(page, {
@@ -210,7 +210,7 @@ async function callMcpTool(name, args, deps, state) {
     }
     if (name === 'web_ai_wait_response' || name === 'web_ai_session_resume') {
         const session = getSession(args.sessionId);
-        const provider = args.provider || session?.vendor || 'chatgpt';
+        const provider = args.provider || args.vendor || session?.vendor || 'chatgpt';
         return pollByProvider(providerFromArgs({ provider }), deps, {
             ...args,
             vendor: provider,

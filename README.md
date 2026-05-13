@@ -74,7 +74,7 @@ Ready surfaces:
 - web-ai contract tests
 - source-audit and answer-artifact gates for research workflows
 - narrow MCP bridge surface: `web_ai_*`, `browser_snapshot`, and
-  `browser_click_ref`
+  `browser_click_ref` with strict input schemas
 - offline DOM churn eval fixtures
 - trace and safety-policy schemas
 - benchmark trajectory schema and offline bundle writer
@@ -396,6 +396,9 @@ The record stores `targetId`, `tabId`, and `tabState` (`createdAt`,
 `lastActiveAt`, `recoveryCount`, `closeCount`). If the bound tab is closed
 mid-operation, the runtime auto-recovers once by creating a new tab and
 navigating to the saved `conversationUrl`.
+
+Temporary Chat sessions are never archived, including when archive mode is
+forced, because they are not durable ChatGPT conversations.
 
 Add `--deadline <iso>` to override the default deadline (now + `--timeout`)
 and `--navigate` to allow `sessions resume` to switch tabs when the saved
