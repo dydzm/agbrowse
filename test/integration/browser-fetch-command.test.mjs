@@ -22,6 +22,21 @@ describe('adaptive fetch browser escalation', () => {
         expect(result.chromeUsed).toBe(false);
     });
 
+    it('surfaces archive fallback as deferred instead of silently ignoring the flag', async () => {
+        const result = await runAdaptiveFetch({
+            url: 'https://example.com/a',
+            browserMode: 'never',
+            publicEndpoints: false,
+            allowArchive: true,
+        }, {
+            fetch: async () => new Response('<title>Weak</title><p>Short</p>', {
+                status: 200,
+                headers: { 'content-type': 'text/html' },
+            }),
+        });
+        expect(result.warnings).toContain('archive-fallback-deferred');
+    });
+
     it('uses browser required mode after URL validation', async () => {
         const result = await runAdaptiveFetch({
             url: 'https://example.com/spa',
@@ -106,4 +121,3 @@ function fakeResponse(candidate) {
         ok: () => true,
     };
 }
-

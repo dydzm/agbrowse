@@ -22,11 +22,13 @@ It covers:
 - URL validation and safety flags;
 - trace records with redaction;
 - public endpoint candidates;
+- discovered RSS/Atom feed candidates;
 - neutral fetch and metadata extraction;
 - reader adapter normalization;
 - content scoring across candidates;
 - opt-in third-party reader support;
 - explicit browser modes: `auto`, `never`, `required`;
+- compatibility alias: `--no-browser` for `--browser never`;
 - explicit browser sessions: `none`, `isolated`, `existing`;
 - isolated Chrome rendering and network JSON candidate discovery;
 - challenge/login/paywall marker classification without bypass behavior.

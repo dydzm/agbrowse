@@ -139,14 +139,15 @@ after a search tool or user has produced a URL.
 agbrowse fetch "https://example.com/article"
 agbrowse fetch "https://example.com/article" --json --trace
 agbrowse fetch "https://example.com/article" --browser never
+agbrowse fetch "https://example.com/article" --no-browser
 agbrowse fetch "https://example.com/article" --browser required
 agbrowse fetch "https://example.com/article" --allow-third-party-reader
 ```
 
-It tries public endpoints, HTTP fetch, metadata extraction, optional public
-readers, browser render, and network JSON candidates. It does not solve
-CAPTCHA, cross logins/paywalls, use stealth, or use existing cookies unless the
-user explicitly requests that session boundary.
+It tries public endpoints, discovered RSS/Atom feeds, HTTP fetch, metadata
+extraction, optional public readers, browser render, and network JSON
+candidates. It does not solve CAPTCHA, cross logins/paywalls, use stealth, or
+use existing cookies unless the user explicitly requests that session boundary.
 
 ## Requirements
 

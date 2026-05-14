@@ -41,6 +41,7 @@ export function normalizeAdaptiveFetchOptions(raw = {}) {
         allowPrivateNetwork: Boolean(raw.allowPrivateNetwork),
         allowThirdPartyReader: Boolean(raw.allowThirdPartyReader),
         allowArchive: Boolean(raw.allowArchive),
+        optionWarnings: raw.allowArchive ? ['archive-fallback-deferred'] : [],
     };
 }
 
@@ -76,6 +77,9 @@ export async function runAdaptiveFetch(input, deps = {}) {
     }
     /** @type {any[]} */
     const readerCandidates = [];
+    const fetchedUrls = new Set();
+    /** @type {string[]} */
+    const discoveredFeedUrls = [];
     for (const candidate of candidateUrls) {
         const fetched = await fetchTextCandidate(candidate.url, {
             maxBytes: options.maxBytes,
@@ -83,10 +87,14 @@ export async function runAdaptiveFetch(input, deps = {}) {
             allowPrivateNetwork: options.allowPrivateNetwork,
             fetchImpl,
         });
+        fetchedUrls.add(fetched.finalUrl || candidate.url);
         const readerCandidate = fromFetchResult(fetched, {
             source: candidate.source,
             label: candidate.label,
         });
+        for (const feedUrl of readerCandidate.metadata?.feedUrls || []) {
+            if (!fetchedUrls.has(feedUrl) && !discoveredFeedUrls.includes(feedUrl)) discoveredFeedUrls.push(feedUrl);
+        }
         const scored = scoreReaderCandidate(readerCandidate);
         appendAttempt(trace, {
             source: readerCandidate.source,
@@ -98,6 +106,32 @@ export async function runAdaptiveFetch(input, deps = {}) {
             warnings: readerCandidate.warnings,
         });
         if (readerCandidate.text || readerCandidate.title) readerCandidates.push(readerCandidate);
+    }
+    if (options.browserMode !== 'required' && options.publicEndpoints) {
+        for (const feedUrl of discoveredFeedUrls) {
+            const fetched = await fetchTextCandidate(feedUrl, {
+                maxBytes: options.maxBytes,
+                timeoutMs: options.timeoutMs,
+                allowPrivateNetwork: options.allowPrivateNetwork,
+                fetchImpl,
+            });
+            fetchedUrls.add(fetched.finalUrl || feedUrl);
+            const readerCandidate = fromFetchResult(fetched, {
+                source: 'public_endpoint',
+                label: 'rss-atom-discovered',
+            });
+            const scored = scoreReaderCandidate(readerCandidate);
+            appendAttempt(trace, {
+                source: readerCandidate.source,
+                verdict: scored.verdict,
+                url: fetched.finalUrl,
+                status: fetched.status,
+                reason: `score:${scored.score}`,
+                evidence: scored.evidence,
+                warnings: readerCandidate.warnings,
+            });
+            if (readerCandidate.text || readerCandidate.title) readerCandidates.push(readerCandidate);
+        }
     }
     if (options.allowThirdPartyReader) {
         const fetched = await fetchThirdPartyReaderCandidate(parsed.href, {
@@ -164,6 +198,7 @@ export async function runAdaptiveFetchCli(args, deps = {}) {
             trace: { type: 'boolean', default: false },
             browser: { type: 'string', default: 'auto' },
             'browser-session': { type: 'string' },
+            'no-browser': { type: 'boolean', default: false },
             'max-bytes': { type: 'string' },
             'timeout-ms': { type: 'string' },
             selector: { type: 'string' },
@@ -181,7 +216,7 @@ export async function runAdaptiveFetchCli(args, deps = {}) {
         url: positionals[0],
         json: values.json,
         trace: values.trace,
-        browser: values.browser,
+        browser: values['no-browser'] ? 'never' : values.browser,
         browserSession: values['browser-session'],
         maxBytes: values['max-bytes'],
         timeoutMs: values['timeout-ms'],
@@ -208,9 +243,14 @@ Options:
   --json                         Output JSON
   --trace                        Include attempt trace
   --browser auto|never|required  Browser escalation mode
+  --no-browser                   Alias for --browser never
   --browser-session none|isolated|existing
+  --max-bytes N                  Maximum response bytes per read
+  --timeout-ms N                 Per-attempt timeout
+  --selector CSS                 Browser text extraction selector
   --allow-third-party-reader     Allow opt-in public reader services
   --no-public-endpoints          Skip known public endpoint resolvers
+  --allow-archive                Accepted but deferred; emits a warning
 `;
 }
 
@@ -291,7 +331,7 @@ function finishResult(result, options, trace, runtime = {}) {
         attempts: options.trace ? trace.attempts : [],
         safetyFlags: [],
         evidence: result.evidence || [],
-        warnings: result.warnings || [],
+        warnings: [...(options.optionWarnings || []), ...(result.warnings || [])],
         metadata: result.metadata || null,
         _traceSummary: summarizeAttempts(trace.attempts),
     };

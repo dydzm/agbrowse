@@ -40,9 +40,14 @@ aliases: [agbrowse commands, agbrowse CLI 표면, web-ai commands]
 | `--json` | parseable result envelope 출력 |
 | `--trace` | validation/public endpoint/fetch/reader/browser/network attempt 포함 |
 | `--browser auto|never|required` | browser escalation policy |
+| `--no-browser` | `--browser never` alias |
 | `--browser-session none|isolated|existing` | browser session/cookie boundary |
+| `--max-bytes N` | per-attempt response size limit |
+| `--timeout-ms N` | per-attempt timeout |
+| `--selector CSS` | browser text extraction selector |
 | `--allow-third-party-reader` | Jina Reader 류 public reader를 명시 opt-in |
 | `--no-public-endpoints` | known public endpoint resolver skip |
+| `--allow-archive` | accepted but deferred; warning only |
 
 기본값은 non-browser fetch를 먼저 시도하고, 강한 결과가 없을 때만 browser
 escalation을 고려한다. `existing` session과 third-party reader는 모두 명시

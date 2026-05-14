@@ -2938,6 +2938,8 @@ try {
     fetch <url>            Read one URL or search-result URL [--json] [--trace]
                               [--browser auto|never|required]
                               [--browser-session none|isolated|existing]
+                              [--no-browser] [--max-bytes N] [--timeout-ms N]
+                              [--selector CSS] [--allow-third-party-reader]
                               Not generic search; use after a candidate URL exists.
     reload                 Reload current page
     resize <w> <h>         Resize browser window / viewport [--fullscreen]

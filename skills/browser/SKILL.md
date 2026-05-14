@@ -102,6 +102,7 @@ first step for broad generic search.
 agbrowse fetch "https://example.com/article"
 agbrowse fetch "https://example.com/article" --json --trace
 agbrowse fetch "https://example.com/article" --browser never
+agbrowse fetch "https://example.com/article" --no-browser
 agbrowse fetch "https://example.com/article" --browser required
 agbrowse fetch "https://example.com/article" --allow-third-party-reader
 ```
@@ -113,12 +114,13 @@ generic search request -> use a search tool first
 known URL / search-result URL / source URL -> use agbrowse fetch
 ```
 
-`fetch` tries public endpoints, normal HTTP fetch, metadata extraction, optional
-third-party public readers, and browser render/network candidates. CAPTCHA,
-login, and paywall markers are not automatic stop words; the command should
-keep trying allowed public and user-authorized representations. It must not
-solve challenges, cross logins/paywalls, use stealth, or use existing cookies
-unless the user explicitly requests that boundary.
+`fetch` tries public endpoints, discovered RSS/Atom feeds, normal HTTP fetch,
+metadata extraction, optional third-party public readers, and browser
+render/network candidates. CAPTCHA, login, and paywall markers are not
+automatic stop words; the command should keep trying allowed public and
+user-authorized representations. It must not solve challenges, cross
+logins/paywalls, use stealth, or use existing cookies unless the user explicitly
+requests that boundary.
 
 ### Snapshot Output Example
 

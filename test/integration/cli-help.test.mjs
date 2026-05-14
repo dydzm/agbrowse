@@ -13,6 +13,7 @@ describe.sequential('CLI help', () => {
         expect(result.stdout).toContain('network');
         expect(result.stdout).toContain('fetch <url>');
         expect(result.stdout).toContain('--browser-session none|isolated|existing');
+        expect(result.stdout).toContain('--no-browser');
         expect(result.stdout).toContain('Not generic search');
         expect(result.stdout).toContain('move-mouse');
         expect(result.stdout).toContain('mouse-down');
@@ -34,6 +35,18 @@ describe.sequential('CLI help', () => {
         expect(result.stdout).toContain('AGBROWSE_WEB_AI_AUTO_START=0');
         expect(result.stdout).toContain('AGBROWSE_MAX_TABS');
         expect(result.stdout).toContain('--reuse-tab');
+    });
+
+    it('shows adaptive fetch help without touching the network', async () => {
+        const result = await execBrowser(['fetch', '--help']);
+        expect(result.code).toBe(0);
+        expect(result.stdout).toContain('agbrowse fetch <url>');
+        expect(result.stdout).toContain('--no-browser');
+        expect(result.stdout).toContain('--max-bytes N');
+        expect(result.stdout).toContain('--timeout-ms N');
+        expect(result.stdout).toContain('--selector CSS');
+        expect(result.stdout).toContain('--allow-archive');
+        expect(result.stdout).toContain('Not generic search');
     });
 
     it('shows browser help for unknown commands', async () => {

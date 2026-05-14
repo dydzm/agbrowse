@@ -18,6 +18,7 @@ export function extractMetadataFromHtml(html = '', finalUrl = '') {
         getMetaContent(html, 'name', 'twitter:description'),
     );
     const canonicalUrl = resolveMaybeUrl(getLinkHref(html, 'canonical'), finalUrl);
+    const feedUrls = extractFeedUrls(html, finalUrl);
     const jsonLd = extractJsonLdBlocks(html);
     const text = htmlToReadableText(html);
     return {
@@ -28,6 +29,7 @@ export function extractMetadataFromHtml(html = '', finalUrl = '') {
         metadata: {
             canonicalUrl,
             description,
+            feedUrls,
             openGraph: extractOpenGraph(html),
             jsonLd,
         },
@@ -35,6 +37,7 @@ export function extractMetadataFromHtml(html = '', finalUrl = '') {
             title ? 'title' : null,
             description ? 'description' : null,
             canonicalUrl ? 'canonical' : null,
+            feedUrls.length > 0 ? 'feed-link' : null,
             jsonLd.length > 0 ? 'json-ld' : null,
         ].filter(Boolean),
         warnings: [],
@@ -74,6 +77,27 @@ function extractOpenGraph(html) {
 
 /**
  * @param {string} html
+ * @param {string} base
+ */
+export function extractFeedUrls(html = '', base = '') {
+    const urls = [];
+    const re = /<link\b[^>]*>/gi;
+    let match;
+    while ((match = re.exec(html))) {
+        const tag = match[0];
+        const rel = getTagAttr(tag, 'rel').toLowerCase();
+        const type = getTagAttr(tag, 'type').toLowerCase();
+        const href = getTagAttr(tag, 'href');
+        if (!href || !/\balternate\b/.test(rel)) continue;
+        if (!/(application\/rss\+xml|application\/atom\+xml|application\/feed\+json|text\/xml|application\/xml)/i.test(type)) continue;
+        const resolved = resolveMaybeUrl(href, base);
+        if (resolved && !urls.includes(resolved)) urls.push(resolved);
+    }
+    return urls;
+}
+
+/**
+ * @param {string} html
  * @param {'name'|'property'} attr
  * @param {string} key
  */
@@ -90,6 +114,16 @@ function getMetaContent(html, attr, key) {
 function getLinkHref(html, rel) {
     const re = new RegExp(`<link\\s+[^>]*rel=["']${escapeRegExp(rel)}["'][^>]*href=["']([^"']*)["'][^>]*>`, 'i');
     const match = html.match(re);
+    return match ? normalizeWhitespace(match[1]) : '';
+}
+
+/**
+ * @param {string} tag
+ * @param {string} attr
+ */
+function getTagAttr(tag, attr) {
+    const re = new RegExp(`\\b${escapeRegExp(attr)}=["']([^"']*)["']`, 'i');
+    const match = tag.match(re);
     return match ? normalizeWhitespace(match[1]) : '';
 }
 
@@ -116,4 +150,3 @@ function firstNonEmpty(...values) {
 function escapeRegExp(text) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runAdaptiveFetch } from '../../skills/browser/adaptive-fetch/index.mjs';
-import { extractMetadataFromHtml } from '../../skills/browser/adaptive-fetch/metadata.mjs';
+import { extractFeedUrls, extractMetadataFromHtml } from '../../skills/browser/adaptive-fetch/metadata.mjs';
 import { dedupeCandidateUrls, htmlToReadableText } from '../../skills/browser/adaptive-fetch/transforms.mjs';
 
 describe('adaptive fetch transforms and metadata', () => {
@@ -15,13 +15,26 @@ describe('adaptive fetch transforms and metadata', () => {
         const meta = extractMetadataFromHtml(`
             <title>Fallback title</title>
             <link rel="canonical" href="/article">
+            <link rel="alternate" type="application/rss+xml" href="/feed.xml">
             <meta property="og:title" content="OG title">
             <meta name="description" content="Summary">
             <script type="application/ld+json">{"@type":"Article","headline":"JSON title"}</script>
         `, 'https://example.com/base');
         expect(meta.title).toBe('OG title');
         expect(meta.metadata.canonicalUrl).toBe('https://example.com/article');
+        expect(meta.metadata.feedUrls).toEqual(['https://example.com/feed.xml']);
         expect(meta.metadata.jsonLd[0].headline).toBe('JSON title');
+    });
+
+    it('extracts RSS and Atom alternate feeds regardless of attribute order', () => {
+        expect(extractFeedUrls(`
+            <link href="/rss.xml" type="application/rss+xml" rel="alternate">
+            <link rel="alternate" href="https://example.com/atom.xml" type="application/atom+xml">
+            <link rel="stylesheet" href="/style.css">
+        `, 'https://example.com/articles')).toEqual([
+            'https://example.com/rss.xml',
+            'https://example.com/atom.xml',
+        ]);
     });
 
     it('deduplicates valid candidate URLs and drops invalid values', () => {
@@ -45,5 +58,29 @@ describe('adaptive fetch transforms and metadata', () => {
         expect(result.content).toContain('Readable body');
         expect(result.attempts.some(a => a.source === 'fetch')).toBe(true);
     });
-});
 
+    it('discovers RSS/Atom feeds from weak HTML and scores them as public endpoints', async () => {
+        const result = await runAdaptiveFetch({
+            url: 'https://example.com/article',
+            browserMode: 'never',
+            trace: true,
+        }, {
+            fetch: async (url) => {
+                if (String(url).endsWith('/feed.xml')) {
+                    return new Response(`<rss><channel><title>Feed</title><item><title>Long story</title><description>${'Readable feed body '.repeat(140)}</description></item></channel></rss>`, {
+                        status: 200,
+                        headers: { 'content-type': 'application/rss+xml' },
+                    });
+                }
+                return new Response('<title>Weak</title><link rel="alternate" type="application/rss+xml" href="/feed.xml"><p>Short</p>', {
+                    status: 200,
+                    headers: { 'content-type': 'text/html' },
+                });
+            },
+        });
+        expect(result.ok).toBe(true);
+        expect(result.source).toBe('public_endpoint');
+        expect(result.finalUrl).toBe('https://example.com/feed.xml');
+        expect(result.attempts.some(a => a.url === 'https://example.com/feed.xml')).toBe(true);
+    });
+});

@@ -117,8 +117,9 @@ high-risk bypass behavior explicitly out of scope.
 The shipped v1 follows the approved agbrowse-first direction:
 
 - `skills/browser/adaptive-fetch/*.mjs` implements validation, safety flags,
-  trace records, public endpoint candidates, neutral fetch/metadata transforms,
-  reader adapters, scoring, opt-in third-party reader support, browser
+  trace records, public endpoint candidates, discovered RSS/Atom feeds, neutral
+  fetch/metadata transforms, reader adapters, scoring, opt-in third-party reader
+  support, browser
   escalation, network JSON candidate discovery, and challenge classification.
 - `skills/browser/browser.mjs` exposes `fetch <url>` as the browser-family CLI
   subcommand.
