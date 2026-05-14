@@ -1,6 +1,6 @@
 ---
 name: browser
-description: "Chrome browser control: open pages, take ref snapshots, click, type, screenshot. No external server required."
+description: "Chrome browser control and adaptive URL reading: open pages, fetch one candidate URL, take ref snapshots, click, type, screenshot. No external server required."
 ---
 
 # Browser Control
@@ -40,6 +40,7 @@ npm install playwright-core
 agbrowse start                               # Start Chrome (CDP auto port)
 agbrowse start --headless                    # Headless mode (server/CI/WSL)
 agbrowse navigate "https://example.com"      # Go to URL
+agbrowse fetch "https://example.com" --json  # Read one candidate URL; not search
 agbrowse snapshot --interactive              # Interactive elements with ref IDs
 agbrowse click e3                            # Click ref e3
 agbrowse type e5 "hello" --submit           # Type + Enter
@@ -91,6 +92,33 @@ agbrowse get-dom --selector ".card" --max-chars 2000
 agbrowse console --clear --reload --duration 3000 # Buffered console logs
 agbrowse network --reload --duration 1000         # Fresh page-load + async requests
 ```
+
+### Adaptive URL Fetch
+
+Use `agbrowse fetch` after a candidate URL already exists. Do not use it as the
+first step for broad generic search.
+
+```bash
+agbrowse fetch "https://example.com/article"
+agbrowse fetch "https://example.com/article" --json --trace
+agbrowse fetch "https://example.com/article" --browser never
+agbrowse fetch "https://example.com/article" --browser required
+agbrowse fetch "https://example.com/article" --allow-third-party-reader
+```
+
+Routing rule:
+
+```text
+generic search request -> use a search tool first
+known URL / search-result URL / source URL -> use agbrowse fetch
+```
+
+`fetch` tries public endpoints, normal HTTP fetch, metadata extraction, optional
+third-party public readers, and browser render/network candidates. CAPTCHA,
+login, and paywall markers are not automatic stop words; the command should
+keep trying allowed public and user-authorized representations. It must not
+solve challenges, cross logins/paywalls, use stealth, or use existing cookies
+unless the user explicitly requests that boundary.
 
 ### Snapshot Output Example
 

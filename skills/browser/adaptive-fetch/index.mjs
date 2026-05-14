@@ -8,6 +8,9 @@ import { fetchTextCandidate } from './fetcher.mjs';
 import { fromFetchResult } from './reader-adapters.mjs';
 import { chooseBestReaderCandidate, scoreReaderCandidate } from './content-scorer.mjs';
 import { fetchThirdPartyReaderCandidate } from './third-party-readers.mjs';
+import { BrowserRequiredError } from './browser-runtime.mjs';
+import { collectBrowserCandidate, collectNetworkJsonCandidates } from './browser-escalation.mjs';
+import { fromBrowserResult, fromNetworkCandidate } from './reader-adapters.mjs';
 
 /**
  * @typedef {'strong_ok'|'weak_ok'|'blocked'|'auth_required'|'challenge'|'paywall'|'browser_required'|'unsupported'|'error'} AdaptiveFetchVerdict
@@ -62,13 +65,15 @@ export async function runAdaptiveFetch(input, deps = {}) {
     });
     /** @type {any[]} */
     const candidateUrls = [];
-    if (options.publicEndpoints) {
+    if (options.browserMode !== 'required' && options.publicEndpoints) {
         candidateUrls.push(...resolvePublicEndpointCandidates(parsed).map(candidate => ({
             ...candidate,
             source: 'public_endpoint',
         })));
     }
-    candidateUrls.push({ label: 'direct-fetch', url: parsed.href, source: 'fetch' });
+    if (options.browserMode !== 'required') {
+        candidateUrls.push({ label: 'direct-fetch', url: parsed.href, source: 'fetch' });
+    }
     /** @type {any[]} */
     const readerCandidates = [];
     for (const candidate of candidateUrls) {
@@ -119,12 +124,22 @@ export async function runAdaptiveFetch(input, deps = {}) {
             if (readerCandidate.text || readerCandidate.title) readerCandidates.push(readerCandidate);
         }
     }
-    const best = chooseBestReaderCandidate(readerCandidates);
+    let best = chooseBestReaderCandidate(readerCandidates);
+    if (shouldReturnWithoutBrowser(best, options)) return finishResult(resultFromReaderCandidate(best), options, trace);
+    const browserResult = await tryBrowserEscalation(parsed.href, options, deps, trace);
+    if (browserResult) {
+        readerCandidates.push(fromBrowserResult(browserResult));
+        for (const networkCandidate of collectNetworkJsonCandidates(browserResult)) {
+            readerCandidates.push(fromNetworkCandidate(networkCandidate));
+        }
+        best = chooseBestReaderCandidate(readerCandidates);
+        if (best) return finishResult(resultFromReaderCandidate(best), options, trace, { chromeUsed: true });
+    }
     if (best) return finishResult(resultFromReaderCandidate(best), options, trace);
     return finishResult({
         ok: false,
-        verdict: 'blocked',
-        source: 'fetch',
+        verdict: options.browserMode === 'required' ? 'browser_required' : 'blocked',
+        source: options.browserMode === 'required' ? 'browser' : 'fetch',
         finalUrl: parsed.href,
         title: null,
         content: '',
@@ -260,7 +275,7 @@ function resultFromReaderCandidate(scored) {
  * @param {any} options
  * @param {{ attempts: object[] }} trace
  */
-function finishResult(result, options, trace) {
+function finishResult(result, options, trace, runtime = {}) {
     return {
         ok: result.ok,
         verdict: result.verdict,
@@ -268,8 +283,8 @@ function finishResult(result, options, trace) {
         finalUrl: result.finalUrl,
         browserMode: options.browserMode,
         browserSession: options.browserSession,
-        chromeUsed: false,
-        chromeRequired: options.browserMode === 'required' && !result.ok,
+        chromeUsed: Boolean(runtime.chromeUsed),
+        chromeRequired: result.verdict === 'browser_required' || (options.browserMode === 'required' && !result.ok),
         title: result.title,
         content: result.content,
         summary: result.summary,
@@ -280,4 +295,66 @@ function finishResult(result, options, trace) {
         metadata: result.metadata || null,
         _traceSummary: summarizeAttempts(trace.attempts),
     };
+}
+
+/**
+ * @param {ReturnType<typeof chooseBestReaderCandidate>|null} best
+ * @param {any} options
+ */
+function shouldReturnWithoutBrowser(best, options) {
+    if (options.browserMode === 'required') return false;
+    if (options.browserMode === 'never') return Boolean(best);
+    return Boolean(best && best.verdict === 'strong_ok');
+}
+
+/**
+ * @param {string} url
+ * @param {any} options
+ * @param {Record<string, unknown>} deps
+ * @param {{ attempts: object[] }} trace
+ */
+async function tryBrowserEscalation(url, options, deps, trace) {
+    if (options.browserMode === 'never') return null;
+    try {
+        const result = await collectBrowserCandidate(url, {
+            browserDeps: deps,
+            browserSession: options.browserSession,
+            timeoutMs: options.timeoutMs,
+            selector: options.selector,
+        });
+        const scored = scoreReaderCandidate(fromBrowserResult(result));
+        appendAttempt(trace, {
+            source: 'browser',
+            verdict: scored.verdict,
+            url: result.finalUrl,
+            status: result.status,
+            reason: `score:${scored.score}`,
+            evidence: scored.evidence,
+            warnings: result.warnings,
+        });
+        for (const networkCandidate of collectNetworkJsonCandidates(result)) {
+            const scoredNetwork = scoreReaderCandidate(fromNetworkCandidate(networkCandidate));
+            appendAttempt(trace, {
+                source: 'network_api',
+                verdict: scoredNetwork.verdict,
+                url: networkCandidate.finalUrl,
+                status: networkCandidate.status,
+                reason: `score:${scoredNetwork.score}`,
+                evidence: scoredNetwork.evidence,
+                warnings: networkCandidate.warnings || [],
+            });
+        }
+        return result;
+    } catch (error) {
+        if (error instanceof BrowserRequiredError || (/** @type {any} */ (error))?.code === 'browser_required') {
+            appendAttempt(trace, {
+                source: 'browser',
+                verdict: 'browser_required',
+                url,
+                reason: (/** @type {any} */ (error)).message,
+            });
+            return null;
+        }
+        throw error;
+    }
 }

@@ -21,6 +21,7 @@ aliases: [agbrowse commands, agbrowse CLI 표면, web-ai commands]
 | Skill installation | `skills`, `skills list`, `skills get`, `skills path`, `skills install`, `install-skills` | bundled agent skill 조회와 설치 |
 | Lifecycle | `start`, `stop`, `status`, `reset` | Chrome CDP lifecycle |
 | Observe | `snapshot`, `screenshot`, `text`, `get-dom` | DOM/ref/text/screenshot 관찰 |
+| URL read | `fetch` | candidate URL을 public endpoint, HTTP fetch, metadata, optional reader, browser render/network 후보로 읽음. Generic search 아님 |
 | Act | `click`, `type`, `press`, `hover`, `select`, `check`, `uncheck`, `drag`, `mouse-click`, `move-mouse`, `mouse-down`, `mouse-up` | ref 기반 또는 coordinate 기반 mutation |
 | Navigate | `navigate`, `reload`, `resize`, `tabs`, `tab-switch`, `select-tab`, `new-tab`, `tab-close`, `tab-cleanup`, `scroll` | navigation, viewport, tab 관리 (multi-tab create/close 포함) |
 | Wait | `wait`, `wait-for-selector`, `wait-for-text`, `wait-for` | time, selector, text, legacy ref wait |
@@ -28,6 +29,27 @@ aliases: [agbrowse commands, agbrowse CLI 표면, web-ai commands]
 | Web AI | `web-ai` | provider workflow subcommand |
 
 ## Web-AI Commands
+
+## Adaptive Fetch
+
+`agbrowse fetch <url>`은 검색기가 아니라 URL reader다. Search tool이나
+사용자가 이미 준 candidate URL 하나를 읽어서 JSON/human evidence를 반환한다.
+
+| 옵션 | 역할 |
+| --- | --- |
+| `--json` | parseable result envelope 출력 |
+| `--trace` | validation/public endpoint/fetch/reader/browser/network attempt 포함 |
+| `--browser auto|never|required` | browser escalation policy |
+| `--browser-session none|isolated|existing` | browser session/cookie boundary |
+| `--allow-third-party-reader` | Jina Reader 류 public reader를 명시 opt-in |
+| `--no-public-endpoints` | known public endpoint resolver skip |
+
+기본값은 non-browser fetch를 먼저 시도하고, 강한 결과가 없을 때만 browser
+escalation을 고려한다. `existing` session과 third-party reader는 모두 명시
+opt-in이다. CAPTCHA/login/paywall marker가 있어도 public endpoint, metadata,
+non-browser, isolated browser, network candidate를 계속 시도할 수 있지만,
+challenge solving, login/paywall crossing, stealth, private credential 사용은
+금지한다.
 
 | 명령 | Browser 필요 | 역할 |
 | --- | ---: | --- |

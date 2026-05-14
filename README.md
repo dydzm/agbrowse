@@ -12,6 +12,7 @@ workflow. It gives an agent a small CLI surface for:
 - DOM/ref based browser control
 - screenshots and coordinate clicks
 - console/network/DOM diagnostics
+- adaptive reading for one candidate URL via `agbrowse fetch`
 - structured web-ai prompt rendering
 - live ChatGPT, Gemini, and Grok web UI execution
 - file upload and context-package upload for implemented providers
@@ -87,6 +88,7 @@ Beta surfaces:
 
 Experimental or deferred surfaces:
 
+- adaptive URL fetch (`agbrowse fetch <url>`) as a URL reader, not search
 - hosted/cloud browser operation
 - remote `external-cdp` provider mode
 - broader MCP production bridge beyond the listed tools
@@ -124,8 +126,27 @@ Direct local usage without linking:
 
 ```bash
 node skills/browser/browser.mjs status
+node skills/browser/browser.mjs fetch https://example.com --json --trace
 node skills/browser/browser.mjs web-ai render --vendor chatgpt --prompt "hello"
 ```
+
+## Adaptive URL Fetch
+
+`agbrowse fetch <url>` reads one candidate URL and returns evidence. It is useful
+after a search tool or user has produced a URL.
+
+```bash
+agbrowse fetch "https://example.com/article"
+agbrowse fetch "https://example.com/article" --json --trace
+agbrowse fetch "https://example.com/article" --browser never
+agbrowse fetch "https://example.com/article" --browser required
+agbrowse fetch "https://example.com/article" --allow-third-party-reader
+```
+
+It tries public endpoints, HTTP fetch, metadata extraction, optional public
+readers, browser render, and network JSON candidates. It does not solve
+CAPTCHA, cross logins/paywalls, use stealth, or use existing cookies unless the
+user explicitly requests that session boundary.
 
 ## Requirements
 

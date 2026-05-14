@@ -1,6 +1,6 @@
 ---
 created: 2026-05-14
-status: planning
+status: implemented-v1
 tags: [jawdev, adaptive-fetch, web-research, browser, source-analysis]
 upstream: https://github.com/fivetaku/insane-search
 upstream_commit: b4ab9384399a8df58503268764ba43ed5520156d
@@ -16,8 +16,14 @@ page, empty SPA shell, weak metadata, or platform-specific content that is bette
 served through a public endpoint.
 
 This folder was copied from the cli-jaw planning set into agbrowse so the first
-implementation can be planned against agbrowse's own browser/CDP runtime. This
-is still a planning folder only. No implementation has been added by this copy.
+implementation could be planned against agbrowse's own browser/CDP runtime.
+
+As of 2026-05-15, the agbrowse v1 implementation exists in the repository under
+`skills/browser/adaptive-fetch/` and is exposed through:
+
+```bash
+agbrowse fetch <url>
+```
 
 ## agbrowse-First Decision
 
@@ -105,6 +111,46 @@ high-risk bypass behavior explicitly out of scope.
 | `18_grok_borrowed_patterns_integration_plan.md` | Exact plan for folding non-insane-search Grok findings into agbrowse. |
 | `19_phased_diff_implementation_plan.md` | Phase 01-04 diff plan: core, readers, scorer, third-party reader. |
 | `20_phased_diff_browser_docs_closeout_plan.md` | Phase 05-07 diff plan: browser escalation, docs, gates, mirror readiness. |
+
+## Implemented Result
+
+The shipped v1 follows the approved agbrowse-first direction:
+
+- `skills/browser/adaptive-fetch/*.mjs` implements validation, safety flags,
+  trace records, public endpoint candidates, neutral fetch/metadata transforms,
+  reader adapters, scoring, opt-in third-party reader support, browser
+  escalation, network JSON candidate discovery, and challenge classification.
+- `skills/browser/browser.mjs` exposes `fetch <url>` as the browser-family CLI
+  subcommand.
+- `skills/browser/SKILL.md`, `README.md`, `structure/commands.md`, and
+  `structure/CAPABILITY_TRUTH_TABLE.md` document the boundary: search tools find
+  candidate URLs; `agbrowse fetch` reads and validates one known URL.
+- Unit and integration tests cover validators, trace redaction, endpoint
+  candidates, transforms, reader adapters, scorer behavior, third-party reader
+  opt-in, CLI help, and command-level browser-mode contracts.
+
+The implementation intentionally stays native to this repository: ES modules,
+no Python `curl_cffi` port, no dependency auto-install, and no automatic use of
+existing cookies or profile state.
+
+## Mirror Contract
+
+cli-jaw should mirror the proven agbrowse shape rather than re-decide the
+product boundary. Preserve these result keys when implementing or wrapping the
+feature there:
+
+```text
+ok, verdict, source, finalUrl, title, content, summary, attempts, evidence,
+metadata, warnings, safetyFlags, browserMode, browserSession, chromeUsed,
+chromeRequired
+```
+
+The mirror should also preserve the same trigger rule:
+
+```text
+generic search -> native search first
+known URL / search result URL / blocked fetch -> adaptive URL fetch
+```
 
 ## Recommended Shape
 

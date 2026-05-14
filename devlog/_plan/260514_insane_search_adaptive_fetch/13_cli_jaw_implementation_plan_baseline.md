@@ -195,3 +195,55 @@ The skill should teach agents:
 - No login/paywall bypass.
 - No bulk crawler.
 - No MCP browser tool registration.
+
+## agbrowse Implementation Result — 2026-05-15
+
+The first build landed in agbrowse, not cli-jaw. That was intentional: agbrowse
+already owns the browser/CDP runtime and can prove the URL-reader behavior before
+cli-jaw mirrors it.
+
+Actual agbrowse paths:
+
+```text
+skills/browser/adaptive-fetch/index.mjs
+skills/browser/adaptive-fetch/safety.mjs
+skills/browser/adaptive-fetch/validators.mjs
+skills/browser/adaptive-fetch/trace.mjs
+skills/browser/adaptive-fetch/endpoint-resolvers.mjs
+skills/browser/adaptive-fetch/fetcher.mjs
+skills/browser/adaptive-fetch/metadata.mjs
+skills/browser/adaptive-fetch/transforms.mjs
+skills/browser/adaptive-fetch/reader-adapters.mjs
+skills/browser/adaptive-fetch/content-scorer.mjs
+skills/browser/adaptive-fetch/third-party-readers.mjs
+skills/browser/adaptive-fetch/browser-runtime.mjs
+skills/browser/adaptive-fetch/browser-escalation.mjs
+skills/browser/adaptive-fetch/challenge-detector.mjs
+skills/browser/browser.mjs
+```
+
+Actual agbrowse command:
+
+```bash
+agbrowse fetch "<url>" --json --trace --browser auto --browser-session none
+```
+
+The cli-jaw mirror should now treat this baseline as a porting target:
+
+- use `cli-jaw browser fetch <url>` as the mirror command;
+- keep the same search-versus-URL boundary;
+- keep third-party readers opt-in;
+- keep browser modes explicit;
+- keep existing profile/cookie reads behind explicit opt-in;
+- preserve the traceable result envelope.
+
+Required result keys for the mirror:
+
+```text
+ok, verdict, source, finalUrl, title, content, summary, attempts, evidence,
+metadata, warnings, safetyFlags, browserMode, browserSession, chromeUsed,
+chromeRequired
+```
+
+The mirror may be implemented in TypeScript, but it should not change behavior
+just because the target language differs.

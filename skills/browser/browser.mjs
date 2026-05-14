@@ -2004,6 +2004,12 @@ async function mouseUp(port, opts = {}) {
 const sub = process.argv[2];
 const browserDeps = {
     getPage: () => getReadyPage(getPort()),
+    createIsolatedPage: async () => {
+        const { browser } = await connectCdp(getPort());
+        const context = await browser.newContext();
+        const page = await context.newPage();
+        return { page, cleanup: async () => context.close().catch(() => undefined) };
+    },
     getCdpSession: () => getCdpSession(getPort()),
     getPort: () => getPort(),
     getTargetId: () => getActiveTargetId(getPort()),

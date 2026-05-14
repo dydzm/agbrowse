@@ -154,3 +154,45 @@ Correct behavior:
 ```text
 search query → native search → candidate URLs → browser fetch selected URLs
 ```
+
+## agbrowse Skill Status — 2026-05-15
+
+`skills/browser/SKILL.md` now reflects the agbrowse v1 surface.
+
+Active command examples:
+
+```bash
+agbrowse fetch "https://example.com"
+agbrowse fetch "https://example.com" --json --trace
+agbrowse fetch "https://example.com" --browser never
+agbrowse fetch "https://example.com" --browser required --browser-session isolated
+agbrowse fetch "https://example.com" --allow-third-party-reader
+```
+
+The active skill wording now routes these cases toward adaptive fetch:
+
+- a URL is already present;
+- a search-result URL needs extraction;
+- a normal fetch produced 402/403, blocked content, or an empty shell;
+- public API, RSS, metadata, JSON-LD, or browser-network evidence is needed;
+- the user asks to inspect a specific Reddit, GitHub, YouTube, RSS, source, or
+  citation URL.
+
+The active skill wording still keeps these out of adaptive fetch until a URL
+exists:
+
+- broad topic search;
+- "latest news" style requests;
+- "what are people saying" style research;
+- general discovery without candidate links.
+
+Boundary wording is intentionally phrased as "keep trying legitimate
+representations" rather than "stop as soon as a CAPTCHA/login/paywall marker is
+seen". The implementation may continue through public endpoint, RSS, metadata,
+neutral fetch, and non-auth browser rendering. It must not solve challenges,
+cross login/paywall boundaries, claim stealth behavior, or use existing profile
+state unless the user explicitly selects that path.
+
+This means future agents should not treat CAPTCHA/login/paywall words in the
+skill as an anti-pattern that forbids all work. Those words mark the boundary
+where the result must become explicit and evidence-based.

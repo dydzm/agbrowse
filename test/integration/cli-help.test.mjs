@@ -11,6 +11,9 @@ describe.sequential('CLI help', () => {
         expect(result.stdout).toContain('get-dom');
         expect(result.stdout).toContain('console');
         expect(result.stdout).toContain('network');
+        expect(result.stdout).toContain('fetch <url>');
+        expect(result.stdout).toContain('--browser-session none|isolated|existing');
+        expect(result.stdout).toContain('Not generic search');
         expect(result.stdout).toContain('move-mouse');
         expect(result.stdout).toContain('mouse-down');
         expect(result.stdout).toContain('mouse-up');
