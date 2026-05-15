@@ -249,6 +249,88 @@ describe('adaptive fetch browser escalation', () => {
         expect(result.warnings).toContain('body-exceeds-max-bytes');
         expect(canceled).toBe(true);
     });
+    it('detects challenge in direct fetch and records it in trace', async () => {
+        const result = await runAdaptiveFetch({
+            url: 'https://example.com/protected',
+            browserMode: 'never',
+            publicEndpoints: false,
+            trace: true,
+        }, {
+            fetch: async () => new Response(
+                '<html><title>Just a moment...</title>Checking your browser before accessing</html>',
+                { status: 403, headers: { 'content-type': 'text/html', 'server': 'cloudflare', 'cf-ray': '123-LAX' } },
+            ),
+        });
+        expect(result.ok).toBe(false);
+        expect(result.attempts.some(a => a.verdict === 'challenge')).toBe(true);
+    });
+
+    it('user session mode navigates with existing page dependency', async () => {
+        const result = await runAdaptiveFetch({
+            url: 'https://example.com/paywalled',
+            browserMode: 'auto',
+            browserSession: 'user',
+            publicEndpoints: false,
+            trace: true,
+        }, {
+            fetch: async () => new Response(
+                '<html><p>Subscribe to read more. Members only.</p></html>',
+                { status: 200, headers: { 'content-type': 'text/html' } },
+            ),
+            getPage: async () => fakePage({
+                text: 'Full article behind paywall '.repeat(120),
+                title: 'Premium Article',
+            }),
+        });
+        expect(result.ok).toBe(true);
+        expect(result.verdict).toBe('strong_ok');
+    });
+
+    it('challenge detection does not cause early return from scheduler', async () => {
+        const result = await runAdaptiveFetch({
+            url: 'https://example.com/cf',
+            browserMode: 'required',
+            browserSession: 'isolated',
+            publicEndpoints: false,
+            trace: true,
+        }, {
+            fetch: async () => new Response(
+                '<html>Checking your browser captcha cloudflare</html>',
+                { status: 403, headers: { 'content-type': 'text/html' } },
+            ),
+            createIsolatedPage: async () => ({
+                page: fakePage({
+                    text: 'Real article content after challenge resolved '.repeat(100),
+                    title: 'Article Title',
+                }),
+                cleanup: async () => undefined,
+            }),
+        });
+        expect(result.ok).toBe(true);
+        expect(result.source).toBe('browser');
+        expect(result.chromeUsed).toBe(true);
+    });
+
+    it('safetyFlags propagate from winning candidate to final result', async () => {
+        const result = await runAdaptiveFetch({
+            url: 'https://example.com/paywall',
+            browserMode: 'auto',
+            browserSession: 'user',
+            publicEndpoints: false,
+            trace: true,
+        }, {
+            fetch: async () => new Response('<p>Short</p>', {
+                status: 200,
+                headers: { 'content-type': 'text/html' },
+            }),
+            getPage: async () => fakePage({
+                text: 'Full article with user session '.repeat(120),
+                title: 'User Session Article',
+            }),
+        });
+        expect(result.ok).toBe(true);
+        expect(result.safetyFlags).toContain('user_session_used');
+    });
 });
 
 function fakePage({ text = '', title = '', url = 'https://example.com/rendered', networkCandidates = [], navResponse = undefined }) {

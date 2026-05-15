@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateFetchUrl } from '../../skills/browser/adaptive-fetch/safety.mjs';
+import { validateFetchUrl, dnsRebindingGuard } from '../../skills/browser/adaptive-fetch/safety.mjs';
 import { classifyBoundarySignals, classifyHtmlStrength } from '../../skills/browser/adaptive-fetch/validators.mjs';
 
 describe('adaptive fetch validators', () => {
@@ -41,5 +41,18 @@ describe('adaptive fetch validators', () => {
         expect(classifyBoundarySignals({ status: 401 }).verdict).toBe('auth_required');
         expect(classifyBoundarySignals({ status: 402 }).verdict).toBe('paywall');
         expect(classifyBoundarySignals({ status: 403, text: 'captcha required' }).verdict).toBe('challenge');
+    });
+
+    it('dnsRebindingGuard passes for public IPs', async () => {
+        await expect(dnsRebindingGuard('8.8.8.8')).resolves.toBeUndefined();
+    });
+
+    it('dnsRebindingGuard rejects localhost hostnames', async () => {
+        await expect(dnsRebindingGuard('localhost')).rejects.toThrow(/private or local host/);
+        await expect(dnsRebindingGuard('evil.localhost')).rejects.toThrow(/private or local host/);
+    });
+
+    it('dnsRebindingGuard rejects .local hostnames', async () => {
+        await expect(dnsRebindingGuard('printer.local')).rejects.toThrow(/private or local host/);
     });
 });

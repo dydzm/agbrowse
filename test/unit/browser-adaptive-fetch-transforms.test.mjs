@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runAdaptiveFetch } from '../../skills/browser/adaptive-fetch/index.mjs';
+import { getIdentityHeaders } from '../../skills/browser/adaptive-fetch/fetcher.mjs';
 import { extractFeedUrls, extractMetadataFromHtml, extractOembedUrls } from '../../skills/browser/adaptive-fetch/metadata.mjs';
 import { dedupeCandidateUrls, htmlToReadableText } from '../../skills/browser/adaptive-fetch/transforms.mjs';
 
@@ -124,5 +125,46 @@ describe('adaptive fetch transforms and metadata', () => {
         expect(result.source).toBe('public_endpoint');
         expect(result.finalUrl).toBe('https://example.com/oembed.json');
         expect(result.attempts.some(a => a.url === 'https://example.com/oembed.json')).toBe(true);
+    });
+
+    it('auto identity sends browser-grade headers with Sec-Fetch-*', () => {
+        const headers = getIdentityHeaders('auto');
+        expect(headers['User-Agent']).toContain('Chrome/');
+        expect(headers['Sec-Fetch-Dest']).toBe('document');
+        expect(headers['Sec-Fetch-Mode']).toBe('navigate');
+        expect(headers['Accept-Language']).toContain('en-US');
+    });
+
+    it('minimal identity sends bare accept header without Sec-Fetch', () => {
+        const headers = getIdentityHeaders('minimal');
+        expect(headers['Accept']).toBeDefined();
+        expect(headers['Sec-Fetch-Dest']).toBeUndefined();
+        expect(headers['User-Agent']).toBeUndefined();
+    });
+
+    it('chrome identity sends browser-grade headers', () => {
+        const headers = getIdentityHeaders('chrome');
+        expect(headers['User-Agent']).toContain('Chrome/');
+        expect(headers['Sec-Fetch-Dest']).toBe('document');
+    });
+
+    it('identity option flows through to fetch result', async () => {
+        let capturedHeaders;
+        const result = await runAdaptiveFetch({
+            url: 'https://example.com/article',
+            publicEndpoints: false,
+            identity: 'auto',
+        }, {
+            fetch: async (_url, init) => {
+                capturedHeaders = init?.headers;
+                return new Response('<article><h1>Title</h1><p>Body ' + 'x'.repeat(500) + '</p></article>', {
+                    status: 200,
+                    headers: { 'content-type': 'text/html' },
+                });
+            },
+        });
+        expect(result.ok).toBe(true);
+        expect(result.identity).toBe('auto');
+        expect(capturedHeaders?.['Sec-Fetch-Dest']).toBe('document');
     });
 });

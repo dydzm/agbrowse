@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
     fromBrowserResult,
     fromFetchResult,
+    fromHumanResolvedResult,
     fromMetadataResult,
     fromNetworkCandidate,
     fromPublicEndpointResult,
+    normalizeReaderCandidate,
     normalizeReaderCandidates,
 } from '../../skills/browser/adaptive-fetch/reader-adapters.mjs';
 
@@ -34,6 +36,41 @@ describe('adaptive fetch reader adapters', () => {
         ]);
         expect(candidates.map(c => c.source)).toEqual(['metadata', 'public_endpoint', 'browser', 'network_api']);
         expect(candidates.every(c => typeof c.text === 'string')).toBe(true);
+    });
+
+    it('normalizeReaderCandidate preserves safetyFlags array', () => {
+        const candidate = normalizeReaderCandidate({
+            source: 'browser_user',
+            finalUrl: 'https://example.com',
+            text: 'content',
+            safetyFlags: ['user_session_used'],
+        });
+        expect(candidate.safetyFlags).toEqual(['user_session_used']);
+    });
+
+    it('normalizeReaderCandidate defaults safetyFlags to empty array', () => {
+        const candidate = normalizeReaderCandidate({
+            source: 'fetch',
+            finalUrl: 'https://example.com',
+            text: 'content',
+        });
+        expect(candidate.safetyFlags).toEqual([]);
+    });
+
+    it('fromHumanResolvedResult produces correct shape with safety flags', () => {
+        const candidate = fromHumanResolvedResult({
+            finalUrl: 'https://example.com/article',
+            title: 'Article Title',
+            text: 'Full article text after human resolved challenge',
+            contentType: 'text/html',
+            status: 200,
+        });
+        expect(candidate.source).toBe('human_resolved');
+        expect(candidate.label).toBe('human-resolved');
+        expect(candidate.safetyFlags).toEqual(['user_session_used', 'human_action_taken']);
+        expect(candidate.evidence).toContain('human-resolved-challenge');
+        expect(candidate.ok).toBe(true);
+        expect(candidate.text).toContain('Full article text');
     });
 });
 

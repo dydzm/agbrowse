@@ -46,5 +46,34 @@ describe('adaptive fetch content scorer', () => {
         expect(verdictFromScore({ score: 25 })).toBe('weak_ok');
         expect(verdictFromScore({ score: 5 })).toBe('blocked');
     });
+
+    it('scores human_resolved and browser_user sources with appropriate trust', () => {
+        const humanResolved = scoreReaderCandidate({
+            source: 'human_resolved',
+            finalUrl: 'https://example.com/',
+            title: 'Detailed article title',
+            text: 'Article body '.repeat(200),
+            rawTextLength: 2800,
+            evidence: ['human-resolved-challenge'],
+        });
+        const browserUser = scoreReaderCandidate({
+            source: 'browser_user',
+            finalUrl: 'https://example.com/',
+            title: 'Detailed article title',
+            text: 'Article body '.repeat(200),
+            rawTextLength: 2800,
+            evidence: ['user-session-render'],
+        });
+        const regularBrowser = scoreReaderCandidate({
+            source: 'browser',
+            finalUrl: 'https://example.com/',
+            title: 'Detailed article title',
+            text: 'Article body '.repeat(200),
+            rawTextLength: 2800,
+            evidence: ['browser-render'],
+        });
+        expect(humanResolved.score).toBeGreaterThan(regularBrowser.score);
+        expect(browserUser.score).toBeGreaterThan(regularBrowser.score);
+    });
 });
 

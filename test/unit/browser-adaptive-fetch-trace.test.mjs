@@ -31,4 +31,20 @@ describe('adaptive fetch trace', () => {
         appendAttempt(trace, { source: 'validation', verdict: 'unsupported' });
         expect(summarizeAttempts(trace.attempts)).toContain('last source=validation');
     });
+
+    it('records identity field in trace', () => {
+        const trace = createAttemptTrace({
+            url: 'https://example.com/',
+            browserMode: 'auto',
+            browserSession: 'user',
+            identity: 'chrome',
+        });
+        expect(trace.identity).toBe('chrome');
+        expect(trace.browserSession).toBe('user');
+    });
+
+    it('defaults identity to auto when not provided', () => {
+        const trace = createAttemptTrace({ url: 'https://example.com/' });
+        expect(trace.identity).toBe('auto');
+    });
 });
