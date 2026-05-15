@@ -180,6 +180,32 @@ describe('adaptive fetch browser escalation', () => {
         expect(result.attempts.some(a => a.source === 'browser' && a.status === 404)).toBe(true);
     });
 
+    it('does not treat browser-rendered 500 bodies as successful content', async () => {
+        const result = await runAdaptiveFetch({
+            url: 'https://example.com/error',
+            browserMode: 'required',
+            browserSession: 'isolated',
+            trace: true,
+        }, {
+            createIsolatedPage: async () => ({
+                page: fakePage({
+                    url: 'https://example.com/error',
+                    title: 'Server Error',
+                    text: 'Server error '.repeat(1000),
+                    navResponse: {
+                        status: () => 500,
+                        ok: () => false,
+                        headers: () => ({ 'content-type': 'text/html' }),
+                    },
+                }),
+                cleanup: async () => undefined,
+            }),
+        });
+        expect(result.ok).toBe(false);
+        expect(result.verdict).toBe('blocked');
+        expect(result.attempts.some(a => a.source === 'browser' && a.status === 500)).toBe(true);
+    });
+
     it('continues to direct fetch when a public endpoint candidate throws', async () => {
         const result = await runAdaptiveFetch({
             url: 'https://github.com/org/repo',

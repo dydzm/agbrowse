@@ -50,4 +50,23 @@ describe('adaptive fetch endpoint resolvers', () => {
             'hacker-news-algolia-item-api',
         ]);
     });
+
+    it('resolves registry and academic endpoint shapes', () => {
+        expect(resolvePublicEndpointCandidates('https://www.npmjs.com/package/lodash')[0]).toMatchObject({
+            label: 'npm-registry',
+            url: 'https://registry.npmjs.org/lodash',
+        });
+        expect(resolvePublicEndpointCandidates('https://www.npmjs.com/package/@npmcli/arborist')[0]).toMatchObject({
+            label: 'npm-registry',
+            url: 'https://registry.npmjs.org/%40npmcli%2Farborist',
+        });
+        expect(resolvePublicEndpointCandidates('https://pypi.org/project/requests/')[0]).toMatchObject({
+            label: 'pypi-json',
+            url: 'https://pypi.org/pypi/requests/json',
+        });
+        expect(resolvePublicEndpointCandidates('https://arxiv.org/abs/2402.03300')[0]).toMatchObject({
+            label: 'arxiv-api',
+            url: 'https://export.arxiv.org/api/query?id_list=2402.03300',
+        });
+    });
 });

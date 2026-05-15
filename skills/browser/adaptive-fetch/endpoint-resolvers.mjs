@@ -103,7 +103,10 @@ function wikipediaCandidates(url) {
 function registryCandidates(url) {
     const parts = url.pathname.split('/').filter(Boolean);
     if (url.hostname === 'www.npmjs.com' && parts[0] === 'package' && parts[1]) {
-        return [{ label: 'npm-registry', url: `https://registry.npmjs.org/${encodeURIComponent(parts[1])}`, source: 'public_endpoint' }];
+        const packageName = parts[1].startsWith('@') && parts[2]
+            ? `${parts[1]}/${parts[2]}`
+            : parts[1];
+        return [{ label: 'npm-registry', url: `https://registry.npmjs.org/${encodeURIComponent(packageName)}`, source: 'public_endpoint' }];
     }
     if (url.hostname === 'pypi.org' && parts[0] === 'project' && parts[1]) {
         return [{ label: 'pypi-json', url: `https://pypi.org/pypi/${encodeURIComponent(parts[1])}/json`, source: 'public_endpoint' }];
