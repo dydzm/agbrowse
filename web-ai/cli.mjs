@@ -78,7 +78,7 @@ Provider:
   --url <url>         Navigate or verify the provider URL before mutation
   --model <alias>     Provider model alias; aliases below
                         ChatGPT: instant, thinking, pro  (default for chatgpt: pro)
-                        Gemini  models: fast, thinking, pro
+                        Gemini  models: flash-lite, flash, pro
                         Gemini  tool:   deepthink
                         Grok:   auto, fast, expert, thinking, heavy
   --effort <alias>    ChatGPT reasoning effort. The reasoning-effort menu is
@@ -1197,9 +1197,12 @@ function rejectFutureScope(values) {
  */
 function isSupportedWebAiModel(vendor, model) {
     const key = String(model || '').trim().toLowerCase();
+    if (String(vendor || 'chatgpt') === 'gemini' && /^(?:gemini\s+)?(?:\d+(?:\.\d+)?\s+)?(?:flash[-_\s]?lite|flash|pro)$/.test(key)) {
+        return true;
+    }
     const byVendor = {
         chatgpt: new Set(['instant', 'fast', 'gpt-5-3', 'gpt-5.3', 'thinking', 'think', 'gpt-5-5-thinking', 'gpt-5.5-thinking', 'pro', 'gpt-5-5-pro', 'gpt-5.5-pro']),
-        gemini: new Set(['fast', 'flash', 'gemini-fast', 'thinking', 'think', 'gemini-thinking', 'pro', 'gemini-pro', '3.1-pro', 'deepthink', 'deep-think', 'deep_think', 'deep think', 'gemini-deepthink', 'gemini-deep-think']),
+        gemini: new Set(['fast', 'flash-lite', 'flash_lite', 'flash lite', 'gemini-fast', 'gemini-flash-lite', 'gemini-flash_lite', 'gemini flash lite', 'flash', 'gemini-flash', 'thinking', 'think', 'gemini-thinking', 'pro', 'gemini-pro', 'deepthink', 'deep-think', 'deep_think', 'deep think', 'gemini-deepthink', 'gemini-deep-think']),
         grok: new Set(['auto', 'automatic', 'fast', 'quick', 'expert', 'thinking', 'think', 'grok-4.3', 'grok43', 'grok-43', 'beta', 'heavy']),
     };
     return Boolean((/** @type {any} */ (byVendor))[String(vendor || 'chatgpt')]?.has(key));

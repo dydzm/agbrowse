@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { GEMINI_DEEP_THINK_CONSTRAINTS } from '../../web-ai/vendor-editor-contract.mjs';
 import { CONVERSATION_TURN_SELECTOR, INPUT_SELECTORS } from '../../web-ai/chatgpt-composer.mjs';
+import { normalizeGeminiModelChoice } from '../../web-ai/gemini-model.mjs';
 
 describe('web-ai Gemini Deep Think contract constraints', () => {
     it('keeps Gemini selectors separate from ChatGPT composer selectors', () => {
@@ -37,10 +38,21 @@ describe('web-ai Gemini Deep Think contract constraints', () => {
         expect(modelSrc).toContain('bard-mode-option-fast');
         expect(modelSrc).toContain('bard-mode-option-thinking');
         expect(modelSrc).toContain('bard-mode-option-pro');
+        expect(modelSrc).toContain('flash-lite');
         expect(modelSrc).toContain('deepthink');
         expect(modelSrc).toContain('isGeminiDeepThinkChoice');
+        expect(modelSrc).not.toContain('3.1-pro');
         expect(liveSrc).toContain('selectGeminiModel');
         expect(liveSrc).toContain('model selected:');
+    });
+
+    it('normalizes Gemini model labels without pinning the version number', () => {
+        expect(normalizeGeminiModelChoice('flash-lite')).toBe('flash-lite');
+        expect(normalizeGeminiModelChoice('3.1 Flash-Lite')).toBe('flash-lite');
+        expect(normalizeGeminiModelChoice('3 Flash')).toBe('flash');
+        expect(normalizeGeminiModelChoice('3.1 Pro')).toBe('pro');
+        expect(normalizeGeminiModelChoice('3.2 Pro')).toBe('pro');
+        expect(normalizeGeminiModelChoice('thinking')).toBe('pro');
     });
 
     it('retries Gemini new-chat clicks when the Angular nav element detaches mid-click', () => {

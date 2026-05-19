@@ -562,9 +562,13 @@ agbrowse web-ai query \
 
 Model aliases:
 
-- `fast`, `flash`, `gemini-fast`
-- `thinking`, `think`, `gemini-thinking` selects the Gemini 3 Flash Thinking model
-- `pro`, `gemini-pro`, `3.1-pro`
+- `flash-lite`, `fast`, `gemini-fast`
+- `flash`, `gemini-flash`
+- `pro`, `gemini-pro`
+- `thinking`, `think`, `gemini-thinking` are legacy compatibility aliases for `pro`
+
+Versioned UI labels such as Gemini 3.n Pro are normalized internally; prefer the
+stable aliases above.
 
 Tool aliases:
 

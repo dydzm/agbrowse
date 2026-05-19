@@ -4,7 +4,7 @@ import { WebAiError } from './errors.mjs';
 
 /** @typedef {import('playwright-core').Page} Page */
 /** @typedef {import('playwright-core').Locator} Locator */
-/** @typedef {'fast'|'thinking'|'pro'} GeminiModelChoice */
+/** @typedef {'flash-lite'|'flash'|'pro'} GeminiModelChoice */
 /**
  * @typedef {{
  *   requested: string,
@@ -22,15 +22,21 @@ import { WebAiError } from './errors.mjs';
 
 /** @type {Record<string, string>} */
 export const GEMINI_MODEL_ALIASES = {
-    fast: 'fast',
-    flash: 'fast',
-    'gemini-fast': 'fast',
-    thinking: 'thinking',
-    think: 'thinking',
-    'gemini-thinking': 'thinking',
+    fast: 'flash-lite',
+    'flash-lite': 'flash-lite',
+    'flash_lite': 'flash-lite',
+    'flash lite': 'flash-lite',
+    'gemini-fast': 'flash-lite',
+    'gemini-flash-lite': 'flash-lite',
+    'gemini-flash_lite': 'flash-lite',
+    'gemini flash lite': 'flash-lite',
+    flash: 'flash',
+    'gemini-flash': 'flash',
+    thinking: 'pro',
+    think: 'pro',
+    'gemini-thinking': 'pro',
     pro: 'pro',
     'gemini-pro': 'pro',
-    '3.1-pro': 'pro',
 };
 
 /** @type {Set<string>} */
@@ -51,8 +57,8 @@ const MODE_BUTTONS = [
 
 /** @type {Record<string, { testId: string, labels: string[] }>} */
 const MODE_OPTIONS = {
-    fast: { testId: 'bard-mode-option-fast', labels: ['Fast'] },
-    thinking: { testId: 'bard-mode-option-thinking', labels: ['Thinking'] },
+    'flash-lite': { testId: 'bard-mode-option-fast', labels: ['Flash-Lite', 'Flash Lite'] },
+    flash: { testId: 'bard-mode-option-thinking', labels: ['Flash'] },
     pro: { testId: 'bard-mode-option-pro', labels: ['Pro'] },
 };
 
@@ -63,7 +69,7 @@ const MODE_OPTIONS = {
 export function normalizeGeminiModelChoice(model) {
     const key = String(model || '').trim().toLowerCase();
     if (!key) return null;
-    return GEMINI_MODEL_ALIASES[key] || null;
+    return GEMINI_MODEL_ALIASES[key] || normalizeGeminiModelLabel(key);
 }
 
 /**
@@ -105,7 +111,8 @@ export async function selectGeminiModel(page, model) {
  * @param {string[]} usedFallbacks
  */
 async function openGeminiModelMenu(page, usedFallbacks) {
-    const modeItems = page.locator('[data-test-id^="bard-mode-option-"], [role="menuitem"]').filter({ hasText: /^Fast\b|^Thinking\b|^Pro\b/i });
+    const modeItems = page.locator('[data-test-id^="bard-mode-option-"], [role="menuitem"], [role="option"], button')
+        .filter({ hasText: /Flash|Pro|Thinking/i });
     if (await modeItems.first().isVisible().catch(() => false)) return;
     const deadline = Date.now() + 5_000;
     while (Date.now() < deadline) {
@@ -119,7 +126,7 @@ async function openGeminiModelMenu(page, usedFallbacks) {
         await page.waitForTimeout(150).catch(() => undefined);
     }
     usedFallbacks.push('mode-menu-text-button');
-    const textButton = page.locator('button').filter({ hasText: /^Fast$|^Thinking$|^Pro$/i }).first();
+    const textButton = page.locator('button').filter({ hasText: /Flash|Pro|Thinking/i }).first();
     if (await textButton.isVisible().catch(() => false)) {
         await textButton.click({ timeout: 5_000 });
         await page.waitForTimeout(350).catch(() => undefined);
@@ -146,14 +153,16 @@ async function findGeminiModelOption(page, choice) {
     while (Date.now() < deadline) {
         const byTestId = page.locator(`[data-test-id="${option.testId}"]`).first();
         if (await byTestId.isVisible().catch(() => false)) return byTestId;
-        const candidates = await page.locator('[role="menuitem"], button').all().catch(() => []);
+        const candidates = await page.locator('[role="menuitem"], [role="option"], button, [data-test-id^="bard-mode-option-"]').all().catch(() => []);
         for (const label of option.labels) {
-            const pattern = new RegExp(`^${label}\\b`, 'i');
+            const pattern = geminiModeLabelPattern(label);
             for (const candidate of candidates) {
                 if (!await candidate.isVisible().catch(() => false)) continue;
                 const text = (await candidate.innerText({ timeout: 500 }).catch(() => '')).trim().replace(/\s+/g, ' ');
                 if (pattern.test(text)) return candidate;
             }
+            const byText = page.getByText(pattern).first();
+            if (await byText.isVisible().catch(() => false)) return byText;
         }
         await page.waitForTimeout(150).catch(() => undefined);
     }
@@ -190,8 +199,8 @@ export async function geminiModelCapabilityProbe(page, model) {
 /** @param {Page} page */
 async function closeGeminiModelMenu(page) {
     for (let i = 0; i < 3; i += 1) {
-        const menuVisible = await page.locator('[data-test-id^="bard-mode-option-"], [role="menuitem"]')
-            .filter({ hasText: /^Fast\b|^Thinking\b|^Pro\b/i }).first().isVisible().catch(() => false);
+        const menuVisible = await page.locator('[data-test-id^="bard-mode-option-"], [role="menuitem"], [role="option"], button')
+            .filter({ hasText: /Flash|Pro|Thinking/i }).first().isVisible().catch(() => false);
         if (!menuVisible) return;
         await page.keyboard.press('Escape').catch(() => undefined);
         await page.waitForTimeout(250).catch(() => undefined);
@@ -208,5 +217,28 @@ async function readGeminiModel(page) {
         if (!await loc.isVisible().catch(() => false)) continue;
         return normalizeGeminiModelChoice(await loc.innerText({ timeout: 1_000 }).catch(() => ''));
     }
+    return null;
+}
+
+/**
+ * @param {string} label
+ * @returns {RegExp}
+ */
+function geminiModeLabelPattern(label) {
+    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[- ]/g, '[- ]');
+    return new RegExp(`^(?:Gemini\\s*)?(?:\\d+(?:\\.\\d+)?\\s+)?${escaped}\\b`, 'i');
+}
+
+/**
+ * @param {string} label
+ * @returns {GeminiModelChoice|null}
+ */
+function normalizeGeminiModelLabel(label) {
+    const normalized = String(label || '').trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+    const withoutVendor = normalized.replace(/^gemini\s+/, '');
+    const withoutVersion = withoutVendor.replace(/^\d+(?:\.\d+)?\s+/, '');
+    if (/^flash lite\b/.test(withoutVersion)) return 'flash-lite';
+    if (/^flash\b/.test(withoutVersion)) return 'flash';
+    if (/^pro\b/.test(withoutVersion)) return 'pro';
     return null;
 }
