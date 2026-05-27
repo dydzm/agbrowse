@@ -66,6 +66,7 @@ graph LR
 ## 동기화 체크리스트
 
 - [ ] `skills/browser/browser.mjs`의 command help 또는 parser가 바뀌면 [commands.md](commands.md)를 갱신한다.
+- [ ] `agbrowse runway` selector/status/preflight/poll 계약이 바뀌면 [commands.md](commands.md), [runtime_contracts.md](runtime_contracts.md), `skills/browser/SKILL.md`를 같이 갱신한다.
 - [ ] `web-ai/cli.mjs`의 command, provider flag, session behavior가 바뀌면 [commands.md](commands.md)와 [str_func.md](str_func.md)를 갱신한다.
 - [ ] MCP tool schema가 바뀌면 [str_func.md](str_func.md)와 [release_gates.md](release_gates.md)를 갱신한다.
 - [ ] live smoke, provider DOM drift, session recovery, model evidence 같은 실제 작동 취약점이 발견되면 [stability-upgrade/](stability-upgrade/00_index.md)에 상태와 검증 방법을 남긴다.
@@ -86,6 +87,7 @@ graph LR
 
 ## 변경 기록
 
+- 2026-05-27: Runway poll 진행률/queue gate 계약을 `commands.md`, `runtime_contracts.md`, `skills/browser/SKILL.md`와 동기화했다.
 - 2026-05-14: Oracle follow-up 이후 실제 작동 취약점만 추적하는 [stability-upgrade/](stability-upgrade/00_index.md) 폴더를 source-of-truth에 추가했다.
 - 2026-05-06: strict-migration P02–P51 + Phase 22 머지 이후 `str_func.md` 스냅샷, `commands.md` root command 표(`new-tab`, `tab-close`), `release_gates.md`의 `gate:*` named release gate 표를 동기화했다. capability/claim 진실은 [CAPABILITY_TRUTH_TABLE.md](CAPABILITY_TRUTH_TABLE.md)에 모았다.
 - 2026-05-05: Phase 11+ claim status를 [phase_status.md](phase_status.md)에 분리해 partial/deferred phase가 완료로 오해되지 않게 했다.

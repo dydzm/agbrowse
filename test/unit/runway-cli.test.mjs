@@ -204,6 +204,52 @@ describe('runway CLI helpers', () => {
         expect(result.submitEvidence.acceptedAfterBaseline).toBe(true);
     });
 
+    it('treats right-rail percent text as an active Runway generation signal', async () => {
+        const page = {
+            url: () => 'https://app.runwayml.com/ai-tools/generate?mode=tools',
+            title: async () => 'Runway',
+            evaluate: async () => ({
+                textSample: 'All Favorited Downloaded 4K 16 17 18 50%',
+                outputItemCount: 18,
+                outputLabels: ['Seedance 2_0 - A clean cinematic sample.mp4'],
+                activeLabels: [],
+                progressTexts: [],
+                queueGateText: null,
+                readyText: null,
+                hasGenerateButton: true,
+                generateDisabled: false,
+            }),
+        };
+        const result = await inspectRunwayCompletionState(page, { queueLimit: 2, afterCount: 17 });
+        expect(result.state).toBe('active');
+        expect(result.terminal).toBe(false);
+        expect(result.completionSignal).toBe('active-generation-signals');
+        expect(result.activeLabels).toContain('50%');
+    });
+
+    it('keeps two in-progress Runway jobs active instead of terminal queue_full without a queue gate', async () => {
+        const page = {
+            url: () => 'https://app.runwayml.com/ai-tools/generate?mode=tools',
+            title: async () => 'Runway',
+            evaluate: async () => ({
+                textSample: '17 20% 18 50%',
+                outputItemCount: 18,
+                outputLabels: [],
+                activeLabels: ['20%', '50%'],
+                progressTexts: [],
+                queueGateText: null,
+                readyText: null,
+                hasGenerateButton: true,
+                generateDisabled: true,
+            }),
+        };
+        const result = await inspectRunwayCompletionState(page, { queueLimit: 2, afterCount: 16 });
+        expect(result.queue.full).toBe(true);
+        expect(result.state).toBe('active');
+        expect(result.terminal).toBe(false);
+        expect(result.completionSignal).toBe('active-generation-signals');
+    });
+
     it('prints runway poll JSON with the 10 minute default timeout', async () => {
         const page = {
             url: () => 'https://app.runwayml.com/ai-tools/generate?mode=tools',

@@ -21,7 +21,7 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 | 경로 | 파일 수 | 라인 수 | 역할 |
 | --- | ---: | ---: | --- |
 | `bin/` | 2 | 6 | published bin wrapper |
-| `skills/browser/` | 29 | 8851 | Chrome lifecycle, CDP connection, refs, tabs, diagnostics, adaptive fetch v2 |
+| `skills/browser/` | 29 | 8910 | Chrome lifecycle, CDP connection, refs, tabs, diagnostics, adaptive fetch v2, Runway task-runner preflight/poll |
 | `skills/vision-click/` | 3 | 831 | screenshot to coordinate click helper |
 | `skills/web-ai/` | 1 | 493 | bundled agent workflow skill |
 | `web-ai/` | 90 | 20025 | provider automation, sessions, MCP, eval, policy, trace |
@@ -30,7 +30,7 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 | `web-ai/policy/` | 4 | 238 | mutation and content-boundary guardrails |
 | `web-ai/trace/` | 5 | 444 | trace ID, redaction, report, writer helpers |
 | `scripts/` | 9 | 1408 | eval runner, release scripts, named release gates, strict-baseline / module-graph / bin smoke checks |
-| `test/unit/` | 91 | 9080 | deterministic module tests |
+| `test/unit/` | 91 | 9126 | deterministic module tests |
 | `test/integration/` | 16 | 2186 | CLI, MCP, policy, provider fixture tests |
 | `test/e2e/` | 1 | 50 | browser smoke coverage |
 | `test/spec/` | 2 | 35 | high-level contract specs |
@@ -43,7 +43,9 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 
 | 파일 | 라인 수 | 설명 |
 | --- | ---: | --- |
-| `skills/browser/browser.mjs` | 3115 | root CLI parser, Chrome lifecycle, browser primitive commands |
+| `skills/browser/browser.mjs` | 3118 | root CLI parser, Chrome lifecycle, browser primitive commands |
+| `skills/browser/runway.mjs` | 500 | Runway Apps/Custom selector contract, status/open/preflight command surface |
+| `skills/browser/runway-monitor.mjs` | 320 | Runway read-only queue/completion poller and progress signal extraction |
 | `skills/browser/tab-manager.mjs` | 446 | CDP target list, create, close, switch |
 | `skills/browser/tab-lifecycle.mjs` | 382 | idle cleanup, pinned target, duration parsing |
 | `skills/browser/skill-install.mjs` | 372 | bundled skill list/get/install |
@@ -130,5 +132,6 @@ sequenceDiagram
 
 ## 변경 기록
 
+- 2026-05-27: Runway poll progress fix 이후 `skills/browser/`, `test/unit/`, `browser.mjs` line count를 갱신하고 Runway command/poller 주요 파일을 source map에 추가했다.
 - 2026-05-06: 파일 수/라인 수 스냅샷을 strict-migration P02–P51 + Phase 22 머지 이후 기준으로 갱신했고, 새로 추가된 release-gate / strict-baseline / module-graph / bin smoke 스크립트와 EXTERNAL_CDP·migration·traces 문서를 source map에 포함했다.
 - 2026-05-05: 현재 repo 기준 파일 수, 라인 수, 주요 runtime flow, cli-jaw mirror 기준을 추가했다.

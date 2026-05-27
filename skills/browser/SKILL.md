@@ -69,12 +69,17 @@ Custom/tools, and never clicks `Generate`, `Run all`, payment, destructive, or
 submit-like controls. For live smoke tests where the user explicitly submits
 generation jobs, treat Runway Unlimited as a queue-capped task runner: allow at
 most 2 active jobs, then poll completion signals for up to 10 minutes per model.
+The poller is Playwright/CDP-based: it reads Runway DOM state, not Computer Use
+state. Treat `In queue`, `Generating`, `Processing`, `loading animation`, and
+right-rail percentage labels such as `18 50%` as active generation signals.
+Do not treat two active jobs as terminal completion. Record `queue_full` only
+when Runway shows the explicit `You're on a roll` / `Credits Mode` gate.
 
 ```bash
 agbrowse runway selectors --surface apps
 agbrowse runway status --surface auto --json
 agbrowse runway preflight --surface custom-tools --json
-agbrowse runway poll --timeout 600000 --interval 5000 --queue-limit 2 --json
+agbrowse runway poll --timeout 600000 --interval 5000 --queue-limit 2 --after-count 17 --expected-item "18" --json
 ```
 
 ## Core Workflow

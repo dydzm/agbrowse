@@ -3056,12 +3056,15 @@ try {
     runway status          Inspect current Runway tab [--surface auto|apps|custom-tools] [--json]
     runway open            Navigate to Apps/Custom and inspect [--surface apps|custom-tools] [--json]
     runway preflight       Alias for open + status; never submits a generation
-    runway poll            Poll queue/completion signals [--timeout 600000] [--interval 5000] [--queue-limit 2] [--json]
+    runway poll            Poll queue/completion signals [--timeout 600000] [--interval 5000] [--queue-limit 2] [--after-count N] [--expected-item TEXT] [--json]
 
       Safety:
         Runway is a media task-runner surface, not web-ai. These commands focus
         Apps and Custom/tools and never click Generate, Run all, payment,
         destructive, or submit-like controls.
+        Poll treats In queue/Generating/Processing and right-rail percent labels
+        like "18 50%" as active. queue_full is terminal only for the explicit
+        "You're on a roll" / Credits Mode gate; two active jobs keep polling.
 
   Vision click:
     agbrowse-vision-click "<target description>" [--double] [--prepare-stable]

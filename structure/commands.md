@@ -41,13 +41,15 @@ selector/status/preflight와 queue/completion poll을 제공한다.
 | `status` | Yes | 현재 Runway tab의 surface, quota hint, selector presence를 읽음 |
 | `open` | Yes | Apps/Custom URL로 navigation 후 status inspect |
 | `preflight` | Yes | `open` + `status` alias. Generation submit 없음 |
-| `poll` | Yes | 현재 Runway tab의 active queue, queue gate toast, output count를 최대 `--timeout`까지 읽음 |
+| `poll` | Yes | 현재 Runway tab의 active queue, right-rail `%` progress, queue gate toast, output count를 최대 `--timeout`까지 읽음 |
 
 Safety contract:
 
 - `Generate`, `Run all`, payment, destructive, submit-like controls는 클릭하지 않는다.
 - 모델 smoke runner는 submit 후 `poll --timeout 600000 --interval 5000 --queue-limit 2`를 기본값으로 삼는다.
-- Runway Unlimited smoke에서 active queue cap은 2개로 취급하고, 세 번째 제출은 `queue_full`/`queue-gate` terminal signal로 기록한다.
+- `poll`은 `In queue`, `Generating`, `Processing`, `loading animation`, 오른쪽 rail의 `18 50%` 같은 percentage label을 active generation signal로 본다.
+- Runway Unlimited smoke에서 active queue cap은 2개로 취급한다. 두 작업이 진행 중이면 `queue.full=true`일 수 있지만 `state=active`, `terminal=false`로 계속 poll한다.
+- 세 번째 제출에서 Runway가 `You're on a roll` / `Please wait for your last generation` / `Credits Mode` gate를 보여줄 때만 `queue_full`/`queue-gate` terminal signal로 기록한다.
 - 첫 구현 focus는 `apps`, `custom-tools`다.
 - `agent`, `recents`, `workflow`, `characters`는 surface-only로 유지한다.
 
@@ -249,6 +251,7 @@ tool description에도 그 제한을 명시한다.
 ## 변경 기록
 
 - 2026-05-14: `sessions show` human output이 ChatGPT model selection evidence와 structured warning을 표시하도록 command 계약을 갱신했다.
+- 2026-05-27: Runway `poll` 계약을 live smoke 결과에 맞춰 갱신했다. Right-rail `%` progress는 active signal이고, `queue_full` terminal은 explicit queue gate에 한정한다.
 - 2026-05-06: G03 — `agbrowse upload <ref> <file...>` CLI 추가. `web-ai/action-breadth.mjs`가 22개 local-CDP primitive (click/type/press/hover/select/check/uncheck/upload/drag/mouse-click/move-mouse/scroll/wait-for/wait-for-selector/wait-for-text/wait/navigate/reload/screenshot/snapshot/evaluate/text)를 카테고리화하고, `gate:browser-primitives-complete`가 모든 primitive에 CLI 핸들러가 wired되어 있는지를 검증한다.
 - 2026-05-06: G06 — `agbrowse observe-bundle`과 ObservationBundleV1 스키마를 추가했다. URL/title/viewport/DPR/refs/boxes/screenshot/text를 한 번에 묶어 multimodal benchmark step 재현성을 확보한다 (`gate:observation-bundle-fixtures`).
 - 2026-05-06: G02 — `agbrowse observe-actions <instruction>` CLI 추가. Pure `buildObserveActions(snapshot, instruction, opts)` API가 ranked `ActionCandidate[]`를 반환한다 (`gate:observe-actions-fixtures`).

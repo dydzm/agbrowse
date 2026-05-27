@@ -370,8 +370,11 @@ Commands:
       Navigate the current agbrowse tab to a supported Runway surface, then inspect.
   preflight --surface apps|custom-tools [--json] [--timeout ms]
       Alias for open + status. It does not submit a generation.
-  poll [--timeout 600000] [--interval 5000] [--queue-limit 2] [--json]
+  poll [--timeout 600000] [--interval 5000] [--queue-limit 2] [--after-count N] [--expected-item TEXT] [--json]
       Poll the current Runway tab for queue/completion signals. Read-only.
+      Active signals include In queue / Generating / Processing and right-rail
+      percentage labels such as "18 50%". A full queue is terminal only when
+      Runway shows the explicit "You're on a roll" / Credits Mode gate.
 
 Safety:
   Runway is a media task-runner surface, not web-ai. These commands never click

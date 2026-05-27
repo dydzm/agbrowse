@@ -6,6 +6,10 @@ export const DEFAULT_RUNWAY_POLL_TIMEOUT_MS = 600000;
 export const DEFAULT_RUNWAY_POLL_INTERVAL_MS = 5000;
 export const DEFAULT_RUNWAY_QUEUE_LIMIT = 2;
 
+const RUNWAY_PROGRESS_RE = /\b(?:100|[1-9]?\d)\s*%(?!\w)/g;
+const RUNWAY_PROGRESS_CONTEXT_RE = /\b\d{1,3}\s+((?:100|[1-9]?\d)\s*%(?!\w))/g;
+const RUNWAY_ACTIVE_TEXT_RE = /\b(?:generating|queued|processing|in queue|loading animation)\b/i;
+
 /**
  * @param {unknown} value
  * @returns {string}
@@ -49,6 +53,38 @@ function isOutputLabel(label) {
 function isActiveLabel(label) {
     return /\b(?:generating|queued|processing|loading animation)\b/i.test(label)
         || /^(?:[1-9]?\d|100)\s*%$/.test(label);
+}
+
+/**
+ * @param {unknown[]} values
+ * @returns {string[]}
+ */
+function extractProgressTexts(values) {
+    const found = [];
+    for (const value of values) {
+        const matches = clean(value).match(RUNWAY_PROGRESS_RE) || [];
+        for (const match of matches) found.push(clean(match));
+    }
+    return Array.from(new Set(found));
+}
+
+/**
+ * Runway right-rail loading cards can expose `18 50%` in plain page text while
+ * omitting the same percentage from the button/label list.
+ *
+ * @param {unknown} value
+ * @returns {string[]}
+ */
+function extractContextualProgressTexts(value) {
+    const text = clean(value);
+    const found = [];
+    for (const match of text.matchAll(RUNWAY_PROGRESS_CONTEXT_RE)) {
+        found.push(clean(match[1]));
+    }
+    if (RUNWAY_ACTIVE_TEXT_RE.test(text)) {
+        found.push(...extractProgressTexts([text]));
+    }
+    return Array.from(new Set(found));
 }
 
 function defaultCompletionDomSummary() {
@@ -112,17 +148,23 @@ export async function inspectRunwayCompletionState(page, options = {}) {
                 .slice(0, 300);
             const outputLabels = [...visibleLabels, ...sourceLabels];
             const outputPattern = /\.(?:mp4|png|jpe?g)\b|\/(?:result|task_artifact|video-previews)\b|\b(?:use frame|reuse settings|see full prompt)\b/i;
-            const activePattern = /\b(?:generating|queued|processing|loading animation)\b/i;
+            const progressPattern = /\b(?:100|[1-9]?\d)\s*%(?!\w)/i;
+            const progressPatternGlobal = /\b(?:100|[1-9]?\d)\s*%(?!\w)/g;
+            const activePattern = /\b(?:generating|queued|processing|in queue|loading animation)\b/i;
             const buttonLabels = Array.from(document.querySelectorAll('button')).map(button => ({
                 text: normalize(button.textContent || button.getAttribute('aria-label') || button.getAttribute('title') || ''),
                 disabled: Boolean(button.disabled || button.getAttribute('aria-disabled') === 'true'),
             }));
+            const progressTexts = [
+                ...(visibleText.match(progressPatternGlobal) || []),
+                ...visibleLabels.flatMap(label => progressPattern.test(label) ? label.match(progressPatternGlobal) || [] : []),
+            ];
             return {
                 textSample: visibleText.slice(0, 1200),
                 outputItemCount: outputLabels.filter(label => outputPattern.test(label)).length,
                 outputLabels: outputLabels.filter(label => outputPattern.test(label)).slice(0, 40),
-                activeLabels: visibleLabels.filter(label => activePattern.test(label)).slice(0, 40),
-                progressTexts: Array.from(new Set(visibleText.match(/\b(?:[1-9]?\d|100)\s*%\b/g) || [])).slice(0, 20),
+                activeLabels: visibleLabels.filter(label => activePattern.test(label) || progressPattern.test(label)).slice(0, 40),
+                progressTexts: Array.from(new Set(progressTexts)).slice(0, 20),
                 queueGateText: /you're on a roll|please wait for your last generation|switch to credits mode/i.test(visibleText)
                     ? 'You are on a roll / wait for last generation / Credits Mode'
                     : null,
@@ -137,15 +179,21 @@ export async function inspectRunwayCompletionState(page, options = {}) {
 
     const outputLabels = Array.isArray(dom.outputLabels) ? dom.outputLabels.map(clean).filter(isOutputLabel) : [];
     const activeLabels = Array.isArray(dom.activeLabels) ? dom.activeLabels.map(clean).filter(isActiveLabel) : [];
-    const progressTexts = Array.isArray(dom.progressTexts) ? dom.progressTexts.map(clean).filter(Boolean) : [];
-    const activeCountEstimate = Math.min(queueLimit, Math.max(activeLabels.length, progressTexts.length));
-    const queueFull = isRunwayTab && (Boolean(dom.queueGateText) || activeCountEstimate >= queueLimit);
+    const progressTexts = extractProgressTexts([
+        ...(Array.isArray(dom.progressTexts) ? dom.progressTexts : []),
+        ...activeLabels,
+        ...extractContextualProgressTexts(dom.textSample),
+    ]);
+    const activeSignals = Array.from(new Set([...activeLabels, ...progressTexts]));
+    const activeCountEstimate = Math.min(queueLimit, activeSignals.length);
+    const queueGateVisible = isRunwayTab && Boolean(dom.queueGateText);
+    const queueFull = isRunwayTab && (queueGateVisible || activeCountEstimate >= queueLimit);
     const outputItemCount = Number.isFinite(Number(dom.outputItemCount)) ? Number(dom.outputItemCount) : outputLabels.length;
     const expectedItemVisible = expectedItem
         ? outputLabels.some(label => label.includes(expectedItem)) || clean(dom.textSample).includes(expectedItem)
         : null;
     const acceptedAfterBaseline = afterCount === null ? null : outputItemCount > afterCount;
-    const state = !isRunwayTab ? 'not_runway' : queueFull ? 'queue_full' : activeCountEstimate > 0 ? 'active' : 'idle';
+    const state = !isRunwayTab ? 'not_runway' : queueGateVisible ? 'queue_full' : activeCountEstimate > 0 ? 'active' : 'idle';
     const terminal = state !== 'active';
     const completionSignal = state === 'not_runway'
         ? 'not-runway-tab'
@@ -183,7 +231,7 @@ export async function inspectRunwayCompletionState(page, options = {}) {
             hasGenerateButton: Boolean(dom.hasGenerateButton),
             generateDisabled: Boolean(dom.generateDisabled),
         },
-        activeLabels,
+        activeLabels: activeSignals,
         outputLabels,
         textSample: clean(dom.textSample).slice(0, 1200),
         errors,
