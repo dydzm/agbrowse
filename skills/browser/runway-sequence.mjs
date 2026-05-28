@@ -1,7 +1,7 @@
 // @ts-check
 
 import { execFile as execFileCallback } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
@@ -138,11 +138,15 @@ export async function extractRunwayLastFrame(inputPath, outputPath, deps = {}) {
         const run = deps.execFile || execFile;
         await run('ffmpeg', [
             '-y',
-            '-sseof', '-0.08',
+            '-sseof', '-1',
             '-i', absInput,
             '-frames:v', '1',
+            '-update', '1',
             absOutput,
         ], { timeout: 60000 });
+        if (!existsSync(absOutput) || statSync(absOutput).size === 0) {
+            return { ok: false, error: `last frame extraction produced no output: ${absOutput}` };
+        }
         return { ok: true, path: absOutput };
     } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : String(error) };

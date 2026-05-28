@@ -56,7 +56,7 @@ export function normalizeRunwayOutputPath(outputPath, asset) {
 export async function extractRunwayOutputUrl(page, index = 0, options = {}) {
     try {
         const result = await page.evaluate((/** @type {{ idx: number, expectedType?: string }} */ opts) => {
-            const outputPattern = /(?:result|task_artifact|video-previews|generation|cdn\.runwayml)/i;
+            const outputPattern = /(?:result|task_artifact|video-previews|generation|cdn\.runwayml|cloudfront\.net|\.(?:mp4|webm|mov|png|jpe?g|webp)(?:[?#]|$))/i;
             const assets = Array.from(document.querySelectorAll('video[src], video source[src], img[src]'))
                 .map(el => ({
                     src: el.getAttribute('src') || '',
@@ -137,6 +137,7 @@ export async function runRunwayDownloadCli(command, args = [], deps = {}) {
         args,
         options: {
             index: { type: 'string', default: '0' },
+            type: { type: 'string', default: 'all' },
             output: { type: 'string' },
             json: { type: 'boolean', default: false },
         },
@@ -154,7 +155,10 @@ export async function runRunwayDownloadCli(command, args = [], deps = {}) {
     }
 
     // download
-    const extracted = await extractRunwayOutputUrl(page, Number(values.index) || 0);
+    const expectedType = ['video', 'image'].includes(String(values.type || '').toLowerCase())
+        ? String(values.type).toLowerCase()
+        : undefined;
+    const extracted = await extractRunwayOutputUrl(page, Number(values.index) || 0, { expectedType });
     if (!extracted.url) {
         const output = { ok: false, command: 'download', error: extracted.error || 'No output asset found on page' };
         emit(deps, values.json ? JSON.stringify(output, null, 2) : `Download failed: ${output.error}`);

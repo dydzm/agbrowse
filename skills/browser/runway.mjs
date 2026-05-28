@@ -392,7 +392,7 @@ Commands (submit, Level 2 — requires --allow-submit):
   sequence --story TEXT | --shots "beat1" "beat2" [--target-duration 120]
       [--shot-duration 10] [--seed-image PATH] [--explore] [--output PATH] [--json]
       Custom Tools continuity chain: last frame of each clip seeds the next clip.
-  download [--index 0] [--output PATH] [--json]
+  download [--index 0] [--type video|image] [--output PATH] [--json]
       Download the most recent generated asset.
   screenshot [--output PATH]
       Screenshot the current Runway tab.

@@ -108,15 +108,27 @@ export async function selectRunwayModel(page, modelName) {
  */
 export async function setRunwayPrompt(page, promptText) {
     try {
-        await page.waitForSelector('div[aria-label="Prompt"]', { timeout: 5000 });
-        const focused = await page.evaluate(() => {
+        const editorHandle = await page.waitForSelector('div[aria-label="Prompt"]', { timeout: 5000 });
+        try {
+            await editorHandle.click();
+        } catch {
+            await editorHandle.evaluate((/** @type {HTMLElement} */ el) => el.click());
+        }
+        try {
+            await editorHandle.focus();
+        } catch {
+            await page.evaluate(() => {
+                const editor = document.querySelector('div[aria-label="Prompt"]');
+                if (editor) /** @type {HTMLElement} */ (editor).focus();
+            });
+        }
+        const found = await page.evaluate(() => {
             const editor = document.querySelector('div[aria-label="Prompt"]');
             if (!editor) return false;
             /** @type {HTMLElement} */ (editor).focus();
-            /** @type {HTMLElement} */ (editor).click();
-            return document.activeElement === editor || editor.contains(document.activeElement);
+            return true;
         });
-        if (!focused) return { set: false, error: 'Prompt editor not found' };
+        if (!found) return { set: false, error: 'Prompt editor not found' };
         await page.waitForTimeout(200);
 
         await page.keyboard.press('Meta+A');
