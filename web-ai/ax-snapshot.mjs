@@ -209,20 +209,65 @@ async function captureAccessibilitySnapshot(page, { interactiveOnly, rootSelecto
     const ax = /** @type {{ snapshot?: (opts: { interestingOnly?: boolean, root?: unknown }) => Promise<AxNode|null> } | undefined} */ (
         /** @type {{ accessibility?: unknown } | null | undefined} */ (/** @type {unknown} */ (page))?.accessibility
     );
-    if (!ax || typeof ax.snapshot !== 'function') {
+    if (ax && typeof ax.snapshot === 'function') {
+        /** @type {import('playwright-core').ElementHandle|null} */
+        let root = null;
+        try {
+            if (rootSelector) {
+                root = await page.locator(rootSelector).elementHandle().catch(() => null);
+                if (!root) {
+                    throw new WebAiError({
+                        errorCode: 'snapshot.root-not-found',
+                        stage: 'snapshot-capture',
+                        retryHint: 'fix-root-selector',
+                        message: `snapshot root selector did not match: ${rootSelector}`,
+                        evidence: { rootSelector },
+                    });
+                }
+            }
+            return await ax.snapshot({
+                interestingOnly: interactiveOnly,
+                ...(root ? { root } : {}),
+            });
+        } finally {
+            await root?.dispose?.().catch(() => undefined);
+        }
+    }
+    // playwright-core >= ~1.55 removed page.accessibility; fall back to the CDP AX tree.
+    return await captureAxViaCdp(page, { interactiveOnly, rootSelector });
+}
+
+/** CDP role names mapped onto the Playwright accessibility-snapshot vocabulary. */
+const CDP_ROLE_ALIASES = /** @type {Record<string, string>} */ ({
+    StaticText: 'text', InlineTextBox: 'text', GenericContainer: 'generic',
+    none: 'generic', presentation: 'generic',
+});
+
+/**
+ * Fallback AX-tree capture via Chrome DevTools Protocol for Playwright runtimes
+ * that no longer expose page.accessibility.snapshot().
+ * @param {import('playwright-core').Page} page
+ * @param {{ interactiveOnly: boolean, rootSelector: string|null }} options
+ * @returns {Promise<AxNode|null>}
+ */
+async function captureAxViaCdp(page, { interactiveOnly, rootSelector }) {
+    const ctx = /** @type {{ newCDPSession?: Function } | undefined} */ (/** @type {any} */ (page).context?.());
+    if (!ctx || typeof ctx.newCDPSession !== 'function') {
         throw new WebAiError({
             errorCode: 'snapshot.unavailable',
             stage: 'snapshot-capture',
             retryHint: 'pin-playwright-or-add-cdp-fallback',
-            message: 'page.accessibility.snapshot() is not available in this Playwright runtime',
+            message: 'page.accessibility.snapshot() is unavailable and no CDP session could be created for this page',
         });
     }
-    /** @type {import('playwright-core').ElementHandle|null} */
-    let root = null;
+    const client = /** @type {{ send: Function, detach?: Function }} */ (await ctx.newCDPSession(page));
     try {
+        await client.send('Accessibility.enable').catch(() => undefined);
+        let backendNodeId;
         if (rootSelector) {
-            root = await page.locator(rootSelector).elementHandle().catch(() => null);
-            if (!root) {
+            const { root } = await client.send('DOM.getDocument', { depth: 0 });
+            const { nodeId } = await client.send('DOM.querySelector', { nodeId: root.nodeId, selector: rootSelector });
+            if (!nodeId) {
                 throw new WebAiError({
                     errorCode: 'snapshot.root-not-found',
                     stage: 'snapshot-capture',
@@ -231,14 +276,77 @@ async function captureAccessibilitySnapshot(page, { interactiveOnly, rootSelecto
                     evidence: { rootSelector },
                 });
             }
+            const described = await client.send('DOM.describeNode', { nodeId });
+            backendNodeId = described?.node?.backendNodeId;
         }
-        return await ax.snapshot({
-            interestingOnly: interactiveOnly,
-            ...(root ? { root } : {}),
-        });
+        const { nodes } = backendNodeId
+            ? await client.send('Accessibility.getPartialAXTree', { backendNodeId, fetchRelatives: true })
+            : await client.send('Accessibility.getFullAXTree', {});
+        return cdpNodesToAxTree(Array.isArray(nodes) ? nodes : [], { interactiveOnly });
     } finally {
-        await root?.dispose?.().catch(() => undefined);
+        await client.detach?.().catch(() => undefined);
     }
+}
+
+/**
+ * Convert a flat CDP AX node list into the nested AxNode tree shape used by the serializer.
+ * @param {any[]} nodes
+ * @param {{ interactiveOnly: boolean }} options
+ * @returns {AxNode|null}
+ */
+function cdpNodesToAxTree(nodes, { interactiveOnly }) {
+    if (!nodes.length) return null;
+    /** @type {Map<string, any>} */
+    const byId = new Map();
+    for (const n of nodes) byId.set(n.nodeId, n);
+    /** @type {Set<string>} */
+    const childIds = new Set();
+    for (const n of nodes) for (const c of n.childIds || []) childIds.add(c);
+    const rootCdp = nodes.find((n) => !childIds.has(n.nodeId)) || nodes[0];
+
+    /** @param {any} cdpNode @returns {AxNode[]} */
+    const convert = (cdpNode) => {
+        /** @type {AxNode[]} */
+        const children = [];
+        for (const cid of cdpNode.childIds || []) {
+            const child = byId.get(cid);
+            if (child) children.push(...convert(child));
+        }
+        if (isCdpNodeCollapsible(cdpNode, interactiveOnly)) return children;
+        return [{ ...mapCdpNode(cdpNode), children }];
+    };
+    const top = convert(rootCdp);
+    if (top.length === 1) return top[0];
+    return { role: 'document', name: '', children: top };
+}
+
+/**
+ * @param {any} node
+ * @param {boolean} interactiveOnly
+ */
+function isCdpNodeCollapsible(node, interactiveOnly) {
+    if (node.ignored) return true;
+    if (!interactiveOnly) return false;
+    const role = node.role?.value || '';
+    const name = node.name?.value || '';
+    const generic = role === 'generic' || role === 'none' || role === 'presentation' || role === 'GenericContainer';
+    return generic && !name;
+}
+
+/**
+ * @param {any} node
+ * @returns {AxNode}
+ */
+function mapCdpNode(node) {
+    const rawRole = node.role?.value || 'generic';
+    /** @type {AxNode} */
+    const out = { role: CDP_ROLE_ALIASES[rawRole] || rawRole, name: node.name?.value || '' };
+    if (node.value && node.value.value !== undefined) out.value = node.value.value;
+    for (const p of node.properties || []) {
+        const v = p?.value?.value;
+        if (v !== undefined) /** @type {Record<string, unknown>} */ (out)[p.name] = v;
+    }
+    return out;
 }
 
 /**
