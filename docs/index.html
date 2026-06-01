@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>agbrowse - Browser automation for AI agents</title>
+  <meta name="description" content="Standalone Chrome/CDP browser automation and web-ai CLI for AI agents.">
+  <link rel="canonical" href="https://lidge-jun.github.io/agbrowse/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="agbrowse">
+  <meta property="og:description" content="Browser automation, web-ai sessions, screenshots, traces, and source audits from one CLI.">
+  <meta property="og:url" content="https://lidge-jun.github.io/agbrowse/">
+  <meta property="og:image" content="https://lidge-jun.github.io/agbrowse/assets/social-preview.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="agbrowse">
+  <meta name="twitter:description" content="A small, inspectable command surface for AI agents using real browser state.">
+  <meta name="twitter:image" content="https://lidge-jun.github.io/agbrowse/assets/social-preview.svg">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: #0b1220;
+      --panel-2: #111827;
+      --line: #1e3a5f;
+      --text: #f8fafc;
+      --muted: #a8b3c7;
+      --blue: #38bdf8;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --max: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 72% 18%, rgba(56, 189, 248, .2), transparent 28%), var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    a { color: inherit; }
+    .shell { min-height: 100vh; }
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      backdrop-filter: blur(18px);
+      background: rgba(7, 17, 31, .78);
+      border-bottom: 1px solid rgba(148, 163, 184, .16);
+    }
+    .nav-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel-2);
+      color: var(--blue);
+      font: 700 16px SFMono-Regular, Menlo, monospace;
+    }
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .nav-links a { text-decoration: none; }
+    .hero {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 84px 24px 52px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+      gap: 42px;
+      align-items: center;
+    }
+    .eyebrow {
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 14px 0 20px;
+      max-width: 760px;
+      font-size: clamp(48px, 7vw, 88px);
+      line-height: .95;
+      letter-spacing: 0;
+    }
+    .hero p {
+      max-width: 660px;
+      color: var(--muted);
+      font-size: 20px;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 30px;
+    }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, .28);
+      text-decoration: none;
+      font-weight: 700;
+      background: #f8fafc;
+      color: #08111f;
+    }
+    .button.secondary {
+      background: transparent;
+      color: var(--text);
+    }
+    .terminal {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(11, 18, 32, .86);
+      box-shadow: 0 28px 70px rgba(0, 0, 0, .38);
+    }
+    .terminal-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 14px 16px;
+      background: var(--panel-2);
+      border-bottom: 1px solid rgba(148, 163, 184, .12);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .red { background: var(--red); }
+    .amber { background: var(--amber); }
+    .green { background: var(--green); }
+    pre {
+      margin: 0;
+      padding: 24px;
+      overflow-x: auto;
+      color: #dbeafe;
+      font: 14px/1.65 SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .section {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 42px 24px;
+    }
+    .section h2 {
+      margin: 0 0 20px;
+      font-size: 32px;
+      letter-spacing: 0;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .card {
+      border: 1px solid rgba(148, 163, 184, .18);
+      border-radius: 8px;
+      padding: 20px;
+      background: rgba(15, 23, 42, .68);
+    }
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+    .card p, .section p {
+      color: var(--muted);
+      margin: 0;
+    }
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(320px, 1.1fr);
+      gap: 24px;
+      align-items: start;
+    }
+    .checklist {
+      display: grid;
+      gap: 10px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .checklist li {
+      border: 1px solid rgba(148, 163, 184, .16);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--muted);
+      background: rgba(15, 23, 42, .46);
+    }
+    footer {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 36px 24px 54px;
+      color: var(--muted);
+      border-top: 1px solid rgba(148, 163, 184, .12);
+    }
+    @media (max-width: 860px) {
+      .hero, .split { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .nav-inner { align-items: flex-start; flex-direction: column; }
+      h1 { font-size: 52px; }
+    }
+    @media (max-width: 440px) {
+      .hero { padding-top: 54px; }
+      h1 { font-size: 42px; }
+      .hero p { font-size: 17px; }
+      pre { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="nav" aria-label="Primary">
+      <div class="nav-inner">
+        <div class="brand"><span class="mark">ag</span><span>AGBROWSE</span></div>
+        <div class="nav-links">
+          <a href="#workflow">Workflow</a>
+          <a href="#web-ai">Web AI</a>
+          <a href="#verification">Verification</a>
+          <a href="https://github.com/lidge-jun/agbrowse">GitHub</a>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <section class="hero">
+        <div>
+          <div class="eyebrow">Standalone CDP toolkit</div>
+          <h1>Browser automation for AI agents.</h1>
+          <p>Drive real Chrome tabs from terminal commands, collect visible evidence, and run ChatGPT, Gemini, or Grok web sessions through a durable CLI workflow.</p>
+          <div class="actions">
+            <a class="button" href="https://www.npmjs.com/package/agbrowse">Install from npm</a>
+            <a class="button secondary" href="https://github.com/lidge-jun/agbrowse/blob/main/README.md">Read the README</a>
+          </div>
+        </div>
+        <div class="terminal" aria-label="agbrowse quickstart terminal">
+          <div class="terminal-head">
+            <span class="dot red"></span>
+            <span class="dot amber"></span>
+            <span class="dot green"></span>
+          </div>
+          <pre><code>npm install -g agbrowse
+agbrowse start
+agbrowse navigate "https://chatgpt.com/"
+agbrowse snapshot --interactive
+agbrowse web-ai query \
+  --vendor grok \
+  --model expert \
+  --inline-only \
+  --prompt "Reply exactly AGBROWSE_OK"</code></pre>
+        </div>
+      </section>
+
+      <section class="section" id="workflow">
+        <h2>Observe before acting.</h2>
+        <div class="grid">
+          <article class="card">
+            <h3>Browser primitives</h3>
+            <p>Navigate, snapshot, click refs, type, resize, screenshot, inspect console output, and capture network evidence.</p>
+          </article>
+          <article class="card">
+            <h3>Durable sessions</h3>
+            <p>Web-ai sends return a session id so a later shell can poll the same provider tab after sleep or timeout.</p>
+          </article>
+          <article class="card">
+            <h3>Fail-closed adapters</h3>
+            <p>Unsupported providers, missing composers, model drift, and unsafe context-package paths fail with explicit evidence.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section split" id="web-ai">
+        <div>
+          <h2>Built for web UI agents, not hidden APIs.</h2>
+          <p>agbrowse treats provider pages as changing user interfaces. The command surface keeps every mutation tied to an observed tab, target id, selector, screenshot, or artifact.</p>
+        </div>
+        <div class="terminal">
+          <pre><code>SID=$(agbrowse web-ai send \
+  --vendor chatgpt \
+  --model pro \
+  --inline-only \
+  --prompt "Research and cite sources." \
+  --json | jq -r .sessionId)
+
+agbrowse web-ai poll \
+  --vendor chatgpt \
+  --session "$SID" \
+  --timeout 1800</code></pre>
+        </div>
+      </section>
+
+      <section class="section" id="verification">
+        <h2>Release gates are explicit.</h2>
+        <ul class="checklist">
+          <li><strong>Type and module checks:</strong> <code>npm run typecheck</code>, <code>npm run check:module-graph</code>.</li>
+          <li><strong>Capability truth checks:</strong> <code>npm run test:release-gates</code> and <code>npm run gate:all</code>.</li>
+          <li><strong>Runtime contracts:</strong> MCP, source audit, trace policy, fixture evals, and browser primitive tests.</li>
+          <li><strong>Remote Pages state:</strong> this page is a local Pages entrypoint until an authorized push deploys the `/docs` workflow.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer>
+      <p>agbrowse is a public project by lidge-jun. Provider UIs can drift; every ready claim is backed by local gates and contract checks.</p>
+    </footer>
+  </div>
+</body>
+</html>

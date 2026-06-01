@@ -4,7 +4,17 @@
 
 # agbrowse
 
-Standalone Chrome/CDP browser automation and web-ai CLI for AI agents.
+[![npm](https://img.shields.io/npm/v/agbrowse?label=npm)](https://www.npmjs.com/package/agbrowse)
+[![Contract Drift Check](https://github.com/lidge-jun/agbrowse/actions/workflows/contract-drift.yml/badge.svg)](https://github.com/lidge-jun/agbrowse/actions/workflows/contract-drift.yml)
+[![GitHub stars](https://img.shields.io/github/stars/lidge-jun/agbrowse?style=flat&label=stars)](https://github.com/lidge-jun/agbrowse)
+[![GitHub Pages ready](https://img.shields.io/badge/GitHub%20Pages-docs%20ready-111827)](docs/index.html)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-0f766e)](package.json)
+[![Package license](https://img.shields.io/badge/package%20metadata-MIT-1f2937)](package.json)
+
+Standalone Chrome/CDP browser automation and web-ai CLI for AI agents. It turns
+browser work into small, inspectable terminal commands: observe the page,
+act by stable references, collect screenshots/console/network evidence, and run
+ChatGPT, Gemini, or Grok web UI sessions without paying an MCP token tax.
 
 `agbrowse` is a serverless extraction of the cli-jaw / 30_browser browser
 workflow. It gives an agent a small CLI surface for:
@@ -19,6 +29,20 @@ workflow. It gives an agent a small CLI surface for:
 
 It does not require a long-running MCP server. Each command is a short-lived
 Node process that reconnects to the same Chrome DevTools Protocol endpoint.
+
+## Public Surface
+
+| Surface | Link | Status |
+| --- | --- | --- |
+| npm package | [`agbrowse`](https://www.npmjs.com/package/agbrowse) | public package metadata |
+| Repository | [`lidge-jun/agbrowse`](https://github.com/lidge-jun/agbrowse) | public source |
+| Docs landing page | [`docs/index.html`](docs/index.html) | local Pages entrypoint, deploys after an authorized push |
+| Architecture source | [`structure/INDEX.md`](structure/INDEX.md) | capability and release truth source |
+| Production notes | [`docs/production-readiness.md`](docs/production-readiness.md) | verification and risk checklist |
+
+GitHub Pages is intentionally documented as **ready, not live** in this local
+state because the GitHub Pages API currently returns 404 for this repository.
+The added Pages workflow publishes `/docs` once the owner authorizes a push.
 
 ## Quick Start
 
@@ -54,6 +78,69 @@ agbrowse web-ai poll --vendor chatgpt --session "$SID" --timeout 1800
 Agent rule: observe before acting. Use `status`, `tabs`, `snapshot
 --interactive`, and `web-ai status` before mutating a page. Set
 `AGBROWSE_JSON_ERRORS=1` for parseable failure envelopes.
+
+## What It Is Good For
+
+- **Browser automation for agents**: navigate, snapshot, click refs, type,
+  capture screenshots, inspect console/network, and keep the active CDP target
+  stable across commands.
+- **Web-AI execution**: submit and poll ChatGPT, Gemini, and Grok sessions with
+  provider-specific model selection and fail-closed capability checks.
+- **Evidence-heavy research**: require source audits, save answer artifacts, and
+  preserve traces without relying on hidden browser state.
+- **Standalone skill distribution**: install bundled `browser`, `web-ai`, and
+  `vision-click` skills into cli-jaw or Codex skill roots.
+
+## Architecture Snapshot
+
+```text
+agent shell
+  -> agbrowse bin
+  -> browser skill runtime
+  -> Chrome DevTools Protocol
+  -> target tab / provider web UI
+
+web-ai command
+  -> provider adapter
+  -> tab/session guard
+  -> prompt renderer
+  -> poller + artifact writer
+  -> source/trace/policy gates
+```
+
+The runtime keeps browser state under `BROWSER_AGENT_HOME` and stores durable
+web-ai sessions separately from the shell process, so a later `poll` can resume
+the same provider tab by session id.
+
+## Verification Policy
+
+Use the smallest gate that matches the changed surface:
+
+```bash
+npm run typecheck
+npm run test:release-gates
+npm run smoke:bins
+npm run test:mcp
+npm run test:source-audit
+npm run test:trace-policy
+npm run gate:all
+```
+
+Current remote CI signal: the scheduled `Contract Drift Check` workflow is
+passing on `main`. Release publishing remains manual through `release.yml`.
+
+## Safety Model
+
+- Provider DOMs are treated as untrusted and can drift.
+- Unsupported vendors, unsupported model aliases, missing composers, and unsafe
+  context-package paths fail closed.
+- `~/.browser-agent` contains browser profile/session state and must not be
+  committed or shared.
+- CAPTCHA bypass, stealth, credential stuffing, and guaranteed provider account
+  entitlement checks are out of scope.
+- The package metadata says MIT; this repository currently has no standalone
+  root `LICENSE` file, so downstream users should rely on package metadata until
+  one is added.
 
 ## Status
 
