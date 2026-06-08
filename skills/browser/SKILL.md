@@ -295,6 +295,7 @@ agbrowse research plan --query "한국어 외부 정보 질문" --json
 # Treat search rows as URL candidates, not evidence.
 agbrowse research normalize-results --backend tavily --file results.json --json
 agbrowse research enrich-fetch --plan plan.json --results normalized-results.json --json
+agbrowse research browse-plan --plan plan.json --enrichment enriched-results.json --json
 # Then browse only the remaining dynamic/Naver/table candidates before answering.
 ```
 
@@ -307,7 +308,14 @@ inspection after fetch.
 
 `enrich-fetch` defaults to `--browser never`; it is a fetch enrichment step, not
 the browser escalation controller. If the envelope returns `nextStep.type:
-browse-candidates`, use normal browser commands to inspect those pages.
+browse-candidates`, run `browse-plan` to produce the explicit browser command
+sequence and reason labels before inspecting those pages.
+
+`browse-plan` does not run Chrome. It maps unresolved URL candidates to command
+strings such as `agbrowse new-tab`, `agbrowse snapshot --interactive`,
+`agbrowse text`, `agbrowse get-dom`, and `agbrowse network`, with reasons like
+`naver-shell-or-iframe-risk`, `dynamic-page-state`,
+`table-list-ordinal-requires-dom`, or `official-page-fetch-empty`.
 
 ### Form Filling
 

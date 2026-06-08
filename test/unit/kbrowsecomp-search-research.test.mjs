@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { planBrowseEscalation } from '../../skills/browser/search-research/browse-escalation.mjs';
 import { createConstraintLedger, summarizeLedger, updateLedgerWithEvidence } from '../../skills/browser/search-research/constraint-ledger.mjs';
 import { enrichSearchResultsWithFetch } from '../../skills/browser/search-research/fetch-enrichment.mjs';
 import { buildRouteUrl, chooseKoreanRoute, detectSourceHints, needsBrowseEscalation } from '../../skills/browser/search-research/korean-routes.mjs';
@@ -193,4 +194,119 @@ describe('K-BrowseComp search research planning', () => {
         expect(enriched.summary.supported).toEqual([]);
         expect(enriched.candidates[0].constraintIds).toEqual([]);
     });
+
+    it('plans Naver browser escalation with explicit commands instead of running browse', () => {
+        const plan = planKoreanResearch('네이버 블로그 후기 원문에서 표 항목을 확인해');
+        const browsePlan = planBrowseEscalation(plan, fixtureEnrichment({
+            url: 'https://blog.naver.com/example/1',
+            verdict: 'weak_ok',
+            textExcerpt: '',
+            pending: ['c1'],
+        }));
+        expect(browsePlan.schemaVersion).toBe('research-browse-escalation-v1');
+        expect(browsePlan.needsBrowse).toBe(true);
+        expect(browsePlan.summary.reasons).toEqual(expect.arrayContaining([
+            'naver-shell-or-iframe-risk',
+            'table-list-ordinal-requires-dom',
+        ]));
+        expect(browsePlan.actions[0].commands).toEqual(expect.arrayContaining([
+            'agbrowse snapshot --interactive',
+            'agbrowse get-dom --selector body --max-chars 20000',
+        ]));
+        expect(browsePlan.actions[0].commands[0]).toContain('agbrowse new-tab "https://blog.naver.com/example/1" --json');
+    });
+
+    it('maps dynamic and official empty fetch states to browse escalation reasons', () => {
+        const dynamicPlan = planKoreanResearch('동적 탭에서 최신 공지사항을 확인해');
+        const dynamicBrowse = planBrowseEscalation(dynamicPlan, fixtureEnrichment({
+            url: 'https://example.com/app',
+            verdict: 'browser_required',
+            chromeRequired: true,
+            textExcerpt: '',
+            pending: ['c1'],
+        }));
+        expect(dynamicBrowse.summary.reasons).toContain('dynamic-page-state');
+        expect(dynamicBrowse.actions[0].commands).toContain('agbrowse network --duration 2000 --filter json');
+
+        const officialPlan = planKoreanResearch('2026년 공식 공지사항 최신 기준 찾아봐');
+        const officialBrowse = planBrowseEscalation(officialPlan, fixtureEnrichment({
+            url: 'https://example.go.kr/notice',
+            ok: false,
+            verdict: 'blocked',
+            textExcerpt: '',
+            pending: ['c1'],
+        }));
+        expect(officialBrowse.summary.reasons).toContain('official-page-fetch-empty');
+        expect(officialBrowse.actions[0].commands).toContain('agbrowse network --duration 1500');
+    });
+
+    it('does not emit browse actions when fetched evidence completes the ledger strongly', () => {
+        const plan = planKoreanResearch('고려대학교출판문화원 2024년 12월 27일 540쪽 MOOC 목차');
+        const browsePlan = planBrowseEscalation(plan, fixtureEnrichment({
+            url: 'https://example.com/book',
+            verdict: 'strong_ok',
+            textExcerpt: 'all constraints supported',
+            pending: [],
+            status: 'complete',
+            ready: true,
+        }));
+        expect(browsePlan.needsBrowse).toBe(false);
+        expect(browsePlan.actions).toEqual([]);
+        expect(browsePlan.summary.reasons).toEqual([]);
+    });
 });
+
+/**
+ * @param {{
+ *   url: string,
+ *   ok?: boolean,
+ *   verdict: string,
+ *   textExcerpt: string,
+ *   chromeRequired?: boolean,
+ *   pending: string[],
+ *   status?: string,
+ *   ready?: boolean
+ * }} options
+ */
+function fixtureEnrichment(options) {
+    const supported = options.pending.length === 0 ? ['c1'] : [];
+    return {
+        schemaVersion: 'research-fetch-enrichment-v1',
+        planSchemaVersion: 'research-plan-v1',
+        resultSchemaVersion: 'search-results-v1',
+        query: 'fixture query',
+        fetchPolicy: { browser: 'never', maxResults: 1, trace: false },
+        candidates: [{
+            rank: 1,
+            url: options.url,
+            title: 'candidate',
+            snippet: 'diagnostic',
+            date: null,
+            discoveryConstraintIds: ['c1'],
+            constraintIds: supported,
+            fetch: {
+                ok: options.ok !== false,
+                verdict: options.verdict,
+                source: 'fetch',
+                finalUrl: options.url,
+                title: null,
+                textExcerpt: options.textExcerpt,
+                warnings: [],
+                evidence: [],
+                chromeRequired: Boolean(options.chromeRequired),
+                chromeUsed: false,
+            },
+        }],
+        ledger: {},
+        summary: {
+            ready: Boolean(options.ready),
+            supported,
+            pending: options.pending,
+            status: options.status || 'insufficient-evidence',
+        },
+        nextStep: {
+            type: options.pending.length > 0 ? 'browse-candidates' : 'finalize-ready',
+            reason: options.pending.length > 0 ? 'fetch-insufficient-or-constraints-pending' : 'all-supported',
+        },
+    };
+}

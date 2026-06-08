@@ -107,6 +107,75 @@ describe.sequential('research CLI', () => {
         }
     });
 
+    it('plans browse escalation commands from local enrichment JSON without Chrome or network', async () => {
+        const dir = mkdtempSync(join(tmpdir(), 'agbrowse-research-browse-plan-cli-'));
+        const planFile = join(dir, 'plan.json');
+        const enrichmentFile = join(dir, 'enrichment.json');
+        try {
+            const planResult = await execBrowser([
+                'research',
+                'plan',
+                '--query',
+                '네이버 블로그 후기 원문에서 표 항목을 확인해',
+                '--json',
+            ]);
+            writeFileSync(planFile, planResult.stdout);
+            writeFileSync(enrichmentFile, JSON.stringify({
+                schemaVersion: 'research-fetch-enrichment-v1',
+                planSchemaVersion: 'research-plan-v1',
+                resultSchemaVersion: 'search-results-v1',
+                query: '네이버 블로그 후기',
+                candidates: [{
+                    rank: 1,
+                    url: 'https://blog.naver.com/example/1',
+                    title: 'Naver Blog',
+                    snippet: 'candidate only',
+                    discoveryConstraintIds: ['c1'],
+                    constraintIds: [],
+                    fetch: {
+                        ok: true,
+                        verdict: 'weak_ok',
+                        source: 'fetch',
+                        finalUrl: 'https://blog.naver.com/example/1',
+                        title: null,
+                        textExcerpt: '',
+                        warnings: [],
+                        evidence: [],
+                        chromeRequired: false,
+                        chromeUsed: false,
+                    },
+                }],
+                summary: {
+                    ready: false,
+                    supported: [],
+                    pending: ['c1'],
+                    status: 'insufficient-evidence',
+                },
+                nextStep: {
+                    type: 'browse-candidates',
+                    reason: 'fetch-insufficient-or-constraints-pending',
+                },
+            }));
+            const result = await execBrowser([
+                'research',
+                'browse-plan',
+                '--plan',
+                planFile,
+                '--enrichment',
+                enrichmentFile,
+                '--json',
+            ]);
+            expect(result.code).toBe(0);
+            const body = JSON.parse(result.stdout);
+            expect(body.schemaVersion).toBe('research-browse-escalation-v1');
+            expect(body.needsBrowse).toBe(true);
+            expect(body.summary.reasons).toContain('naver-shell-or-iframe-risk');
+            expect(body.actions[0].commands[0]).toContain('agbrowse new-tab "https://blog.naver.com/example/1" --json');
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
     it('fails missing arguments before browser mutation', async () => {
         const missingQuery = await execBrowser(['research', 'plan', '--json']);
         expect(missingQuery.code).not.toBe(0);
@@ -119,5 +188,9 @@ describe.sequential('research CLI', () => {
         const missingEnrich = await execBrowser(['research', 'enrich-fetch', '--json']);
         expect(missingEnrich.code).not.toBe(0);
         expect(missingEnrich.stderr).toContain('research enrich-fetch --plan <json> --results <json>');
+
+        const missingBrowsePlan = await execBrowser(['research', 'browse-plan', '--json']);
+        expect(missingBrowsePlan.code).not.toBe(0);
+        expect(missingBrowsePlan.stderr).toContain('research browse-plan --plan <json> --enrichment <json>');
     });
 });

@@ -18,6 +18,7 @@
  *   research plan --query <problem> [--json]  Korean query rewrite and evidence plan
  *   research normalize-results --file <json> [--backend name] [--json]  Normalize search URL candidates
  *   research enrich-fetch --plan <json> --results <json> [--json]  Fetch original-page evidence
+ *   research browse-plan --plan <json> --enrichment <json> [--json]  Plan browser escalation actions
  *   screenshot [--full-page] [--ref eN] [--json]  Capture screenshot
  *   mouse-click <x> <y> [--double]  Click at pixel coordinates
  *   move-mouse <x> <y>               Move mouse without clicking
@@ -86,6 +87,7 @@ import { runRunwayCli } from './runway.mjs';
 import { planKoreanResearch } from './search-research/search-strategy.mjs';
 import { normalizeSearchResults } from './search-research/normalizer.mjs';
 import { enrichSearchResultsWithFetch } from './search-research/fetch-enrichment.mjs';
+import { planBrowseEscalation } from './search-research/browse-escalation.mjs';
 
 // ─── Config ──────────────────────────────────────
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -2153,6 +2155,35 @@ async function runResearchCli(argv = []) {
             : { stdout: formatFetchEnrichment(enriched) };
     }
 
+    if (command === 'browse-plan') {
+        const { values } = parseArgs({
+            args: argv.slice(1),
+            options: {
+                plan: { type: 'string' },
+                enrichment: { type: 'string' },
+                json: { type: 'boolean', default: false },
+                'max-actions': { type: 'string' },
+            },
+            strict: false,
+        });
+        const planFile = typeof values.plan === 'string' ? values.plan.trim() : '';
+        const enrichmentFile = typeof values.enrichment === 'string' ? values.enrichment.trim() : '';
+        if (!planFile || !enrichmentFile) {
+            return {
+                exitCode: 1,
+                stderr: 'Usage: browser.mjs research browse-plan --plan <json> --enrichment <json> [--max-actions N] [--json]',
+            };
+        }
+        const plan = JSON.parse(readFileSync(planFile, 'utf8'));
+        const enrichment = JSON.parse(readFileSync(enrichmentFile, 'utf8'));
+        const browsePlan = planBrowseEscalation(plan, enrichment, {
+            maxActions: values['max-actions'] === undefined ? undefined : Number(values['max-actions']),
+        });
+        return values.json
+            ? { stdout: JSON.stringify(browsePlan, null, 2) }
+            : { stdout: formatBrowseEscalation(browsePlan) };
+    }
+
     return {
         stdout: `agbrowse research <command>
 
@@ -2162,7 +2193,9 @@ Commands:
   normalize-results --file <json> [--backend name] [--query query] [--json]
       Normalize provider search rows into URL candidates. Snippets are not final evidence.
   enrich-fetch --plan <json> --results <json> [--browser never|auto|required] [--max-results N] [--json]
-      Fetch original pages for normalized URL candidates and update the constraint ledger.`,
+      Fetch original pages for normalized URL candidates and update the constraint ledger.
+  browse-plan --plan <json> --enrichment <json> [--max-actions N] [--json]
+      Plan explicit browser commands for candidates fetch could not fully verify.`,
     };
 }
 
@@ -2209,6 +2242,24 @@ function formatFetchEnrichment(enriched) {
         `supported: ${enriched.summary.supported.join(', ') || 'none'}`,
         `pending: ${enriched.summary.pending.join(', ') || 'none'}`,
         `next step: ${enriched.nextStep.type} (${enriched.nextStep.reason})`,
+    ].join('\n');
+}
+
+/**
+ * @param {ReturnType<typeof planBrowseEscalation>} browsePlan
+ */
+function formatBrowseEscalation(browsePlan) {
+    return [
+        `browse escalation: ${browsePlan.schemaVersion}`,
+        `needs browse: ${browsePlan.needsBrowse ? 'yes' : 'no'}`,
+        `actions: ${browsePlan.summary.actionCount}`,
+        `reasons: ${browsePlan.summary.reasons.join(', ') || 'none'}`,
+        `pending: ${browsePlan.summary.pending.join(', ') || 'none'}`,
+        ...browsePlan.actions.map(action => [
+            `  ${action.rank}. ${action.priority} ${action.url}`,
+            `     reasons: ${action.reasons.join(', ')}`,
+            ...action.commands.map(command => `     $ ${command}`),
+        ].join('\n')),
     ].join('\n');
 }
 
@@ -3157,6 +3208,10 @@ try {
     research enrich-fetch --plan <json> --results <json> [--browser never|auto|required] [--max-results N] [--json]
       Fetch original pages for normalized URL candidates, attach adaptive-fetch
       results, and update the constraint ledger from fetched text only.
+
+    research browse-plan --plan <json> --enrichment <json> [--max-actions N] [--json]
+      Plan explicit browser commands for candidates fetch could not fully verify.
+      Does not run Chrome, search, or mutate browser state.
 
   Browser lifecycle:
     start [--port <9222>] [--headless|--headed] [--chrome-path PATH]

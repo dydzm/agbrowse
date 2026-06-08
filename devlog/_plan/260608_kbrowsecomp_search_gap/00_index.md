@@ -47,6 +47,7 @@ source-domain statistics to avoid republishing query-answer pairs.
 | 20 | `20_p0a_browser_surface_parity_plan.md` | P0a implementation plan | Concrete browser command parity patch plan before research CLI work |
 | 21 | `21_p1_research_cli_plan.md` | P1 implementation plan | `agbrowse research plan` CLI and search-result normalizer contract |
 | 22 | `22_p3_fetch_enrichment_plan.md` | P3 implementation plan | Fetch original-page evidence from normalized search URL candidates |
+| 23 | `23_p4_browse_escalation_plan.md` | P4 implementation plan | Plan reasoned browser next actions from fetch enrichment output |
 
 ## Key Dataset Facts
 
