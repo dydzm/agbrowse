@@ -7,10 +7,11 @@ that can explain search failures and choose fetch or browse deliberately.
 
 ## Patch Sequence
 
-This sequence must be read together with doc 17. `agbrowse research plan` is
-not enough by itself; cli-jaw's `browser`/`browse` command surface and
+This sequence must be read together with docs 17-19. `agbrowse research plan`
+is not enough by itself; cli-jaw's `browser`/`browse` command surface and
 agbrowse's standalone command surface need to stay mirrored for the agent
-workflow to remain teachable.
+workflow to remain teachable. The implementation must preserve three modes:
+cli-jaw-only, agbrowse-only, and integrated cli-jaw + agbrowse.
 
 ### P0a. cli-jaw Browser Command Mirror
 
@@ -18,15 +19,29 @@ Before or alongside the research CLI, close the agent-visible browser parity
 gap:
 
 ```text
+Document and classify every browser/search surface:
+  shared and aligned
+  shared but surface/docs drift
+  cli-jaw-only with reason
+  agbrowse-only with reason
+  mirror-required before K-BrowseComp implementation
+  later parity, not P0 blocker
+```
+
+The first mirror candidates are:
+
+```text
+agbrowse active-tab --json
 agbrowse new-tab <url> [--no-activate] [--json]
 agbrowse tab-close <targetId> [--json]
-agbrowse active-tab --json
 agbrowse vision-click <target> [--provider codex] [--double]
 ```
 
-These commands matter for Korean search because dynamic pages, portals,
-iframes, and table/list pages often require controlled tab isolation, explicit
-target handoff, and no-ref coordinate fallback.
+Source inspection shows `agbrowse new-tab` and `agbrowse tab-close` already
+exist in `skills/browser/browser.mjs`; the current gap is help/flag/JSON/skill
+surface parity. These commands matter for Korean search because dynamic pages,
+portals, iframes, and table/list pages often require controlled tab isolation,
+explicit target handoff, and no-ref coordinate fallback.
 
 ### P0b. Offline Planning Core
 

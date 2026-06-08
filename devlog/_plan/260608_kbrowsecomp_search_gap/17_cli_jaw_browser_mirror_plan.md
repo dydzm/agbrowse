@@ -35,7 +35,12 @@ Observed on 2026-06-09 from:
 ```text
 cli-jaw browser --help
 node bin/agbrowse.mjs --help
+skills/browser/browser.mjs
+web-ai/cli.mjs
 ```
+
+Doc 18 is the full A/B inventory. This document keeps the mirror requirement
+and implementation priority.
 
 ### Already Mirrored Enough For K-BrowseComp
 
@@ -52,8 +57,8 @@ node bin/agbrowse.mjs --help
 
 | Capability | cli-jaw browser | agbrowse state | Why it matters |
 |------------|-----------------|----------------|----------------|
-| explicit new tab | `new-tab <url> [--no-activate]` | not in help | parallel research and avoiding active-tab drift |
-| explicit tab close | `tab-close <targetId>` | not in help | cleanup after multi-candidate browse runs |
+| explicit new tab | `new-tab <url> [--no-activate]` | implemented in source, weak help/flag/JSON surface | parallel research and avoiding active-tab drift |
+| explicit tab close | `tab-close <targetId>` | implemented in source, weak help/JSON surface | cleanup after multi-candidate browse runs |
 | active tab contract | `active-tab --json` | not in help | employee handoff needs target-id truth |
 | vision-click surface | `vision-click <target>` | separate agbrowse bin/skill, not mirrored in main help | no-ref Korean portal/iframe fallback |
 | cleanup-runtimes | `cleanup-runtimes` | not mirrored | lower priority; jaw-owned runtime cleanup is cli-jaw-specific |
@@ -82,9 +87,9 @@ first" to "browser parity + research CLI together":
 These should be patched before or alongside `research plan` CLI exposure:
 
 ```text
+agbrowse active-tab --json
 agbrowse new-tab <url> [--no-activate] [--json]
 agbrowse tab-close <targetId> [--json]
-agbrowse active-tab --json
 agbrowse vision-click <target> [--provider codex] [--double]
 ```
 

@@ -42,6 +42,8 @@ source-domain statistics to avoid republishing query-answer pairs.
 | 15 | `15_offline_fixture_contract.md` | Offline fixture contract | Network-free fixture shape for query/fetch/browse trajectory validation |
 | 16 | `16_patch_sequence_search_research.md` | Search research patch sequence | P0-P4 implementation sequence from planning core to live harness |
 | 17 | `17_cli_jaw_browser_mirror_plan.md` | cli-jaw browser mirror plan | Required browser command parity between cli-jaw and agbrowse |
+| 18 | `18_browser_surface_inventory.md` | Browser surface inventory | A/B inventory of cli-jaw-only, agbrowse-only, shared, and drifted command surfaces |
+| 19 | `19_standalone_orchestrated_architecture.md` | Standalone/orchestrated architecture | cli-jaw-only, agbrowse-only, and integrated operating modes |
 
 ## Key Dataset Facts
 
@@ -86,11 +88,13 @@ keep existing search APIs for URL discovery, make small Korean/source-aware
 keyword rewrites, fetch the returned URLs, and use browser skills only when
 fetch cannot see the needed page state.
 
-Doc 17 adds the missing integration constraint: the K-BrowseComp patch plan
+Docs 17-19 add the missing integration constraint: the K-BrowseComp patch plan
 must advance cli-jaw browser command parity and agbrowse research planning
 together. cli-jaw is the employee orchestrator; agbrowse is the standalone
 browser runtime. If the browse command surface diverges, the query/fetch/browse
-workflow cannot be taught reliably across both systems.
+workflow cannot be taught reliably across both systems. The target architecture
+has three valid modes: cli-jaw without agbrowse, agbrowse without cli-jaw, and
+the combined cli-jaw + agbrowse workflow.
 
 The provider probe in doc 13 confirms this direction across Codex, Claude,
 AGY/Gemini, and Cursor. Internal search query rewrites are generally not
