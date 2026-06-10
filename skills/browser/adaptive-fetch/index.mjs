@@ -9,7 +9,7 @@ import { fromFetchResult, fromHumanResolvedResult, fromUserSessionResult } from 
 import { chooseBestReaderCandidate, scoreReaderCandidate } from './content-scorer.mjs';
 import { fetchThirdPartyReaderCandidate } from './third-party-readers.mjs';
 import { BrowserRequiredError } from './browser-runtime.mjs';
-import { collectBrowserCandidate, collectNetworkJsonCandidates } from './browser-escalation.mjs';
+import { collectBrowserCandidate, collectDefuddleCandidate, collectNetworkJsonCandidates } from './browser-escalation.mjs';
 import { fromBrowserResult, fromNetworkCandidate } from './reader-adapters.mjs';
 import { classifyChallengeType } from './challenge-detector.mjs';
 import { shouldTryUserSession, navigateInUserSession } from './browser-session.mjs';
@@ -258,6 +258,8 @@ export async function runAdaptiveFetch(input, deps = {}) {
     const browserResult = await tryBrowserEscalation(parsed.href, options, deps, trace, detectedChallenge);
     if (browserResult) {
         readerCandidates.push(fromBrowserResult(browserResult));
+        const defuddleCandidate = collectDefuddleCandidate(browserResult);
+        if (defuddleCandidate) readerCandidates.push(fromBrowserResult(defuddleCandidate));
         for (const networkCandidate of collectNetworkJsonCandidates(browserResult)) {
             readerCandidates.push(fromNetworkCandidate(networkCandidate));
         }
@@ -558,6 +560,19 @@ async function tryBrowserEscalation(url, options, deps, trace, challengeInfo) {
             evidence: scored.evidence,
             warnings: result.warnings,
         });
+        const defuddleCandidate = collectDefuddleCandidate(result);
+        if (defuddleCandidate) {
+            const scoredDefuddle = scoreReaderCandidate(fromBrowserResult(defuddleCandidate));
+            appendAttempt(trace, {
+                source: 'browser',
+                verdict: scoredDefuddle.verdict,
+                url: defuddleCandidate.finalUrl,
+                status: defuddleCandidate.status,
+                reason: `score:${scoredDefuddle.score}`,
+                evidence: scoredDefuddle.evidence,
+                warnings: defuddleCandidate.warnings || [],
+            });
+        }
         for (const networkCandidate of collectNetworkJsonCandidates(result)) {
             const scoredNetwork = scoreReaderCandidate(fromNetworkCandidate(networkCandidate));
             appendAttempt(trace, {

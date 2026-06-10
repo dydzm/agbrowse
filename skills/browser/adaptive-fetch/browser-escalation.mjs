@@ -2,6 +2,7 @@
 
 import { closeFetchBrowserPage, getFetchBrowserPage } from './browser-runtime.mjs';
 import { classifyAccessBoundary, detectChallengeMarkers, detectWafChallenge } from './challenge-detector.mjs';
+import { runDefuddleInPage } from './defuddle-extractor.mjs';
 import { validateFetchUrl } from './safety.mjs';
 import { classifyBoundarySignals } from './validators.mjs';
 
@@ -91,6 +92,24 @@ export async function collectBrowserCandidate(url, options = {}) {
         const markers = detectChallengeMarkers({ url: finalUrl, title, text, status: navStatus });
         const boundary = classifyAccessBoundary(markers);
         const statusBoundary = classifyBoundarySignals({ status: navStatus, text: `${title}\n${text}`, url: finalUrl }).verdict;
+        const defuddle = await runDefuddleInPage(page);
+        const defuddleCandidate = defuddle.parsed
+            ? {
+                source: 'browser',
+                label: 'browser-defuddle',
+                finalUrl,
+                title: defuddle.parsed.title || title,
+                text: defuddle.parsed.content || '',
+                contentType: 'text/markdown',
+                status: navStatus,
+                ok: navOk && statusBoundary === null,
+                metadata: defuddle.parsed.author || defuddle.parsed.published
+                    ? { author: defuddle.parsed.author || '', published: defuddle.parsed.published || '' }
+                    : null,
+                evidence: ['browser-defuddle', navStatus ? `http-${navStatus}` : null].filter(Boolean),
+                warnings: markers.map(marker => `marker:${marker.kind}`),
+            }
+            : null;
         return {
             source: 'browser',
             label: 'browser-render',
@@ -107,8 +126,12 @@ export async function collectBrowserCandidate(url, options = {}) {
                 boundary ? `boundary:${boundary}` : null,
                 statusBoundary ? `status-boundary:${statusBoundary}` : null,
             ].filter(Boolean),
-            warnings: markers.map(marker => `marker:${marker.kind}`),
+            warnings: [
+                ...markers.map(marker => `marker:${marker.kind}`),
+                ...(defuddle.reason ? [defuddle.reason] : []),
+            ],
             networkCandidates,
+            defuddleCandidate,
         };
     } finally {
         if (typeof page.off === 'function') page.off('response', onResponse);
@@ -136,6 +159,13 @@ async function readVisibleText(page, selector) {
  */
 export function collectNetworkJsonCandidates(browserResult) {
     return Array.isArray(browserResult?.networkCandidates) ? browserResult.networkCandidates : [];
+}
+
+/**
+ * @param {any} browserResult
+ */
+export function collectDefuddleCandidate(browserResult) {
+    return browserResult?.defuddleCandidate || null;
 }
 
 /**
