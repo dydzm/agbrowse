@@ -29,6 +29,38 @@ describe('web-ai ChatGPT model selector policy', () => {
         expect(isChatGptEffortSupported('thinking', 'heavy')).toBe(true);
     });
 
+    it('selects the simplified June 2026 Intelligence menu labels', async () => {
+        const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
+        const cases = [
+            { model: 'instant', effort: null, selected: 'instant', selectedEffort: null },
+            { model: 'thinking', effort: 'standard', selected: 'thinking', selectedEffort: 'standard' },
+            { model: 'thinking', effort: 'extended', selected: 'thinking', selectedEffort: 'extended' },
+            { model: 'thinking', effort: 'heavy', selected: 'thinking', selectedEffort: 'heavy' },
+            { model: 'pro', effort: 'extended', selected: 'pro', selectedEffort: 'extended' },
+        ];
+
+        for (const testCase of cases) {
+            const page = createFakeModelPage({
+                model: 'instant',
+                initialModelMenuOpen: false,
+                closedDropdownButton: true,
+                simplifiedIntelligenceMenu: true,
+                checkedModelRows: false,
+                checkedEffortRows: false,
+            });
+            const result = await selectChatGptModel(
+                page,
+                testCase.model,
+                testCase.effort ? { effort: testCase.effort } : {},
+            );
+
+            expect(result).toMatchObject({
+                selected: testCase.selected,
+                effort: testCase.selectedEffort,
+            });
+        }
+    });
+
     it('selects every supported reasoning effort when ChatGPT puts the model name before the effort label', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
 
@@ -691,6 +723,7 @@ function createFakeModelPage({
     strayModelMenuTexts = [],
     effortOptionRole = 'menuitemradio',
     modelPickerUnavailable = false,
+    simplifiedIntelligenceMenu = false,
     advanceClock = null,
 } = {}) {
     const missingModelTestIdSet = new Set(missingModelTestIds);
@@ -704,7 +737,7 @@ function createFakeModelPage({
         exactEffortTriggerVisible,
         genericEffortTrigger,
     };
-    const modelRows = [
+    const legacyModelRows = [
         createElement({
             text: 'GPT-5.3 Instant',
             testId: modelRowTestId('model-switcher-gpt-5-3'),
@@ -724,6 +757,39 @@ function createFakeModelPage({
             onClick: () => setModel('pro'),
         }),
     ];
+    const simplifiedRows = [
+        createElement({
+            text: 'Instant',
+            get checked() { return state.currentModel === 'instant'; },
+            onClick: () => setSimplifiedSelection('instant', null),
+        }),
+        createElement({
+            text: 'Medium',
+            get checked() { return state.currentModel === 'thinking' && state.selectedEffort === 'standard'; },
+            onClick: () => setSimplifiedSelection('thinking', 'standard'),
+        }),
+        createElement({
+            text: 'High',
+            get checked() { return state.currentModel === 'thinking' && state.selectedEffort === 'extended'; },
+            onClick: () => setSimplifiedSelection('thinking', 'extended'),
+        }),
+        createElement({
+            text: 'Extra High',
+            get checked() { return state.currentModel === 'thinking' && state.selectedEffort === 'heavy'; },
+            onClick: () => setSimplifiedSelection('thinking', 'heavy'),
+        }),
+        createElement({
+            text: 'Pro Standard',
+            get checked() { return state.currentModel === 'pro' && state.selectedEffort === 'standard'; },
+            onClick: () => setSimplifiedSelection('pro', 'standard'),
+        }),
+        createElement({
+            text: 'Pro Extended',
+            get checked() { return state.currentModel === 'pro' && state.selectedEffort === 'extended'; },
+            onClick: () => setSimplifiedSelection('pro', 'extended'),
+        }),
+    ];
+    const modelRows = simplifiedIntelligenceMenu ? simplifiedRows : legacyModelRows;
     const exactTrigger = createElement({
         text: exactEffortTriggerText,
         testId: `model-switcher-gpt-5-5-${exactEffortTriggerModel}-thinking-effort`,
@@ -800,6 +866,12 @@ function createFakeModelPage({
         state.currentModel = nextModel;
     }
 
+    function setSimplifiedSelection(nextModel, nextEffort) {
+        state.currentModel = nextModel;
+        state.selectedEffort = nextEffort;
+        state.modelMenuOpen = false;
+    }
+
     function currentEffortTexts() {
         if (state.effortMenuSource === 'generic' && genericEffortTexts) return genericEffortTexts;
         return effortTexts;
@@ -828,6 +900,7 @@ function createFakeModelPage({
         if (selector.includes('__composer-pill')) return roleButtonPill ? composerPills() : [];
         if (selector === 'button') return roleButtonPill ? [] : [dropdownButton, ...composerPills(), closedHeroPill].filter(element => element.visible && (element !== closedHeroPill || closedHeroEffortPill));
         if (selector === '[role="menu"]') {
+            if (simplifiedIntelligenceMenu && state.modelMenuOpen) return [createElement({ text: `Intelligence\n${simplifiedRows.map(row => row.text).join('\n')}\nGPT-5.5` })];
             return state.effortMenuOpen ? [createElement({ text: Object.values(currentEffortTexts()).join('\n') })] : [];
         }
         if (selector === '[data-testid^="model-switcher-"]') return state.modelMenuOpen ? modelRows.filter(element => element.testId) : (closedHeroEffortPill ? [closedHeroPill] : []);

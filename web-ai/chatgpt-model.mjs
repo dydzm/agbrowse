@@ -35,7 +35,7 @@ const CHATGPT_COMPOSER_MODEL_PILL_SELECTORS = [
 ];
 
 const CHATGPT_MODEL_MENU_ITEM_SELECTOR = '[data-testid^="model-switcher-gpt-"]';
-const CHATGPT_MODEL_TEXT_BUTTON_PATTERN = /^(ChatGPT|GPT[-\s]?\d|((Light|Standard|Extended|Heavy)\s+)?(Instant|Fast|Thinking|Pro|Heavy)\b)/i;
+const CHATGPT_MODEL_TEXT_BUTTON_PATTERN = /^(ChatGPT|GPT[-\s]?\d|((Light|Standard|Extended|Heavy)\s+)?(Instant|Fast|Thinking|Pro|Heavy)\b|Medium\b|High\b|Extra High\b|Pro Standard\b|Pro Extended\b)/i;
 const CHATGPT_OBSERVED_PRO_PILL_LABELS = ['Standard Pro', 'Extended Pro'];
 const CHATGPT_EFFORT_TRIGGER_SELECTORS = [
     '[data-testid*="thinking-effort"]',
@@ -50,8 +50,8 @@ const CHATGPT_EFFORT_TRIGGER_SELECTORS = [
 /** @type {Readonly<Record<ModelChoice, ModelOptionConfig>>} */
 export const CHATGPT_MODEL_OPTIONS = {
     instant: { testIds: ['model-switcher-gpt-5-5', 'model-switcher-gpt-5-3'], labels: ['Instant'] },
-    thinking: { testIds: ['model-switcher-gpt-5-5-thinking', 'model-switcher-gpt-5-5-thinking-thinking-effort'], labels: ['Thinking'] },
-    pro: { testIds: ['model-switcher-gpt-5-5-pro', 'model-switcher-gpt-5-5-pro-thinking-effort'], labels: ['Pro', 'Heavy'] },
+    thinking: { testIds: ['model-switcher-gpt-5-5-thinking', 'model-switcher-gpt-5-5-thinking-thinking-effort'], labels: ['Thinking', 'Medium', 'High', 'Extra High'] },
+    pro: { testIds: ['model-switcher-gpt-5-5-pro', 'model-switcher-gpt-5-5-pro-thinking-effort'], labels: ['Pro', 'Heavy', 'Pro Standard', 'Pro Extended'] },
 };
 
 /** @type {Readonly<Record<string, EffortConfig>>} */
@@ -70,6 +70,32 @@ export const CHATGPT_MODEL_EFFORT_OPTIONS = {
         efforts: {
             standard: 'Standard',
             extended: 'Extended',
+        },
+    },
+};
+
+/** @type {Readonly<Record<ModelChoice, { defaultLabels: readonly string[], efforts: Readonly<Record<string, readonly string[]>> }>>} */
+const CHATGPT_SIMPLIFIED_INTELLIGENCE_OPTIONS = {
+    instant: {
+        defaultLabels: ['Instant'],
+        efforts: {
+            light: ['Instant'],
+        },
+    },
+    thinking: {
+        defaultLabels: ['Medium'],
+        efforts: {
+            light: ['Instant'],
+            standard: ['Medium'],
+            extended: ['High'],
+            heavy: ['Extra High'],
+        },
+    },
+    pro: {
+        defaultLabels: ['Pro Standard', 'Pro Extended'],
+        efforts: {
+            standard: ['Pro Standard'],
+            extended: ['Pro Extended'],
         },
     },
 };
@@ -428,6 +454,8 @@ async function findModelOption(page, choice) {
             return loc;
         }
     }
+    const simplified = await findOptionByExactLabels(page, simplifiedDefaultLabels(choice));
+    if (simplified && await isModelOptionCandidate(simplified, choice)) return simplified;
     return null;
 }
 
@@ -483,6 +511,8 @@ async function selectChatGptEffort(page, model, effort, usedFallbacks) {
 async function findEffortOption(page, model, effort) {
     const label = CHATGPT_MODEL_EFFORT_OPTIONS[model]?.efforts?.[effort];
     if (!label) return null;
+    const simplified = await findOptionByExactLabels(page, simplifiedEffortLabels(model, effort));
+    if (simplified) return simplified;
     const candidates = page.locator('[role="menuitemradio"], [role="menuitem"]').filter({ hasText: effortLabelPattern(label) });
     const modelSpecific = candidates.filter({ hasText: modelLabelPattern(/** @type {ModelChoice} */ (model), CHATGPT_MODEL_OPTIONS[/** @type {ModelChoice} */ (model)]?.labels?.[0] || '') }).last();
     if (await modelSpecific.isVisible().catch(() => false)) return modelSpecific;
@@ -621,6 +651,14 @@ async function findEffortTriggerBoxNearModelRow(page, model) {
  */
 async function readCheckedEffort(page, model) {
     const config = CHATGPT_MODEL_EFFORT_OPTIONS[model];
+    const checkedRows = await page.locator('[role="menuitemradio"][aria-checked="true"], [role="menuitemradio"][data-state="checked"]')
+        .all()
+        .catch(() => /** @type {Locator[]} */ ([]));
+    for (const row of checkedRows) {
+        const text = (await row.innerText({ timeout: 500 }).catch(() => '')).trim();
+        const simplified = effortChoiceFromSimplifiedText(text, model);
+        if (simplified) return simplified;
+    }
     for (const [effort, label] of Object.entries(config?.efforts || {})) {
         const checked = await page.locator(`[role="menuitemradio"][aria-checked="true"], [role="menuitemradio"][data-state="checked"]`)
             .filter({ hasText: effortLabelPattern(label) })
@@ -647,6 +685,7 @@ async function isEffortMenuOpen(page, model, options = {}) {
     const requestedEffort = options.effort || null;
     const config = CHATGPT_MODEL_EFFORT_OPTIONS[model];
     if (!config) return false;
+    if (await isSimplifiedIntelligenceMenuOpen(page, model, requestedEffort)) return true;
     const labels = Object.values(config.efforts);
     const requiredLabels = requiredEffortMenuLabels(model, requestedEffort);
     const unexpectedLabels = Object.entries(CHATGPT_MODEL_EFFORT_OPTIONS)
@@ -805,16 +844,17 @@ async function readActiveEffortPill(page) {
  * @returns {Promise<boolean>}
  */
 async function isModelMenuOpen(page) {
-    return page.locator(CHATGPT_MODEL_MENU_ITEM_SELECTOR)
+    const legacyOpen = await page.locator(CHATGPT_MODEL_MENU_ITEM_SELECTOR)
         .filter({ hasText: CHATGPT_MODEL_TEXT_BUTTON_PATTERN })
         .evaluateAll((items) => items.some(item => {
             const text = (/** @type {HTMLElement} */ (item).innerText || item.textContent || '').trim();
             const testId = item.getAttribute?.('data-testid') || '';
             if (!text) return false;
             if (testId.includes('effort') && /^(Light|Standard|Extended|Heavy|Standard Pro|Extended Pro)$/i.test(text)) return false;
-            return /^(ChatGPT|GPT[-\s]?\d|((Light|Standard|Extended|Heavy)\s+)?(Instant|Fast|Thinking|Pro|Heavy)\b)/i.test(text);
+            return /^(ChatGPT|GPT[-\s]?\d|((Light|Standard|Extended|Heavy)\s+)?(Instant|Fast|Thinking|Pro|Heavy)\b|Medium\b|High\b|Extra High\b|Pro Standard\b|Pro Extended\b)/i.test(text);
         }))
         .catch(() => false);
+    return legacyOpen || isSimplifiedIntelligenceMenuOpen(page, null, null);
 }
 
 /**
@@ -824,8 +864,8 @@ async function isModelMenuOpen(page) {
  */
 function modelLabelPattern(choice, label) {
     if (choice === 'instant') return /\b(Instant|Fast)\b/i;
-    if (choice === 'thinking') return /\b(Thinking|Think)\b/i;
-    if (choice === 'pro') return /\b(Pro|Heavy)\b/i;
+    if (choice === 'thinking') return /\b(Thinking|Think|Medium|High|Extra High)\b/i;
+    if (choice === 'pro') return /\b(Pro|Heavy|Pro Standard|Pro Extended)\b/i;
     return new RegExp(`(^|\\s)${escapeRegExp(label)}\\b`, 'i');
 }
 
@@ -844,9 +884,88 @@ function effortLabelPattern(label) {
 function modelChoiceFromText(text) {
     if (/\b(Instant|Fast)\b/i.test(text)) return 'instant';
     if (isLegacyProModelLabel(text)) return null;
+    if (/\b(Pro Standard|Pro Extended)\b/i.test(text)) return 'pro';
+    if (/\b(Medium|High|Extra High)\b/i.test(text)) return 'thinking';
     if (/\b(Thinking|Think)\b/i.test(text)) return 'thinking';
     if (/\b(Pro|Heavy)\b/i.test(text)) return 'pro';
     return null;
+}
+
+/**
+ * @param {Page} page
+ * @param {readonly string[]} labels
+ * @returns {Promise<Locator | null>}
+ */
+async function findOptionByExactLabels(page, labels) {
+    for (const label of labels) {
+        const candidates = await page.locator('[role="menuitemradio"], [role="menuitem"]').all().catch(() => /** @type {Locator[]} */ ([]));
+        for (const loc of candidates) {
+            if (!(await loc.isVisible().catch(() => false))) continue;
+            const text = (await loc.innerText({ timeout: 500 }).catch(() => '')).trim();
+            if (menuTextHasExactLine(text, label)) return loc;
+        }
+    }
+    return null;
+}
+
+/**
+ * @param {Page} page
+ * @param {ModelChoice | string | null} model
+ * @param {string | null} effort
+ * @returns {Promise<boolean>}
+ */
+async function isSimplifiedIntelligenceMenuOpen(page, model, effort) {
+    const requiredLabels = effort && model
+        ? simplifiedEffortLabels(model, effort)
+        : ['Instant', 'Medium', 'High', 'Extra High'];
+    if (requiredLabels.length === 0) return false;
+    return page.locator('[role="menu"]').evaluateAll((menus, labels) => menus.some(menu => {
+        const text = /** @type {HTMLElement} */ (menu).innerText || menu.textContent || '';
+        if (!/\bIntelligence\b/i.test(text)) return false;
+        return labels.some(label => menuTextHasExactLine(text, label));
+    }), requiredLabels).catch(() => false);
+}
+
+/**
+ * @param {ModelChoice | string} model
+ * @returns {readonly string[]}
+ */
+function simplifiedDefaultLabels(model) {
+    return CHATGPT_SIMPLIFIED_INTELLIGENCE_OPTIONS[/** @type {ModelChoice} */ (model)]?.defaultLabels || [];
+}
+
+/**
+ * @param {ModelChoice | string} model
+ * @param {string} effort
+ * @returns {readonly string[]}
+ */
+function simplifiedEffortLabels(model, effort) {
+    return CHATGPT_SIMPLIFIED_INTELLIGENCE_OPTIONS[/** @type {ModelChoice} */ (model)]?.efforts?.[effort] || [];
+}
+
+/**
+ * @param {string} text
+ * @param {string} model
+ * @returns {EffortChoice | null}
+ */
+function effortChoiceFromSimplifiedText(text, model) {
+    const options = CHATGPT_SIMPLIFIED_INTELLIGENCE_OPTIONS[/** @type {ModelChoice} */ (model)]?.efforts || {};
+    for (const [effort, labels] of Object.entries(options)) {
+        if (labels.some(label => menuTextHasExactLine(text, label))) return /** @type {EffortChoice} */ (effort);
+    }
+    return null;
+}
+
+/**
+ * @param {string} text
+ * @param {string} label
+ * @returns {boolean}
+ */
+function menuTextHasExactLine(text, label) {
+    return String(text || '')
+        .split(/\r?\n/)
+        .map(line => normalizeModelPickerText(line))
+        .includes(normalizeModelPickerText(label));
 }
 
 /**

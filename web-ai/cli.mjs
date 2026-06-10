@@ -97,7 +97,8 @@ Provider:
   --effort <alias>    ChatGPT reasoning effort. The reasoning-effort menu is
                       ONLY touched when this flag is provided; otherwise the
                       currently-checked effort in the browser is left as-is.
-                      Requires a model because Pro and Thinking expose different menus.
+                      Requires a model because legacy Pro/Thinking menus and the
+                      simplified Intelligence menu map efforts differently.
                         Pro: standard, extended
                         Thinking: light, standard, extended, heavy
   --reasoning-effort <alias>
