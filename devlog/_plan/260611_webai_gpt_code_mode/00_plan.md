@@ -122,3 +122,17 @@ GET  <download_url>  (쿠키 필수, 외부 403)          → zip 바이너리
   `answer-artifact.mjs`(회수 경로 기록처 재사용).
 - 실측 대화: https://chatgpt.com/c/6a298861-3ecc-83a5-b03a-75f8c84e03cc
 - 회수 산출물 검증: /tmp/js_path_inpage.zip (in-page fetch, 4파일, 무결성 OK)
+
+## Phase 10 구현 결과 (2026-06-11)
+
+- `web-ai/code-artifact.mjs` (195줄): `scanConversationForZip`(순수),
+  `verifyZipBuffer`(무의존 EOCD 파서, 파일 목록 추출), `fetchConversationJson`,
+  `mintDownloadUrl`, `fetchBinaryBase64`(청크 base64), `retrieveCodeArtifact`
+  (오케스트레이터, mid 후보 순회, 단계별 reason — silent fallback 없음).
+- 테스트: `test/unit/web-ai-code-artifact.test.mjs` 10케이스 (실제 zip 픽스처
+  포함) — 전체 스위트 771/771, tsc(checkjs) 0, counts 60/drift 140 PASS.
+- **라이브 e2e**: 실제 code-mode 대화(c/6a29932e)에 모듈 연결 →
+  `{ok:true, files:[src/server.js, package.json, README.md], 967B}` 회수,
+  `unzip -t` 0 에러. 순수 EOCD 파서의 파일 목록이 unzip과 일치.
+- 다음: Phase 11 (code prompt 템플릿 + ask 연동), Phase 12 (CLI 표면 + policy
+  allow + truth table).
