@@ -325,6 +325,18 @@ conversation was created by agbrowse and the session is still recorded, use
 works. The extractor does not send a new prompt; it scans the saved conversation
 JSON for `/mnt/data/*.zip` paths and reuses the provider download API.
 
+After extraction, verify locally when correctness matters:
+
+```bash
+unzip -t ./result.zip
+unzip -l ./result.zip
+```
+
+Validated live on 2026-06-11 with a completed ChatGPT code-mode conversation
+where the visible assistant answer contained only `/mnt/data/result.zip`; the
+runtime recovered `pro_hello.py` and `README.md` from the old conversation
+without sending a follow-up prompt.
+
 Code mode is beta and ChatGPT-only. It does not depend on visible download
 buttons; plain sandbox paths in the assistant answer are enough for the runtime
 to retrieve the archives, including later `code-extract` runs. Text copied away

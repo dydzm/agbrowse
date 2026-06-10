@@ -276,6 +276,16 @@ Examples:
                                           --output-image ./next.png \\
                                           --prompt "Create another image in this same conversation"
 
+  # Re-retrieve a zip from an existing ChatGPT code-mode conversation.
+  agbrowse web-ai code-extract --vendor chatgpt \\
+          --url "https://chatgpt.com/c/<conversation-id>" \\
+          --output-zip ./result.zip
+
+  # Re-retrieve every zip mentioned in an existing conversation.
+  agbrowse web-ai code-extract --vendor chatgpt \\
+          --url "https://chatgpt.com/c/<conversation-id>" \\
+          --multi-zip --output-dir ./artifacts
+
   # Long-running Pro: send returns sessionId; resume from any shell later.
   SID=$(agbrowse web-ai send --vendor chatgpt --inline-only \\
           --prompt "..." --json | jq -r .sessionId)
