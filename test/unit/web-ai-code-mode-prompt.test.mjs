@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     ARTIFACT_EXCLUSIONS,
     CODE_ARTIFACT_PATH,
+    PLAN_TOOL_REQUIREMENT,
     buildCodeModePrompt,
     checkContractCompliance,
 } from '../../web-ai/code-mode-prompt.mjs';
@@ -11,6 +12,7 @@ describe('buildCodeModePrompt', () => {
         const prompt = buildCodeModePrompt('Node.js Express ping API MVP');
         expect(prompt).toContain('Node.js Express ping API MVP');
         expect(prompt).toContain('/mnt/data/workdir');
+        expect(prompt).toContain(PLAN_TOOL_REQUIREMENT);
         expect(prompt).toContain(`container.exec 로 단 하나의 ${CODE_ARTIFACT_PATH}`);
         expect(prompt).toContain('find /mnt/data -maxdepth 1 -name "*.zip" -print');
         expect(prompt).toContain('중간 확인 질문 금지');
@@ -28,6 +30,7 @@ describe('buildCodeModePrompt', () => {
         expect(prompt).toContain('MULTI-ZIP');
         expect(prompt).toContain('frontend.zip');
         expect(prompt).toContain('한 줄에 하나씩');
+        expect(prompt).toContain(PLAN_TOOL_REQUIREMENT);
         // the single-zip "exactly one result.zip" clause must NOT appear
         expect(prompt).not.toContain('단 하나의 /mnt/data/result.zip');
     });

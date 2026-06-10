@@ -14,6 +14,8 @@ export const ARTIFACT_EXCLUSIONS = [
     'coverage/', '.turbo/', '__pycache__/', '.pytest_cache/', '.git/',
 ];
 
+export const PLAN_TOOL_REQUIREMENT = '- 첫 액션으로 반드시 plan 도구를 사용해 구현/검증/패키징 계획을 세운 뒤 코드 작성에 들어간다. 최종 assistant 메시지에는 그 계획을 반복하지 않는다.';
+
 /**
  * Build the strict code-mode prompt around the caller's requirements.
  *
@@ -38,6 +40,7 @@ export function buildCodeModePrompt(requirements, opts = {}) {
             spec,
             '',
             '빌드/패키징 계약:',
+            PLAN_TOOL_REQUIREMENT,
             '- 모든 소스를 먼저 /mnt/data/workdir 아래에 작성한다.',
             '- 패키징 전 기존 /mnt/data/*.zip 을 모두 삭제한다.',
             '- 논리적으로 분리된 산출물마다 의미 있는 이름의 zip 을 /mnt/data 바로 아래에 생성한다 (예: /mnt/data/frontend.zip, /mnt/data/backend.zip). 모든 zip 은 /mnt/data 직속이어야 한다.',
@@ -55,6 +58,7 @@ export function buildCodeModePrompt(requirements, opts = {}) {
         spec,
         '',
         '빌드/패키징 계약:',
+        PLAN_TOOL_REQUIREMENT,
         '- 모든 소스를 먼저 /mnt/data/workdir 아래에 작성한다.',
         '- 패키징 전 기존 /mnt/data/*.zip 을 모두 삭제한다.',
         `- container.exec 로 단 하나의 ${CODE_ARTIFACT_PATH} 을 생성한다.`,

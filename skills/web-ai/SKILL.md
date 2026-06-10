@@ -272,7 +272,9 @@ Use `--max-upload-file-size <bytes>` for live `--file` uploads. Use
 
 Use ChatGPT only. `web-ai code` sends a strict code-generation contract, waits
 for ChatGPT to create zip artifacts in its sandbox, retrieves the artifacts via
-the provider download API, and validates the local zip before returning.
+the provider download API, and validates the local zip before returning. The
+contract tells ChatGPT to use its plan tool first, then implement, self-check,
+package, and return only the artifact path(s).
 
 Single zip:
 
