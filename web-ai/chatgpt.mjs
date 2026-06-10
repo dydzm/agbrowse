@@ -26,6 +26,7 @@ import { recordActiveLease } from './tab-lease-store.mjs';
 import { createChatGptEditorAdapter } from './vendor-editor-contract.mjs';
 import {
     attachLocalFileLive,
+    attachLocalFilesLive,
     fileInfoFromPath,
     sendButtonTimeoutMs,
     verifySentTurnAttachmentLive,
@@ -233,7 +234,12 @@ export async function sendWebAi(deps, input = {}) {
         /** @type {any[]} */
         let usedFallbacks = [];
         const contextAttachmentPath = contextPack?.attachments?.[0]?.path;
-        if (contextAttachmentPath && input.filePath) {
+        // input.filePaths (repeatable --file) takes precedence; fall back to the
+        // legacy single input.filePath, then the context-package attachment.
+        const requestedPaths = Array.isArray(input.filePaths) && input.filePaths.length
+            ? input.filePaths
+            : (input.filePath ? [input.filePath] : []);
+        if (contextAttachmentPath && requestedPaths.length) {
             throw new WebAiError({
                 errorCode: 'provider.attachment-preflight',
                 stage: 'attachment-preflight',
@@ -242,10 +248,10 @@ export async function sendWebAi(deps, input = {}) {
                 message: 'context package upload and --file upload cannot be combined yet',
             });
         }
-        const uploadPath = input.filePath || contextAttachmentPath;
-        if (uploadPath) {
+        const uploadPaths = requestedPaths.length ? requestedPaths : (contextAttachmentPath ? [contextAttachmentPath] : []);
+        if (uploadPaths.length) {
             const uploadResolution = await resolveOptionalChatGptUploadTarget(page, traceCtx);
-            const upload = await attachLocalFileLive(page, fileInfoFromPath(uploadPath), {
+            const upload = await attachLocalFilesLive(page, uploadPaths.map(fileInfoFromPath), {
                 uploadTarget: /** @type {any} */ (uploadResolution?.target || null),
                 maxUploadBytes: input.maxUploadFileSize,
             });
@@ -261,7 +267,7 @@ export async function sendWebAi(deps, input = {}) {
             usedFallbacks = upload.usedFallbacks || [];
         }
         const sendResolution = await resolveOptionalChatGptSendTarget(page, traceCtx);
-        const submitTimeoutMs = sendButtonTimeoutMs(uploadPath ? [uploadPath] : []);
+        const submitTimeoutMs = sendButtonTimeoutMs(uploadPaths);
         await adapter.submitPrompt({
             sendTarget: /** @type {any} */ (sendResolution?.target || null),
             sendButtonTimeoutMs: submitTimeoutMs,
@@ -269,11 +275,11 @@ export async function sendWebAi(deps, input = {}) {
         await adapter.verifyPromptCommitted(rendered.composerText, commitBaseline, {
             timeoutMs: submitTimeoutMs,
         });
-        if (uploadPath) {
+        for (const uploadPath of uploadPaths) {
             const sentAttachment = await verifySentTurnAttachmentLive(page, fileInfoFromPath(uploadPath));
             if (!sentAttachment.ok) {
                 usedFallbacks.push('sent-attachment-evidence-unavailable');
-                attachmentWarnings.push(`sent attachment evidence unavailable after submit: ${sentAttachment.error}`);
+                attachmentWarnings.push(`sent attachment evidence unavailable after submit (${fileInfoFromPath(uploadPath).basename}): ${sentAttachment.error}`);
             }
         }
         const finalUrl = page.url();

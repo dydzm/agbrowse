@@ -286,6 +286,70 @@ export async function attachLocalFileLive(page, file, options = {}) {
 }
 
 /**
+ * Attach several local files at once — including mixed types (zip + image +
+ * doc) — through a single composer file input. ChatGPT's general attachment
+ * input has no `accept` and `multiple`, so a batch containing any non-image
+ * file routes there automatically (image-only inputs score -Infinity for
+ * non-images); an all-image batch may use an image input. Verified live
+ * 2026-06-11: zip + png + txt accepted together.
+ *
+ * @param {Page} page
+ * @param {AttachmentFile[]} files
+ * @param {AttachLocalFileOptions} [options]
+ * @returns {Promise<AttachmentResult>}
+ */
+export async function attachLocalFilesLive(page, files, options = {}) {
+    /** @type {string[]} */
+    const usedFallbacks = [];
+    /** @type {string[]} */
+    const warnings = [];
+    if (!Array.isArray(files) || files.length === 0) {
+        return { ok: false, stage: 'attachment-preflight', error: 'no files to attach', usedFallbacks };
+    }
+    if (files.length === 1) return attachLocalFileLive(page, files[0], options);
+
+    for (const file of files) {
+        const preflight = preflightAttachment(file, {
+            maxUploadBytes: options.maxUploadBytes,
+            maxImageBytes: options.maxImageBytes,
+        });
+        if (!preflight.ok) {
+            return { ok: false, stage: 'attachment-preflight', error: `${file.basename}: ${preflight.rejectedReason || 'preflight rejected'}`, usedFallbacks };
+        }
+        warnings.push(...preflight.softWarnings);
+    }
+
+    // Batch is "image" only when every file is an image; one non-image forces
+    // the general (no-accept) input that takes all types.
+    const batchIsImage = files.every(file => isImageAttachmentPath(file.basename || file.path || ''));
+    const probeFile = { ...files[0], basename: batchIsImage ? files[0].basename : 'batch.bin' };
+
+    let inputSel = await findFirstFileInput(page, probeFile);
+    if (!inputSel) {
+        await openUploadSurface(page, usedFallbacks, options.uploadTarget);
+        inputSel = await findFirstFileInput(page, probeFile);
+    }
+    if (!inputSel) {
+        return { ok: false, stage: 'attachment-upload', error: 'composer file input not found', usedFallbacks };
+    }
+    try {
+        await page.locator(inputSel).first().setInputFiles(files.map(file => file.path), { timeout: 15_000 });
+    } catch (e) {
+        return { ok: false, stage: 'attachment-upload', error: `setInputFiles failed: ${/** @type {{message?: string}} */ (e)?.message}`, usedFallbacks };
+    }
+    const accepted = await waitForAttachmentAcceptedLive(page, { timeoutMs: 60_000, fileNames: files.map(file => file.basename) });
+    if (!accepted.ok) return accepted;
+    return {
+        ok: true,
+        stage: 'attachment-uploaded',
+        chipVisible: accepted.chipVisible,
+        fileCount: accepted.fileCount,
+        usedFallbacks: [...usedFallbacks, ...accepted.usedFallbacks],
+        warnings: [...warnings, ...accepted.warnings],
+    };
+}
+
+/**
  * @param {Page} page
  * @param {{ timeoutMs?: number, fileNames?: string[] }} [opts]
  * @returns {Promise<AttachmentResult>}

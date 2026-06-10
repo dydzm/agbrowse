@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
     attachLocalFileLive,
+    attachLocalFilesLive,
     buildAttachmentReadyExpression,
     isImageAttachmentPath,
     preflightAttachment,
@@ -29,6 +30,35 @@ describe('ChatGPT attachment upload surface', () => {
         expect(result.fileCount).toBeGreaterThan(0);
         expect(page.clickedUploadSelector).toBe('button[aria-label*="Attach" i]');
         expect(page.filePath).toBe('/tmp/example.txt');
+    });
+
+    it('uploads several mixed-type files through one setInputFiles array', async () => {
+        const page = createUploadPage();
+        const result = await attachLocalFilesLive(page, [
+            { path: '/tmp/backend.zip', basename: 'backend.zip', sizeBytes: 200 },
+            { path: '/tmp/pixel.png', basename: 'pixel.png', sizeBytes: 70 },
+            { path: '/tmp/notes.txt', basename: 'notes.txt', sizeBytes: 12 },
+        ], { uploadTarget: { selector: 'button[aria-label*="Attach" i]', resolution: 'css-fallback' } });
+
+        expect(result.ok).toBe(true);
+        expect(result.stage).toBe('attachment-uploaded');
+        // all three paths handed to setInputFiles in one call
+        expect(page.filePath).toEqual(['/tmp/backend.zip', '/tmp/pixel.png', '/tmp/notes.txt']);
+    });
+
+    it('delegates a single-element batch to the single-file path', async () => {
+        const page = createUploadPage();
+        const result = await attachLocalFilesLive(page, [
+            { path: '/tmp/only.txt', basename: 'only.txt', sizeBytes: 5 },
+        ], { uploadTarget: { selector: 'button[aria-label*="Attach" i]', resolution: 'css-fallback' } });
+        expect(result.ok).toBe(true);
+        expect(page.filePath).toBe('/tmp/only.txt');
+    });
+
+    it('rejects an empty file batch', async () => {
+        const result = await attachLocalFilesLive(createUploadPage(), []);
+        expect(result.ok).toBe(false);
+        expect(result.stage).toBe('attachment-preflight');
     });
 
     it('keeps polling when ChatGPT hides sent-turn attachment evidence after upload acceptance', () => {

@@ -117,7 +117,8 @@ model to use web search and cite sources inline):
 
 Attachments and context:
   --inline-only                     Required for send/query without files
-  --file <path>                     Upload a single file
+  --file <path>                     Upload a file; repeat for several files of
+                                    mixed types (zip + image + doc) in one turn
   --output-image <path>             Save generated ChatGPT images. If several
                                     images are returned, siblings are written
                                     as out.png, out-2.png, out-3.png.
@@ -391,7 +392,7 @@ async function runWebAiCliInner(argv = [], deps) {
             'source-audit-ratio': { type: 'string' },
             'source-audit-scope': { type: 'string' },
             'source-audit-date': { type: 'string' },
-            file: { type: 'string' },
+            file: { type: 'string', multiple: true },
             'output-image': { type: 'string' },
             'output-zip': { type: 'string' },
             'output-dir': { type: 'string' },
@@ -450,7 +451,9 @@ async function runWebAiCliInner(argv = [], deps) {
     rejectFutureScope(values);
     const vendorExplicit = argv.slice(1).includes('--vendor') || argv.slice(1).some((/** @type {any} */ a) => a.startsWith('--vendor='));
     const hasContextPackage = Boolean(values['context-file'] || (Array.isArray(values['context-from-files']) && values['context-from-files'].length > 0));
-    if (['send', 'query'].includes(command) && !values['inline-only'] && !values.file && !hasContextPackage) {
+    // --file may repeat → parseArgs yields an array; normalize to a path list.
+    const filePaths = (Array.isArray(values.file) ? values.file : (values.file ? [values.file] : [])).filter((value) => typeof value === 'string');
+    if (['send', 'query'].includes(command) && !values['inline-only'] && filePaths.length === 0 && !hasContextPackage) {
         throw new WebAiError({
             errorCode: 'provider.attachment-preflight',
             stage: 'attachment-preflight',
@@ -474,8 +477,9 @@ async function runWebAiCliInner(argv = [], deps) {
         deadline: values.deadline,
         session: values.session,
         navigate: values.navigate === true,
-        attachmentPolicy: values.file ? 'upload' : 'inline-only',
-        filePath: values.file,
+        attachmentPolicy: filePaths.length ? 'upload' : 'inline-only',
+        filePath: filePaths[0],
+        filePaths,
         outputImage: values['output-image'],
         outputZip: values['output-zip'],
         outputDir: values['output-dir'],
