@@ -279,8 +279,9 @@ for ChatGPT to create zip artifacts in its sandbox, retrieves the artifacts via
 the provider download API, and validates the local zip before returning. The
 contract tells ChatGPT to use its plan tool when available, create/update a
 visible `turn_plan.update_turn_plan` todo checklist only when that tool is
-actually available, create `PLAN.md` or `00_plan.md` inside every generated
-code zip, then implement, self-check, package, and return both human clickable
+actually available, use longer 20+ item todo lists when the work is complex,
+create `PLAN.md` or `00_plan.md` inside every generated code zip, then
+implement, self-check, package, and return both human clickable
 sandbox links and machine-readable plain artifact paths. `web-ai code`
 automatically uploads `skills/web-ai/modules/gpt-dev-agent-context.zip` as the
 first attachment; this saved skill module is a GPT/Linux-sandbox dev-agent guide
@@ -351,7 +352,8 @@ a completed run only because the visible todo UI is absent after the answer
 finishes; the durable plan file inside the zip is the required checklist. New
 `web-ai code` retrieval fails closed when a code zip lacks `PLAN.md` or
 `00_plan.md`; `code-extract` can still recover legacy artifacts from older
-conversations.
+conversations. Small code artifacts usually need 5-10 checklist items, but
+complex artifacts may use 20 or more.
 
 After extraction, verify locally when correctness matters:
 

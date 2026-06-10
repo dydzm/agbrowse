@@ -40,6 +40,7 @@ describe('code dev-agent context bundle', () => {
         const contextMarkdown = readZipTextEntry(buffer, GPT_DEV_AGENT_CONTEXT_MARKDOWN_ENTRY);
         expect(contextMarkdown).toContain('Linux sandbox');
         expect(contextMarkdown).toContain('turn_plan.update_turn_plan');
+        expect(contextMarkdown).toContain('20+ items');
         expect(contextMarkdown).toContain('visible todo UI may disappear');
 
         const manifest = await readCodeDevContextManifest(result.path);
