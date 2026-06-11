@@ -76,6 +76,7 @@ describe('P02 — bin shim contract', () => {
             'bin/',
             'devlog/',
             'docs/',
+            'scripts/postinstall.mjs',
             'skills/',
             'structure/',
             'vitest.config.mjs',
