@@ -119,6 +119,29 @@ describe('retrieveCodeArtifact', () => {
         expect(readFileSync(outputPath).length).toBe(result.sizeBytes);
     });
 
+    it('prefers the NEWEST mid when several runs minted the same sandbox path (drop10 stale incident)', async () => {
+        rmSync(outputPath, { force: true });
+        // Both mids mint a URL for /mnt/data/result.zip: the older run's snapshot
+        // (BACKEND zip) and the latest rebuild (FIXTURE zip). Oldest-first selection
+        // used to return the stale snapshot — newest-first must win.
+        const page = makeRetrievalPage({
+            conversation: conversationFixture(),
+            urlByMid: {
+                'mid-code': 'https://chatgpt.com/stale',
+                'mid-output': 'https://chatgpt.com/fresh',
+            },
+            binaryByUrl: {
+                'https://chatgpt.com/stale': { status: 200, base64: BACKEND_ZIP_B64 },
+                'https://chatgpt.com/fresh': { status: 200, base64: FIXTURE_ZIP_B64 },
+            },
+        });
+        const result = await retrieveCodeArtifact(page, { conversationId: 'conv-1', outputPath });
+        expect(result.ok).toBe(true);
+        expect(result.mintedMessageId).toBe('mid-output');
+        expect(result.files).toContain('src/a.js');
+        expect(result.files).not.toContain('app.py');
+    });
+
     it('reports code-artifact:missing when no zip was produced', async () => {
         const page = makeRetrievalPage({ conversation: { mapping: {} } });
         const result = await retrieveCodeArtifact(page, { conversationId: 'conv-1', outputPath });

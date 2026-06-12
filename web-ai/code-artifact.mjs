@@ -26,6 +26,7 @@ import { inflateRawSync } from 'node:zlib';
  * @property {number} sizeBytes
  * @property {string[]} files
  * @property {boolean} [hasPlanArtifact]
+ * @property {string|null} [mintedMessageId]
  */
 
 const ZIP_PATH_RE_GLOBAL = /\/mnt\/data\/[A-Za-z0-9_\-./]+\.zip/g;
@@ -330,24 +331,34 @@ export async function retrieveAllCodeArtifacts(page, { conversationId, outputDir
  * Mint a URL for one sandbox path (trying each candidate mid), fetch in-page,
  * verify, and save. Shared by single- and multi-zip retrieval.
  *
+ * Mids are tried NEWEST-first: when a sandbox path like /mnt/data/result.zip is
+ * reused across several code runs in one conversation, interpreter/download
+ * serves the file snapshot tied to the given message_id — oldest-first selection
+ * minted a STALE artifact (2026-06-11 drop10 incident: a drop9 variant was
+ * retrieved although the final turn had rebuilt result.zip). Newest-first makes
+ * the first successful mint the latest sandbox state; mids whose run deleted or
+ * never had the file simply fail to mint and the loop falls back to older ones.
+ *
  * @param {Page} page
  * @param {{ conversationId: string, zipPath: string, candidateMids: string[], outputPath: string }} params
  * @returns {Promise<RetrieveResult>}
  */
 async function downloadAndSaveZip(page, { conversationId, zipPath, candidateMids, outputPath, requirePlan = false }) {
     /** @type {RetrieveResult} */
-    const result = { ok: false, reason: null, zipPath, savedPath: null, sizeBytes: 0, files: [] };
+    const result = { ok: false, reason: null, zipPath, savedPath: null, sizeBytes: 0, files: [], mintedMessageId: null };
 
     let payload = null;
-    for (const messageId of candidateMids) {
-        // eslint-disable-next-line no-await-in-loop -- try mids in order; stop at first that mints a working URL
+    let mintedMessageId = null;
+    for (const messageId of [...candidateMids].reverse()) {
+        // eslint-disable-next-line no-await-in-loop -- newest-first; stop at first mid that mints a working URL
         const downloadUrl = await mintDownloadUrl(page, { conversationId, messageId, sandboxPath: zipPath });
         if (!downloadUrl) continue;
         // eslint-disable-next-line no-await-in-loop
         const fetched = await fetchBinaryBase64(page, downloadUrl);
-        if (fetched?.base64) { payload = fetched; break; }
+        if (fetched?.base64) { payload = fetched; mintedMessageId = messageId; break; }
     }
     if (!payload) return { ...result, reason: 'code-artifact:download-failed' };
+    result.mintedMessageId = mintedMessageId;
 
     const buffer = Buffer.from(payload.base64, 'base64');
     const verified = verifyZipBuffer(buffer);
@@ -364,5 +375,5 @@ async function downloadAndSaveZip(page, { conversationId, zipPath, candidateMids
         console.error('[code-artifact]', /** @type {Error} */ (error)?.message || error);
         return { ...result, sizeBytes: buffer.length, files: verified.files, hasPlanArtifact: planArtifact, reason: 'code-artifact:write-failed' };
     }
-    return { ok: true, reason: null, zipPath, savedPath: outputPath, sizeBytes: buffer.length, files: verified.files, hasPlanArtifact: planArtifact };
+    return { ok: true, reason: null, zipPath, savedPath: outputPath, sizeBytes: buffer.length, files: verified.files, hasPlanArtifact: planArtifact, mintedMessageId };
 }
