@@ -479,6 +479,8 @@ Supported `--plugin` aliases under `더 보기`:
 - `github`, `gmail`, `google-drive`, `google-calendar`, `google-contacts`
 - `supabase`, `vercel`, `figma`, `canva`, `context7`, `openai-platform`
 
+Composer menus are not opened on the default send/query path. They are touched only when `--tool`, `--plugin`, `--web-search`, `--auto-tools`, `--output-image`, or `--research deep` requests a composer selection.
+
 Use `--auto-tools` when you want agbrowse to infer obvious tools from the prompt:
 
 - current/latest/news/price/official/source-sensitive prompt → web search

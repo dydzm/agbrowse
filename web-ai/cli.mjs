@@ -141,6 +141,8 @@ Attachments and context:
   --auto-tools                      Heuristically select ChatGPT tools/plugins
                                     from the prompt (current/news → web search,
                                     image intent → image, repo/GitHub → GitHub).
+                                    Composer menus are untouched unless one of
+                                    these tool/plugin flags requests selection.
   --output-image <path>             Save generated ChatGPT images. If several
                                     images are returned, siblings are written
                                     as out.png, out-2.png, out-3.png.

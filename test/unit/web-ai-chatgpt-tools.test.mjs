@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveChatGptComposerToolRequests } from '../../web-ai/chatgpt-tools.mjs';
+import { resolveChatGptComposerToolRequests, selectChatGptComposerTools } from '../../web-ai/chatgpt-tools.mjs';
 
 describe('web-ai ChatGPT composer tool resolver', () => {
+    it('does not touch ChatGPT composer menus without explicit tool requests', async () => {
+        const page = new Proxy({}, {
+            get() {
+                throw new Error('page should not be touched without tool requests');
+            },
+        });
+
+        await expect(selectChatGptComposerTools(page)).resolves.toBeNull();
+        await expect(selectChatGptComposerTools(page, { prompt: '최신 뉴스를 요약해줘' })).resolves.toBeNull();
+    });
+
     it('normalizes explicit tool and plugin aliases', () => {
         expect(resolveChatGptComposerToolRequests({
             tools: ['web-search', '이미지 만들기'],

@@ -21,6 +21,17 @@ describe('web-ai ChatGPT model selector policy', () => {
         expect(modelSrc).toContain('readActiveModelPill');
     });
 
+    it('does not touch the model selector without explicit model or effort flags', async () => {
+        const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
+        const page = new Proxy({}, {
+            get() {
+                throw new Error('page should not be touched without model requests');
+            },
+        });
+
+        await expect(selectChatGptModel(page, undefined, {})).resolves.toBeNull();
+    });
+
     it('normalizes observed ChatGPT effort aliases', async () => {
         const {
             CHATGPT_MODEL_EFFORT_OPTIONS,
