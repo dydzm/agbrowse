@@ -28,6 +28,7 @@ must be treated as historical  do not edit them after release.evidence
 | web-ai skill + cli-jaw mirror closeout | `_plan/260611_webai_skill_cli_jaw_mirror/` | Active: update agent-facing skill docs and mirror the simplified ChatGPT Intelligence picker into cli-jaw. |
 | Background runtime hook research | `_plan/260611_background_runtime_hook/` | Research complete; findings reflected in `skills/web-ai/SKILL.md` (Long-Running section). Hook design relocated to cli-jaw `devlog/_plan/260611_bgtask_background_runtime/` for implementation planning. |
 | ChatGPT composer tool selection live probe | `_plan/260615_chatgpt_composer_tools_live_probe.md` | Active: PR #78 live DOM/UX evidence for explicit-only tool/plugin/model gating. |
+| Computer-use contract hardening | `_plan/260617_computer_use_contract_hardening/` | Active PABCD plan: align browser control with the shared Observation/Candidate/Action/Verification/Error contract and harden vision-click coordinate fallback. |
 
 ## `_fin/mvp/` topics
 
