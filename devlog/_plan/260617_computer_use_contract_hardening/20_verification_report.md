@@ -90,17 +90,25 @@ PASS: touched vision-click modules are <= 500 lines (`vision-core.mjs` 341, `vis
 
 ## Real Browser Smoke
 
-Not run in this phase.
+Run on 2026-06-17 with linked global `agbrowse` binaries.
 
-Reason:
+Setup:
 
-- The implemented coverage is parser, contract, and routing-basis hardening.
-- A real browser smoke requires a live Chrome/CDP session with a controlled fixture page or canvas target.
-- No fake pass was recorded.
+- `npm ls -g --depth=0 agbrowse` shows `agbrowse@0.1.14 -> /Users/jun/Developer/new/700_projects/agbrowse`.
+- `agbrowse start` launched Chrome on CDP `9222`.
+- Test page was a data URL with one accessible button and one canvas-only green `CANVAS` target.
 
-Required future smoke:
+Smoke results:
 
-- accessible button: snapshot ref click, no vision fallback
-- no-ref target: vision bbox -> verify crop -> coordinate click
-- ambiguous target: reject without click
-- DPR/clip target: final CSS coordinate evidence is correct
+- `agbrowse screenshot --json` returned `url`, `targetId: cdp:9222`, `dpr: 2`, viewport, and path; `sips` confirmed screenshot pixels were `2880x1604` for viewport `1440x802`.
+- `agbrowse observe-bundle --screenshot --boxes --json` initially exposed a bug: snapshot refs were `eN`, while `ObservationBundle` kept only `@eN`, producing `refs: []`.
+- After patch, `observe-bundle` preserved `e2` and captured its box: `{ x: 71, y: 119, width: 222, height: 67 }`.
+- Stale bundle check failed closed before click with `COMPUTER_OBSERVATION_STALE: observation URL does not match current page`.
+- Canvas no-ref fallback succeeded: `agbrowse-vision-click "green CANVAS rectangle" --clip 300 90 500 330 --verify-before-click` clicked `(515,224)`, and `agbrowse text` changed to `canvas-clicked`.
+- Accessible button with bundle initially showed a second bug: reconciliation compared raw image pixels to CSS boxes and ran before verification, so a full-page candidate missed the ref box and coordinate fallback did not click the button.
+- After patch, bundle click succeeded: `agbrowse-vision-click "Blue Test Button" --bundle /tmp/agbrowse-vision-bundle-fixed2.json` verified the crop, re-reconciled in CSS space, used the ref path, and `agbrowse text` changed to `blue-clicked`.
+
+Smoke limitations:
+
+- `agbrowse evaluate` was denied by policy, so DOM state was checked via `agbrowse text`.
+- Ambiguous target live smoke remains future work; ambiguity behavior is covered by `test/unit/candidate-reconcile.test.mjs`.

@@ -291,9 +291,10 @@ function visionClick(target, opts = {}) {
     let finalCss = convertRawToCss(finalRaw, dpr, clip);
     let verification = null;
     let reconciliation = 'unavailable';
+    let shouldVerify = opts.verifyBeforeClick || requiresVerification;
 
     if (bundle) {
-        const decision = reconcileVisionCandidate({ candidate: result, bundle });
+        const decision = reconcileVisionCandidate({ candidate: candidateAtCssPoint(result, finalCss), bundle });
         reconciliation = decision.reason || decision.action;
         if (decision.action === 'fail') {
             throw new Error(`${decision.code || 'COMPUTER_TARGET_AMBIGUOUS'}: ${decision.reason}`);
@@ -313,13 +314,37 @@ function visionClick(target, opts = {}) {
                 verified: false,
             };
         }
+        shouldVerify = true;
     }
 
-    if (opts.verifyBeforeClick || requiresVerification) {
+    if (shouldVerify) {
         verification = verifyCandidate(target, { dpr, viewport, clip }, result, opts);
         finalRaw = verification.raw;
         finalCss = verification.css;
         console.error(`${c.dim}   verified via crop: (${verification.clip.x}, ${verification.clip.y}, ${verification.clip.width}, ${verification.clip.height})${c.reset}`);
+    }
+
+    if (bundle && verification) {
+        const decision = reconcileVisionCandidate({ candidate: candidateAtCssPoint(result, finalCss), bundle });
+        reconciliation = decision.reason || decision.action;
+        if (decision.action === 'fail') {
+            throw new Error(`${decision.code || 'COMPUTER_TARGET_AMBIGUOUS'}: ${decision.reason}`);
+        }
+        if (decision.action === 'ref' && decision.ref) {
+            browserCmd(['click', decision.ref], opts);
+            return {
+                success: true,
+                clicked: finalCss,
+                raw: finalRaw,
+                dpr,
+                description: verification.description || result.description,
+                candidate: result,
+                reconciliation,
+                snap: safeSnapshot(opts),
+                clip,
+                verified: true,
+            };
+        }
     }
 
     console.error(`${c.dim}   raw: (${finalRaw.x}, ${finalRaw.y}) → css: (${finalCss.x}, ${finalCss.y}) [dpr=${dpr}]${c.reset}`);
@@ -359,6 +384,18 @@ function safeSnapshot(opts) {
     } catch {
         return null;
     }
+}
+
+/**
+ * @param {import('./vision-core.mjs').VisionCandidate} candidate
+ * @param {{x:number,y:number}} cssPoint
+ * @returns {import('./vision-core.mjs').VisionCandidate}
+ */
+function candidateAtCssPoint(candidate, cssPoint) {
+    return {
+        ...candidate,
+        point: cssPoint,
+    };
 }
 
 // ═══════════════════════════════════════════════════

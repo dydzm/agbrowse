@@ -2437,7 +2437,7 @@ try {
                 try {
                     const cdp = await getCdpSession(getPort());
                     for (const n of nodes) {
-                        if (!n.ref || n.ref === '...' || !n.ref.startsWith('@')) continue;
+                        if (!n.ref || !/^@?e\d+$/.test(n.ref)) continue;
                         try {
                             const { root } = await cdp.send('DOM.getDocument', { depth: -1, pierce: true });
                             const sel = `[aria-label="${(n.name || '').replace(/"/g, '\\"')}"]`;
@@ -2448,6 +2448,13 @@ try {
                             if (model && Array.isArray(model.content) && model.content.length >= 8) {
                                 const c = model.content;
                                 boxes[n.ref] = { x: Math.round(c[0]), y: Math.round(c[1]), width: Math.round(model.width), height: Math.round(model.height) };
+                            }
+                        } catch { /* best-effort per-node */ }
+                        if (boxes[n.ref] || !n.role || !n.name) continue;
+                        try {
+                            const box = await page.getByRole(String(n.role), { name: String(n.name), exact: true }).first().boundingBox({ timeout: 500 });
+                            if (box) {
+                                boxes[n.ref] = { x: Math.round(box.x), y: Math.round(box.y), width: Math.round(box.width), height: Math.round(box.height) };
                             }
                         } catch { /* best-effort per-node */ }
                     }

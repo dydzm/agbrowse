@@ -84,7 +84,7 @@ export function buildObservationBundle(input) {
     const refs = [];
     for (const node of input.snapshotNodes) {
         if (!node || typeof node.ref !== 'string') continue;
-        if (node.ref === '...' || !node.ref.startsWith('@')) continue;
+        if (!isElementRef(node.ref)) continue;
         const row = {
             ref: node.ref,
             role: String(node.role || ''),
@@ -134,6 +134,13 @@ export function buildObservationBundle(input) {
             hasScreenshot: Boolean(screenshot),
         },
     };
+}
+
+/**
+ * @param {string} ref
+ */
+function isElementRef(ref) {
+    return /^@?e\d+$/.test(ref);
 }
 
 /**
