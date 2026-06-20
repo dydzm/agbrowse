@@ -39,5 +39,7 @@ Two tiers. **Tier 1 (safe, do-first):** adaptive poll interval (pro-safe backoff
 - [x] Interview/requirements gathering
 - [x] Plan (`10_solution_plan.md`) — superseded for scope
 - [x] Pressure-test (`20_pressure_test_verdict.md`)
-- [x] Implementation (MVV): commit `1d86985` — `watcher.mjs` now feeds the resolver-healed session to `ensureWatcherAttached` (retires the watch-path half of #77 root-drift). ~2 lines, no deletion of `--navigate` semantics
-- [x] Verification: vitest 837/837 unit (watcher source-contract +2), `npm run gate:all` 16/16
+- [x] Implementation (MVV), two steps:
+  - commit `1d86985` — `watcher.mjs` feeds the resolver-healed session to `ensureWatcherAttached` (retires the watch-path half of #77 root-drift)
+  - follow-up — completed the MVV's "retire `urlsEquivalentForWatch`": replaced the strict hash-only compare with the canonical tolerant `urlsCompatible` (exported from `tab-recovery.mjs`, shared with the resolver) and deleted `urlsEquivalentForWatch`. Replace-not-delete preserves the genuine-mismatch guard (non-provider landing) that a blind deletion would have stripped — confirmed by an independent completion audit.
+- [x] Verification: affected tests 21/21, `npm run gate:all` 16/16 (twice)

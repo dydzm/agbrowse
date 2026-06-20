@@ -12,7 +12,7 @@ import { pollWebAi } from './chatgpt.mjs';
 import { geminiPollWebAi } from './gemini-live.mjs';
 import { grokPollWebAi } from './grok-live.mjs';
 import { getSession, updateSession } from './session.mjs';
-import { withSessionPage } from './tab-recovery.mjs';
+import { withSessionPage, urlsCompatible } from './tab-recovery.mjs';
 import { withSessionCommandLock } from './session-store.mjs';
 import { WebAiError, wrapError } from './errors.mjs';
 import {
@@ -403,7 +403,11 @@ async function ensureWatcherAttached(page, session, options) {
     const targetUrl = session.conversationUrl || session.originalUrl;
     if (!targetUrl) return { ok: true, warnings: ['session-has-no-conversation-url'] };
     const currentUrl = page.url?.() || '';
-    if (urlsEquivalentForWatch(currentUrl, targetUrl)) return { ok: true, url: currentUrl, warnings: [] };
+    // Use the canonical tolerant predicate (shared with resolveSessionPage) instead
+    // of a stricter hash-only compare: same-conversation root->/c/ drift and trailing
+    // slashes are compatible, while a genuinely different conversation or a
+    // non-provider landing still mismatches and (with --navigate) re-navigates.
+    if (urlsCompatible(targetUrl, currentUrl)) return { ok: true, url: currentUrl, warnings: [] };
     if (options.navigate) {
         await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: options.navigateTimeoutMs });
         return { ok: true, url: targetUrl, warnings: [`reattached:navigated-from=${currentUrl}`] };
@@ -554,22 +558,6 @@ function isWatcherLockStale(metadata, staleMs) {
 function pidAlive(pid) {
     if (!Number.isFinite(pid) || pid <= 0) return false;
     try { process.kill(pid, 0); return true; } catch (err) { return (/** @type {any} */ (err))?.code === 'EPERM'; }
-}
-
-/**
- * @param {any} a
- * @param {any} b
- */
-function urlsEquivalentForWatch(a, b) {
-    try {
-        const ua = new URL(a);
-        const ub = new URL(b);
-        ua.hash = '';
-        ub.hash = '';
-        return ua.toString() === ub.toString();
-    } catch {
-        return String(a || '') === String(b || '');
-    }
 }
 
 /**

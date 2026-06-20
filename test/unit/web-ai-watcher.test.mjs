@@ -45,4 +45,13 @@ describe('web-ai watcher self-heals drifted conversation URL (source-string cont
     it('feeds the healed session (not the stale outer one) to the attach check', () => {
         expect(watcherSrc).toContain('ensureWatcherAttached(page, resolvedSession || session, options)');
     });
+
+    it('uses the canonical tolerant urlsCompatible predicate imported from tab-recovery', () => {
+        expect(watcherSrc).toContain("import { withSessionPage, urlsCompatible } from './tab-recovery.mjs'");
+        expect(watcherSrc).toContain('if (urlsCompatible(targetUrl, currentUrl))');
+    });
+
+    it('retires the strict urlsEquivalentForWatch helper', () => {
+        expect(watcherSrc).not.toContain('urlsEquivalentForWatch');
+    });
 });
