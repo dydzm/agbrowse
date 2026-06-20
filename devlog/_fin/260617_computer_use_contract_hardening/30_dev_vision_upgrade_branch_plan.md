@@ -193,7 +193,7 @@ Docs changes:
 
 Add after implementation:
 
-- `devlog/_plan/260617_computer_use_contract_hardening/20_verification_report.md`
+- `devlog/_fin/260617_computer_use_contract_hardening/20_verification_report.md`
 
 Must include:
 

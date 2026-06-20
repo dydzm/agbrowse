@@ -134,7 +134,7 @@ agbrowse web-ai watch --session "$SID" --json --navigate
 ```
 
 Key facts (verified 2026-06-11, details in
-`devlog/_plan/260611_background_runtime_hook/02_agbrowse_sufficiency.md`):
+`devlog/_fin/260611_background_runtime_hook/02_agbrowse_sufficiency.md`):
 
 - Sessions persist in `~/.browser-agent/web-ai-sessions.json` and survive
   process/machine restarts. `sessions show <SID> --json` is safe from any
