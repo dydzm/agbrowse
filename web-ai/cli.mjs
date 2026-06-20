@@ -20,7 +20,7 @@ import { createTab, listManagedTabs, waitForPageByTargetId } from '../skills/bro
 import { cleanupIdleTabs, isPinned } from '../skills/browser/tab-lifecycle.mjs';
 import { resolveSessionPage, withSessionPage } from './tab-recovery.mjs';
 import { withSessionCommandLock } from './session-store.mjs';
-import { listSessions, getSession } from './session.mjs';
+import { listSessions, getSession, resolveTimeoutDefaultSec } from './session.mjs';
 import { resolveImplicitSessionSelection } from './session-target-guard.mjs';
 import { listLeases } from './tab-lease-store.mjs';
 import { cleanupPoolTabs, getPooledTab } from './tab-pool.mjs';
@@ -121,7 +121,9 @@ Provider:
                         Thinking: light, standard, extended, heavy
   --reasoning-effort <alias>
                       Alias for --effort
-  --timeout <sec>     Polling timeout. Defaults: ChatGPT 1200, Gemini 1200, Grok 600.
+  --timeout <sec>     Polling timeout. When omitted, the default scales by model tier:
+                      instant 120s, thinking 600s, pro/deep-research 3600s (vendor
+                      default 1200/1200/600 for unknown models). --timeout overrides.
 
 Prompt envelope (every prompt also gets a [INSTRUCTIONS] block telling the
 model to use web search and cite sources inline):
@@ -642,7 +644,12 @@ async function runWebAiCliInner(argv = [], deps) {
         question: values.question,
         output: values.output,
         constraints: values.constraints,
-        timeout: values.timeout,
+        // When --timeout is omitted, default scales by model tier (instant 120s,
+        // thinking 600s, pro/deep-research 3600s) so a long pro run is not capped
+        // at the legacy 1200s. An explicit --timeout still wins.
+        timeout: values.timeout != null
+            ? values.timeout
+            : resolveTimeoutDefaultSec({ model: values.model, research: values.research }, values.vendor || 'chatgpt'),
         deadline: values.deadline,
         session: values.session,
         navigate: values.navigate === true,

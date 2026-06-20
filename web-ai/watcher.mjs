@@ -172,11 +172,15 @@ export async function watchSessionOnce(deps, input = {}) {
         };
     }
 
-    // Phase 9.1: Use withSessionPage to resolve session's specific page, not active tab
-    return withSessionPage(deps, options.sessionId, async ({ page, targetId }) => {
+    // Phase 9.1: Use withSessionPage to resolve session's specific page, not active tab.
+    // resolveSessionPage (allowNavigate) already self-heals root->/c/ URL drift and
+    // returns the updated session; use that healed copy for the attach check instead
+    // of the stale outer `session`, which previously re-introduced a false
+    // reattach-mismatch (issue #77 watch-path).
+    return withSessionPage(deps, options.sessionId, async ({ page, targetId, session: resolvedSession }) => {
         const profileLockSummary = await readProfileLockSummary()
             .catch(err => ({ state: 'unknown', error: err?.message || String(err) }));
-        const reattach = await ensureWatcherAttached(page, session, options);
+        const reattach = await ensureWatcherAttached(page, resolvedSession || session, options);
         if (!reattach.ok) {
             return {
                 ok: false, sessionId: session.sessionId, vendor,
