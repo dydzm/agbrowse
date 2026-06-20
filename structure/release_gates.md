@@ -52,7 +52,7 @@ aliases: [agbrowse release gates, agbrowse 릴리즈 게이트, production readi
 - [ ] `npm run smoke:bins`
 - [ ] `npm run benchmark:trajectory -- --help`
 - [ ] `npm pack --dry-run`
-- [ ] `npm publish --dry-run --access public` 또는 preview면 `--tag preview`
+- [ ] `npm publish --dry-run --access public` 또는 preview면 `--tag preview` (GitHub Actions `release.yml`에서 실행)
 
 ## Script Coverage
 
@@ -81,8 +81,9 @@ aliases: [agbrowse release gates, agbrowse 릴리즈 게이트, production readi
 | `npm run typecheck` / `typecheck:checkjs` / `typecheck:checkjs-dom` | `tsc --noEmit` (root, JSDoc opt-in, DOM-aware JSDoc opt-in) | strict-migration 진행 표면이 깨지지 않는지 확인 |
 | `npm run pack:dry` | `npm pack --dry-run --json` | 패키징 manifest 회귀 확인 |
 | `npm run benchmark:trajectory` | offline trajectory bundle writer | score가 아니라 sanitized trajectory artifact 생성만 허용 |
-| `npm run release` | latest release script | clean tree, install, audit, tests, structure gates, fixture evals, diff check, pack, publish dry-run, tag/publish |
-| `npm run release:preview` | preview release script | preview version, audit, tests, structure gates, fixture evals, diff check, pack, publish dry-run, tag/publish |
+| `.github/workflows/release.yml` | npm Trusted Publishing release workflow | `main`에서 version/tag/dry-run 입력 검증, audit/typecheck/tests/fixture evals/gate:all/pack dry-run 실행, OIDC로 publish, registry smoke 후 git tag와 GitHub Release 생성 |
+| `npm run release` | latest release dispatcher | clean `main`, local preflight(typecheck + structure gates + pack dry-run), version commit, push, `release.yml` dispatch/watch; real publish는 `--publish`일 때만 GitHub Actions에서 실행 |
+| `npm run release:preview` | preview release dispatcher | `<base>-preview.<timestamp>` 버전 계산 후 `npm run release -- <version> --tag preview`로 위임; real preview publish도 GitHub Actions OIDC 경로만 사용 |
 | `bash structure/verify-counts.sh` | structure count verifier | source map line/file counts drift 차단 |
 | `structure/stability-upgrade/` review | real operational weakness register | live-provider claim 전에 실제 작동 취약점 상태와 검증 방법을 확인 |
 
@@ -98,6 +99,7 @@ aliases: [agbrowse release gates, agbrowse 릴리즈 게이트, production readi
 
 ## 변경 기록
 
+- 2026-06-21: npm Trusted Publishing 전용 release path로 전환했다. 로컬 release scripts는 더 이상 real `npm publish`를 실행하지 않고, clean `main`에서 version commit을 push한 뒤 `release.yml`을 dispatch/watch한다. 실제 publish, registry smoke, tag, GitHub Release 생성은 GitHub Actions OIDC 경로에서만 수행한다.
 - 2026-06-11: GitHub Pages developer docs V1(EN/KO), ChatGPT code-mode/code-extract beta 표면, Pages validation gate를 release gate 문서에 반영했다.
 - 2026-05-14: stability-upgrade register review를 release 전 claim 점검 항목으로 추가했다. 이 register는 speculative security가 아니라 live 작동 취약점만 기록한다.
 - 2026-05-06: Phase 22 named release gates (`gate:all`, `gate:typecheck`, `gate:tests`, `gate:truth-table-fresh`, `gate:mcp-scope-frozen`, `gate:no-experimental-in-readme-ready-section`)와 strict-baseline / module-graph / bin smoke / pack dry-run 명령을 release path에 추가했다. capability 주장은 [CAPABILITY_TRUTH_TABLE.md](CAPABILITY_TRUTH_TABLE.md)가 단일 source of truth다.

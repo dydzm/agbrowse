@@ -1,37 +1,59 @@
 name: Release
 
+# Publish agbrowse to npm through Trusted Publishing (OIDC).
+# Bump package.json on main before dispatching this workflow, or use
+# `npm run release -- <version> [--publish]` to bump, commit, push, dispatch,
+# and watch the run. Dry-run is the default.
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Git tag to publish, for example v0.1.0'
+      version:
+        description: "Version to publish; must equal package.json"
         required: true
-      npm_tag:
-        description: 'npm dist-tag'
-        required: false
+        type: string
+      tag:
+        description: "npm dist-tag"
+        required: true
+        type: choice
+        options:
+          - latest
+          - preview
         default: latest
+      dry-run:
+        description: "Dry run (no actual publish)"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
+  actions: read
   id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
-      TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-      NPM_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.npm_tag || 'latest' }}
+      RELEASE_VERSION: ${{ inputs.version }}
+      NPM_DIST_TAG: ${{ inputs.tag }}
+      DRY_RUN: ${{ inputs['dry-run'] }}
+      PACKAGE_NAME: agbrowse
     steps:
-      - name: Checkout release tag
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Use npm with trusted publishing support
         run: npm install -g npm@latest
@@ -39,8 +61,27 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Verify release ref and package version
+        run: |
+          set -euo pipefail
+
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::error::Release must run from main; got ${GITHUB_REF}"
+            exit 1
+          fi
+
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          echo "package.json=${PKG_VERSION} input=${RELEASE_VERSION}"
+          if [ "$PKG_VERSION" != "$RELEASE_VERSION" ]; then
+            echo "::error::package.json (${PKG_VERSION}) != requested (${RELEASE_VERSION})"
+            exit 1
+          fi
+
       - name: Audit
         run: npm audit --audit-level=high
+
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Test
         run: npm test
@@ -69,20 +110,105 @@ jobs:
       - name: Git diff whitespace check
         run: git diff --check
 
-      - name: Verify package
+      - name: Verify package contents
         run: npm pack --dry-run
 
       - name: Publish to npm
-        run: npm publish --access public --tag "$NPM_TAG"
+        run: |
+          set -euo pipefail
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::DRY RUN - not publishing ${PACKAGE_NAME}@${RELEASE_VERSION}"
+            npm publish --dry-run --access public --tag "$NPM_DIST_TAG"
+          else
+            npm publish --access public --tag "$NPM_DIST_TAG"
+          fi
+
+      - name: Post-publish registry smoke
+        if: ${{ inputs['dry-run'] != true }}
+        run: |
+          set -euo pipefail
+
+          for attempt in $(seq 1 30); do
+            if VERSION="$(npm view "${PACKAGE_NAME}@${RELEASE_VERSION}" version 2>/dev/null)"; then
+              echo "registry version=${VERSION}"
+              test "$VERSION" = "$RELEASE_VERSION"
+              npm dist-tag ls "$PACKAGE_NAME"
+              exit 0
+            fi
+            echo "::notice::${PACKAGE_NAME}@${RELEASE_VERSION} not visible yet (attempt ${attempt}/30)"
+            sleep 10
+          done
+
+          echo "::error::npm registry smoke failed after 30 attempts"
+          npm view "$PACKAGE_NAME" versions dist-tags --json || true
+          exit 1
 
       - name: Create GitHub release
+        if: ${{ inputs['dry-run'] != true }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$NPM_TAG" = "latest" ]; then
-            gh release create "$TAG_NAME" --title "$TAG_NAME" --generate-notes --latest || \
-              gh release edit "$TAG_NAME" --title "$TAG_NAME" --latest
+          set -euo pipefail
+
+          release_tag="v${RELEASE_VERSION}"
+          notes_file="$(mktemp)"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --force --tags origin
+
+          existing_tag_sha="$(git rev-parse -q --verify "refs/tags/${release_tag}^{commit}" || true)"
+          if [ -n "$existing_tag_sha" ] && [ "$existing_tag_sha" != "$GITHUB_SHA" ]; then
+            echo "::error::${release_tag} already points at ${existing_tag_sha}, not ${GITHUB_SHA}"
+            exit 1
+          fi
+
+          previous_tag="$(
+            git tag --merged HEAD --list 'v[0-9]*' --sort=-v:refname |
+              grep -vx "$release_tag" |
+              head -n 1 || true
+          )"
+
+          {
+            echo "Published to npm as \`${PACKAGE_NAME}@${RELEASE_VERSION}\` with dist-tag \`${NPM_DIST_TAG}\`."
+            echo
+            echo "## Commit log"
+            echo
+            if [ -n "$previous_tag" ]; then
+              echo "Changes since \`${previous_tag}\`:"
+              echo
+              git log --reverse --no-merges --pretty=format:'- %s (%h)' "${previous_tag}..HEAD" |
+                grep -vE '^- release: v[0-9]+\.[0-9]+\.[0-9]+' || true
+              echo
+              echo
+              echo "[Full diff](https://github.com/${GITHUB_REPOSITORY}/compare/${previous_tag}...${release_tag})"
+            else
+              echo "Initial release commits:"
+              echo
+              git log --reverse --no-merges --pretty=format:'- %s (%h)' HEAD |
+                grep -vE '^- release: v[0-9]+\.[0-9]+\.[0-9]+' || true
+            fi
+          } > "$notes_file"
+
+          if ! grep -q '^- ' "$notes_file"; then
+            printf '\n- Release version bump only.\n' >> "$notes_file"
+          fi
+
+          if [ -z "$existing_tag_sha" ]; then
+            git tag "$release_tag" "$GITHUB_SHA"
+            git push origin "refs/tags/${release_tag}"
+          fi
+
+          release_flags=()
+          if [ "$NPM_DIST_TAG" = "preview" ]; then
+            release_flags+=(--prerelease)
           else
-            gh release create "$TAG_NAME" --title "$TAG_NAME ($NPM_TAG)" --generate-notes --prerelease || \
-              gh release edit "$TAG_NAME" --title "$TAG_NAME ($NPM_TAG)" --prerelease
+            release_flags+=(--latest)
+          fi
+
+          if gh release view "$release_tag" >/dev/null 2>&1; then
+            gh release edit "$release_tag" --title "$release_tag" --notes-file "$notes_file" "${release_flags[@]}"
+          else
+            gh release create "$release_tag" --target "$GITHUB_SHA" --title "$release_tag" --notes-file "$notes_file" "${release_flags[@]}"
           fi

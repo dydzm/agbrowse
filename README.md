@@ -132,7 +132,7 @@ npm run gate:all
 ```
 
 Current remote CI signal: the scheduled `Contract Drift Check` workflow is
-passing on `main`. Release publishing remains manual through `release.yml`.
+passing on `main`. Release publishing is dispatched through `release.yml`.
 
 ## Safety Model
 
@@ -1069,26 +1069,41 @@ npx vitest run test/integration/web-ai-cli-contract.test.mjs --reporter=verbose
 
 ## Release
 
-`agbrowse` ships with a release script modeled after the cli-jaw release
-scripts.
+`agbrowse` publishes through npm Trusted Publishing from GitHub Actions. The
+local release scripts prepare the version commit, push `main`, dispatch
+`.github/workflows/release.yml`, and watch the run; they do not run a real local
+`npm publish`.
+
+Run release commands from a clean `main` checkout:
 
 ```bash
-npm run release          # first release keeps package.json version; later releases bump patch
-npm run release -- minor
-npm run release -- major
-npm run release -- 0.2.0
+npm run release                    # bump patch, dry-run through release.yml
+npm run release -- minor           # bump minor, dry-run
+npm run release -- 0.2.0           # explicit version, dry-run
+npm run release -- 0.2.0 --publish # real publish through GitHub Actions OIDC
+npm run release -- watch           # watch latest release.yml run
 ```
 
-Preview releases:
+Preview releases keep the existing preview version shape
+`<base>-preview.<timestamp>` and use npm dist-tag `preview`:
 
 ```bash
 npm run release:preview
 npm run release:preview -- 0.2.0
+npm run release:preview -- --publish
+PREID=rc STAMP=20260621040500 npm run release:preview -- 0.2.0 --publish
 ```
 
-The default script verifies the package, pushes a git tag, then runs
-`npm publish --access public`. If the npm account requires browser-based
-authentication, npm will print the auth URL during that publish step.
+The release workflow validates the requested version against `package.json`,
+requires `main`, runs the release gates, performs `npm publish --dry-run` by
+default, and only creates the git tag plus GitHub Release after a successful real
+npm publish. The npm package's trusted publisher must be configured as:
+
+```text
+Repository: lidge-jun/agbrowse
+Workflow:   release.yml
+Action:     npm publish
+```
 
 The release path includes named claim gates for MCP, source audit, trace/policy,
 structure drift, fixture evals, package dry-run, and high-severity dependency
@@ -1119,24 +1134,6 @@ npm run check:module-graph       # module dependency graph regression
 npm run smoke:bins               # published bin entrypoints boot
 npm run typecheck                # tsc --noEmit on the strict surface
 ```
-
-For npm trusted publishing through GitHub Actions, configure npm's trusted
-publisher for:
-
-```text
-Repository: lidge-jun/agbrowse
-Workflow:   release.yml
-```
-
-Then run:
-
-```bash
-AGBROWSE_PUBLISH_VIA_GITHUB=1 npm run release
-```
-
-That path pushes the version tag and dispatches `.github/workflows/release.yml`
-with `id-token: write`, so npm can publish through OIDC instead of a long-lived
-token or OTP prompt.
 
 ## Security Notes
 
