@@ -61,6 +61,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Install Playwright browsers
+        run: npx playwright-core install --with-deps chromium
+
       - name: Verify release ref and package version
         run: |
           set -euo pipefail
