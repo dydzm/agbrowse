@@ -61,6 +61,7 @@ separate closeout audit.
 | MCP wait response recovery | `_fin/260621_mcp_wait_response_recovery/` | GitHub #79 PABCD: session-bound MCP wait/resume recovery and monotonic timeout handling. |
 | Tab stability MVV closeout | `_fin/260621_tab_stability_mvv_closeout/` | Final branch closeout plan for tab MVV, verification, push, and PR body `Closes #79`. |
 | npm Trusted release automation | `_fin/260621_npm_trusted_release_automation/` | GitHub Actions OIDC Trusted Publishing shipped; `agbrowse@0.1.15` published and tagged by release run `27892124575`. |
+| Agent-safe update notice | `_fin/260622_update_notice/` | Stderr-only npm latest-version advisory shipped with JSON/MCP/CI/help skip policy and cached `BROWSER_AGENT_HOME/update-check.json`. |
 
 ## `_fin/mvp/` topics
 

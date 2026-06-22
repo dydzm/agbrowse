@@ -16,12 +16,12 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 
 ## 현재 구조 스냅샷
 
-마지막 측정: 2026-06-21.
+마지막 측정: 2026-06-22.
 
 | 경로 | 파일 수 | 라인 수 | 역할 |
 | --- | ---: | ---: | --- |
 | `bin/` | 2 | 6 | published bin wrapper |
-| `skills/browser/` | 45 | 13602 | Chrome lifecycle, CDP connection, refs, tabs, diagnostics, adaptive fetch v2, Runway task-runner preflight/poll |
+| `skills/browser/` | 46 | 13866 | Chrome lifecycle, CDP connection, refs, tabs, diagnostics, adaptive fetch v2, Runway task-runner preflight/poll |
 | `skills/vision-click/` | 4 | 1182 | screenshot to coordinate click helper |
 | `skills/web-ai/` | 3 | 850 | bundled agent workflow skill |
 | `web-ai/` | 96 | 22214 | provider automation, sessions, MCP, eval, policy, trace |
@@ -30,12 +30,12 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 | `web-ai/policy/` | 4 | 238 | mutation and content-boundary guardrails |
 | `web-ai/trace/` | 5 | 444 | trace ID, redaction, report, writer helpers |
 | `scripts/` | 10 | 1617 | eval runner, release scripts, named release gates, strict-baseline / module-graph / bin smoke checks |
-| `test/unit/` | 105 | 12600 | deterministic module tests |
-| `test/integration/` | 18 | 2475 | CLI, MCP, policy, provider fixture tests |
+| `test/unit/` | 106 | 12757 | deterministic module tests |
+| `test/integration/` | 18 | 2513 | CLI, MCP, policy, provider fixture tests |
 | `test/e2e/` | 1 | 50 | browser smoke coverage |
 | `test/spec/` | 2 | 35 | high-level contract specs |
 | `docs/` | 41 | 2635 | adoption, trace, production-readiness, comparison, benchmark, EXTERNAL_CDP, migration docs, GitHub Pages developer docs |
-| `devlog/` | 373 | 46674 | phased plan, research, implementation notes (incl. strict-migration phases) |
+| `devlog/` | 374 | 46912 | phased plan, research, implementation notes (incl. strict-migration phases) |
 
 `structure/` 자체는 이 문서가 검증 대상으로 삼는 source tree 밖의 문서 허브라서 위 집계에서 제외한다. `verify-counts.sh`는 이 표의 경로별 파일 수와 라인 수를 live source 기준으로 비교한다.
 
@@ -43,7 +43,7 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 
 | 파일 | 라인 수 | 설명 |
 | --- | ---: | --- |
-| `skills/browser/browser.mjs` | 3467 | root CLI parser, Chrome lifecycle, browser primitive commands |
+| `skills/browser/browser.mjs` | 3481 | root CLI parser, Chrome lifecycle, browser primitive commands |
 | `skills/browser/runway.mjs` | 598 | Runway Apps/Custom selector contract, status/open/preflight command surface |
 | `skills/browser/runway-monitor.mjs` | 383 | Runway read-only queue/completion poller and progress signal extraction |
 | `skills/browser/tab-manager.mjs` | 446 | CDP target list, create, close, switch |
