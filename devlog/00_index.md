@@ -16,7 +16,7 @@ must be treated as historical  do not edit them after release.evidence
 | `_fin/` | Completed non-MVP closeouts, research outcomes, and shipped implementation plans. |
 | `_fin/mvp/` | Shipped MVP phases, grouped by topic (read-only history). |
 | `_plan/` | Active or deferred plans not yet shipped. |
-| `_legacy/` | Pre-rewrite changelogs / plans / research dumps. |
+| `_fin/_legacy/` | Pre-rewrite changelogs / plans / research dumps, closed as historical records. |
 | `context/` | Verbatim Pro / Grok peer reviews and gap audits. |
 
 ## `_plan/` active or deferred work
@@ -26,11 +26,12 @@ must be treated as historical  do not edit them after release.evidence
 | Post-MVP competitive gap closeout | `_plan/260506_post_mvp_gap_closeout/` | Deferred backlog; not fully shipped. |
 | Oracle ZIP browser bundle proposal | `_plan/260513_oracle_zip_bundle_proposal/` | External upstream proposal draft; no local agbrowse implementation authority. |
 | Adaptive Fetch v2 hardening | `_plan/260515_adaptive_fetch_v2_hardening/` | Follow-up planning after v2; not closed. |
+| Competitor skill trigger research | `_plan/260519_competitor_skill_trigger_research/` | Research includes implemented slices, but remaining P0/P1/P2/P3 roadmap items keep the folder active. |
 | Provider expansion | `_plan/260519_provider_expansion/` | Deferred provider roadmap for Claude, Perplexity, NotebookLM. |
 | Codebase audit backlog | `_plan/260603_codebase_audit/` | Historical audit + issue tracker; keep grouped until separately closed. |
 | K-BrowseComp search gap analysis | `_plan/260608_kbrowsecomp_search_gap/` | Research/spec complete; implementation deferred. |
 | Oracle stability gap analysis | `_plan/260608_oracle_stability_gap/` | Partial follow-up backlog; includes 2026-06-20 Oracle 0.15 delta and 31/32 PABCD follow-up plans. |
-| Legacy MVP phase plans | `_plan/legacy_mvp_phase_plans/` | Pre-closeout phase 8.1/9 planning references; grouped for audit hygiene. |
+| cli-jaw web-ai parity mirror | `_plan/260621_cli_jaw_webai_parity/` | External cli-jaw mirror plan; verify closeout in cli-jaw before moving from agbrowse `_plan`. |
 | Strict migration | `_plan/strict-migration/` | Deferred migration planning and arbitration notes. |
 
 Other grouped planning folders under `_plan/` remain until they receive a
@@ -61,7 +62,10 @@ separate closeout audit.
 | MCP wait response recovery | `_fin/260621_mcp_wait_response_recovery/` | GitHub #79 PABCD: session-bound MCP wait/resume recovery and monotonic timeout handling. |
 | Tab stability MVV closeout | `_fin/260621_tab_stability_mvv_closeout/` | Final branch closeout plan for tab MVV, verification, push, and PR body `Closes #79`. |
 | npm Trusted release automation | `_fin/260621_npm_trusted_release_automation/` | GitHub Actions OIDC Trusted Publishing shipped; `agbrowse@0.1.15` published and tagged by release run `27892124575`. |
+| Poll stderr heartbeat | `_fin/260621_poll_stderr_heartbeat/` | Implemented by `8c7b0a3`: `web-ai/chatgpt.mjs` emits stderr `[poll]` progress lines during long streaming/stabilizing polls. |
 | Agent-safe update notice | `_fin/260622_update_notice/` | Stderr-only npm latest-version advisory shipped with JSON/MCP/CI/help skip policy and cached `BROWSER_AGENT_HOME/update-check.json`. |
+| Historical legacy docs | `_fin/_legacy/` | Pre-rewrite changelog/plan/research dumps relocated out of active root layout. |
+| Legacy MVP phase plans | `_fin/legacy_mvp_phase_plans/` | Pre-closeout phase 8.1/9 planning references relocated as historical closeout material. |
 
 ## `_fin/mvp/` topics
 
