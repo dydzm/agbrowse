@@ -1,6 +1,15 @@
 # 05 — Error Taxonomy Comparison
 
-Severity: **P2**
+Severity: **P2** — 🟡 **OPEN** (저긴급; 2026-06-24 재감사로 코드 수 정정)
+
+## 2026-06-24 Re-audit (v0.1.15)
+
+핵심 gap(단일 클래스 vs 3-tier 서브클래스)은 여전히 유효: `errors.mjs:59`
+`export class WebAiError extends Error` 단일 클래스, `TransportError`/`ValidationError` 서브클래스 없음.
+단 errorCode 카탈로그는 본문의 "14개+"가 아니라 **현재 36개**(`grep -roh "errorCode: '...'" web-ai/ | sort -u` = 36).
+`toJSON()`, `wrapError()`, `retryHint`는 그대로 존재. 본문 평가("agbrowse 접근이 오히려 나음")는 유효하므로 우선순위는 낮음.
+
+> 아래 원본 분석(2026-06-08, v0.1.7 기준)은 역사적 기록으로 보존한다.
 
 ## Problem
 
