@@ -23,6 +23,7 @@ import {
 } from './session.mjs';
 import { WebAiError } from './errors.mjs';
 import { finalizeProviderTab } from './tab-finalizer.mjs';
+import { saveAssistantDownloadableFiles } from './chatgpt-files.mjs';
 import { recordActiveLease } from './tab-lease-store.mjs';
 import { createChatGptEditorAdapter } from './vendor-editor-contract.mjs';
 import {
@@ -465,6 +466,26 @@ export async function pollWebAi(deps, input = {}) {
                         }
                     }
                     if (session && !input.skipFinalize) {
+                        // Capture generic assistant-turn downloadable files (CSV/PDF/ZIP/...)
+                        // before archive. Separate from code-mode ZIP (code-artifact.mjs,
+                        // not on this path) and generated images (handled above). Never
+                        // throws past its boundary; only adds warnings.
+                        try {
+                            const fileCdp = await deps.getCdpSession?.();
+                            if (fileCdp) {
+                                try {
+                                    const fileResult = await saveAssistantDownloadableFiles(fileCdp, deps, {
+                                        sessionId: session.sessionId,
+                                        baselineAssistantCount: baseline?.assistantCount || 0,
+                                    });
+                                    if (fileResult.warnings?.length) warnings.push(...fileResult.warnings);
+                                } finally {
+                                    await fileCdp.detach?.().catch(() => undefined);
+                                }
+                            }
+                        } catch (err) {
+                            warnings.push(`file-artifact-capture-failed:${/** @type {any} */ (err)?.message || 'unknown'}`);
+                        }
                         await finalizeProviderTab(deps, { vendor, session: /** @type {any} */ (session), page, answerText, warnings, archiveFlag: input.archiveFlag });
                     }
                     return withAnswerArtifact({
