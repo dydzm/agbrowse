@@ -32,8 +32,26 @@ All 9 `102` modules confirmed **ABSENT** in cli-jaw `src/browser/web-ai/` (no `.
 
 Adaptation notes: artifact capture follows cli-jaw idiom (`saveImageArtifact` → `appendSessionArtifact`), **not** agbrowse `appendArtifactRecord`. tab-inspect swaps raw `chrome-remote-interface` for `getPageByTargetId(port,id).evaluate(INSPECT_EXPRESSION)` + `listTabs(port)`.
 
-## Build log (filled at cycle B-phase)
-_Commits + gate output recorded below as each module lands._
+## Build log (B-phase — all 11 items landed)
+
+Branch `feat/webai-parity-100-260625` (cli-jaw); small atomic commits; +73 unit tests.
+
+| # | Item | cli-jaw commit | Tests |
+|---|---|---|---|
+| 8.1 | candidate-reconcile (NEW) | `62729bc3` | BWAI-RECONCILE-001..009 (9) |
+| 8.2 | control-summary (NEW, P3) | `6bd10768` | BWAI-CTRLSUM-001..004 (4) |
+| 8.3 | navigation-ready (NEW, **P1**) | `9d0cd326` | BWAI-NAVREADY-001..006 (6) |
+| 8.4 | chatgpt-archive (NEW) | `7eac22e4` | BWAI-ARCHIVE-001..010 (10) |
+| 8.5 | chatgpt-upload-surface (NEW) | `44a86c4c` | BWAI-UPLOAD-001..007 (7) |
+| 8.6 | chatgpt-project-sources (NEW) | `18d4eeff` | BWAI-PROJSRC-001..006 (6) |
+| 8.7 | tab-inspect (NEW) | `02e1eaef` | BWAI-TABINSPECT-001..007 (7) |
+| 8.8 | session-doctor (NEW) | `d6665458` | BWAI-DOCTOR-001..008 (8) |
+| 8.9 | chatgpt-images (NEW, **P1**) | `712e6b88` | BWAI-IMG-001..008 (8) |
+| 8.10 | chatgpt-tools More-submenu + aria-checked (MODIFY, 106) | `3e02b05b` | BWAI-TOOLS-MORE-001..002 (2) |
+| 8.11 | tab-lease active-capacity + dead-owner reclaim (MODIFY, 106) | `02c8f0ea` | BWAI-LEASECAP-001..006 (6) |
+
+Adaptations from agbrowse: tab-inspect raw-CDP → Playwright connection layer; chatgpt-images artifact capture via `saveImageArtifact`→`appendSessionArtifact`; CDP modules typed via local `CdpSendSession`; upload-surface barrel re-export omits the `UPLOAD_BUTTON_SELECTORS` name owned by chatgpt-attachments; tab-lease `ownerPid` defaults to null on read (legacy-safe, never false-reclaimed).
 
 ## Verification
-_A-phase: catalog already audited (master-plan A-phase PASS); per-module gap re-confirmed ABSENT at scope time (all 9 `.ts` files absent). C-phase: full `npm test` + `tsc --noEmit` green._
+- **A-phase:** master-plan A-phase PASS (catalog audited vs live cli-jaw); per-module gap re-confirmed at scope time — all 9 `.ts` files were ABSENT, the 2 MODIFY surfaces (More-submenu/aria-checked, active-capacity/ownerPid) confirmed missing in live code.
+- **C-phase (gate):** `npx tsc --noEmit` → 0; full `npm test` → **4916 tests, 4898 pass, 0 fail, 18 skipped**. Existing pool/lease + chatgpt-tools contracts green (no regression).
