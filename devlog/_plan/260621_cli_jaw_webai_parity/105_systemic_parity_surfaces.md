@@ -88,6 +88,13 @@ The shared selector NAMES match (28 `*_SELECTORS` both sides) but the underlying
 
 > Ruled NOT a gap (Pass 4): `--json` envelope is largely symmetric (1 low-confidence `answer:` vs `text:` key-name nit, possibly intentional); session **status enums** match once capability-registry metadata is excluded.
 
+## 105.9 — `warning:` object-shape vocabulary (agbrowse → cli-jaw) · **Pass 5**
+
+The 4th vocabulary surface. The `warnings.push('…')` *array* form is near-symmetric (agbrowse 17 / cli-jaw 16). But agbrowse also emits a **second shape** — object-keyed `{ok:false, warning:'…'}` — that cli-jaw emits **0** of (grep: cli-jaw 0, agbrowse 6).
+
+- agbrowse-only (6): `recovery-deferred-streaming`, `recovery-deferred-unverified`, `copy-markdown-deferred-streaming` (`chatgpt.mjs:561/571/609`); `conversation-url-mismatch`, `archive-menu-item-not-found`, `archive-menu-trigger-not-found` (`chatgpt-archive.mjs:87/105/109`).
+- **Pri: P3** — derivative: 3 belong to `chatgpt-archive` (a module cli-jaw lacks, [102](102_webai_remaining_modules.md)), 3 to the deferred-streaming recovery path (= [101 #2/#9](101_webai_stability_patches.md) response-observer). A checklist that ports with its modules. Verified by grep.
+
 ## Notes
 - 105.1 and 105.2 are **derivative aggregations** — they re-frame already-documented module gaps as contract surfaces, plus surface a few genuinely-new items (inline prompt-channel `--system`/`--context`, `cdp.headless`/`cdp.unreachable` codes). They do not invalidate any prior doc.
 - **Pass 3 (105.4–105.6):** 105.4 (tier-timeout) is **NOT** derivative — a genuine early-timeout bug for long ChatGPT runs (**P1**). 105.5/105.6 are schema/vocabulary surfaces that partly map to module gaps.
