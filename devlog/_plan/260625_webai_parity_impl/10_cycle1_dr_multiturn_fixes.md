@@ -42,9 +42,16 @@ Ordered atomic slices (each its own commit, behind `npm test` + `tsc --noEmit`):
   - Gate: `tsc --noEmit` 0 errors; new regression `tests/unit/browser-web-ai-multi-turn.test.ts`
     (BWAI-MULTITURN-001) green.
   - Deferred: 106.6 transcript-artifact-save on partial → Cycle 2 (needs `session-artifacts.ts`).
-- **Slice 1.2 — deep-research not-started guard + completeness (106.1)** — ⬜ PENDING (next).
-  Port NEW `chatgpt-deep-research-report.ts` + add `researchActivityObserved` guard +
-  `completed` flag in `chatgpt-deep-research.ts`.
+- **Slice 1.2 — deep-research not-started guard + completeness (106.1)** — ✅ DONE — cli-jaw `f3b2708f`
+  - NEW `chatgpt-deep-research-report.ts` (`normalizeDeepResearchReportText`,
+    `isIncompleteDeepResearchText`, `chooseDeepResearchReportRead`) — strict-TS port.
+  - `chatgpt-deep-research.ts`: `researchActivityObserved` tracking (progress UI + frame),
+    not-started guard (stable answer w/o activity → `status:failed` + `deep-research-not-started`),
+    incomplete-report skip (keep waiting), timeout persists only a `completed` report.
+  - Gate: `tsc --noEmit` 0 errors; new tests BWAI-DR-001/002/003 (003 drives the poll loop).
+  - Deferred: report-artifact-save (trySaveReport) → Cycle 2 (needs `session-artifacts.ts`).
+
+**Cycle 1 gate (full cli-jaw suite):** `npm test` → **4765 tests, 4747 pass, 0 fail** (22.6s). ✅ DONE.
 
 ## Verification
 **A-phase audit (2026-06-25, 3 parallel read-only sub-agents vs live cli-jaw repo):**
