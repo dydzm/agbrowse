@@ -117,8 +117,8 @@ capture-flow pass rather than rushed per-cycle). Tracked so they are not mistake
 
 | # | Capability (done) | Activation pending | Target |
 |---|---|---|---|
-| **2.4** | `chatgpt-files` downloadable capture (`bcc8268c`) | invoke `saveAssistantDownloadableFiles` post-answer | `chatgpt.ts` (mirror agbrowse `chatgpt.mjs:483`) |
-| **3.3** | response-observer early-wake + recovery (`1517d1f0`) | early-wake race + timeout recovery tier | `captureAssistantResponse` (`chatgpt-response.ts`; cf. agbrowse `chatgpt.mjs:364/549`) |
+| **2.4** | `chatgpt-files` downloadable capture (`bcc8268c`) | invoke `saveAssistantDownloadableFiles` post-answer | ⬜ PENDING — `chatgpt.ts` (multi-path: send/poll/canvas complete returns; mirror agbrowse `chatgpt.mjs:483`). Do via a shared post-answer helper. |
+| **3.3** | response-observer early-wake + recovery (`1517d1f0`) | early-wake race + timeout recovery tier | ✅ DONE — `017b4a31` in `captureAssistantResponse` (`chatgpt-response.ts`) |
 
 These ride together in a **chatgpt.ts/capture-flow integration cycle** (also natural home for 101 #9
 streaming-recovery + #6 model-pill, which are chatgpt.ts-resident).
@@ -130,7 +130,7 @@ streaming-recovery + #6 model-pill, which are chatgpt.ts-resident).
 | 1 | ✅ DONE | cli-jaw `0d80a71f` (multi-turn) + `f3b2708f` (deep-research) | full suite 4747 pass / 0 fail; tsc 0 | 106.1 + 106.2/.5 fixed |
 | 2 | ✅ DONE (planned) | cli-jaw `98760f5b` + `7fa38482` + `bcc8268c` | full suite 4754 pass / 0 fail; tsc 0 | 2.1/2.2/2.3 done; #1 auto-wire = follow-up 2.4 |
 | 3 | ✅ DONE (modules) | cli-jaw `a943ba84` (dedup) + `1517d1f0` (observer) | full suite 4761 pass / 0 fail; tsc 0 | 106.13 + 101#2 symbols; wiring = follow-up 3.3 |
-| 4 | ⬜ PENDING | — | — | — |
+| 4 | 🔄 IN PROGRESS | cli-jaw `017b4a31` (observer wiring 3.3) | full suite 4761 pass / 0 fail; tsc 0 | observer ACTIVE; remaining = 101#9 streaming-recovery + 2.4 (chatgpt.ts surgery) |
 | 5 | ⬜ PENDING | — | — | — |
 | 6 | ⬜ PENDING | — | — | — |
 | 7 | ⬜ PENDING | — | — | — |
