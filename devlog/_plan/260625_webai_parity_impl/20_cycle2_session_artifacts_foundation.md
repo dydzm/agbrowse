@@ -38,8 +38,21 @@ Scope exceeds one atomic commit (agbrowse `session-artifacts.mjs` 301L + `chatgp
 Integration confirmed: cli-jaw home = `JAW_HOME` (`../../core/config.js`), store `web-ai-sessions.json`,
 `getSession` exists, no current `artifacts` field on the record.
 
-## Build log (filled at cycle B-phase)
-_Commits + gate output recorded here._
+## Build log (cli-jaw branch `feat/webai-parity-100-260625`)
+
+- **2.1 — session-artifacts foundation** — ✅ DONE — cli-jaw `98760f5b`
+  - NEW `session-artifacts.ts` (FS under `JAW_HOME/web-ai-artifacts/<sid>`, traversal guard, `try*`
+    discriminated-union result); `types.ts` + `WebAiArtifactDescriptor`/`artifacts[]`; `session.ts`
+    + `appendSessionArtifact` (dedupe kind+path). Test BWAI-ARTIFACTS-001; tsc 0.
+- **2.3 — wire deferred Cycle-1 saves** — ✅ DONE — cli-jaw `7fa38482`
+  - multi-turn partial → `trySaveTranscript`+`appendSessionArtifact` (106.6); deep-research
+    complete+timeout → `trySaveReport`+`appendSessionArtifact`. Test BWAI-MULTITURN-002 exercises
+    the append path; mocks → context-scoped `t.mock.module`. tsc 0.
+  - **Regression gate:** full cli-jaw `npm test` → **4767 tests, 4749 pass, 0 fail**.
+- **2.2 — chatgpt-files (generic downloadable-file capture, P0)** — ⬜ PENDING (next).
+  NEW `chatgpt-files.ts`: `normalizeChatGptFileDownloadUrl`/`normalizeChatGptSandboxUrl` allowlist,
+  `readAssistantDownloadableFiles` (CDP DOM scan), `saveAssistantDownloadableFiles` (sequential
+  download + `trySaveFileArtifact`). Pure URL/filename tests first.
 
 ## Verification
 _A-phase audit result (advisory) + C-phase gate result._
