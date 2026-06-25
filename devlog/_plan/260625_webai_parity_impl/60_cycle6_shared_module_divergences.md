@@ -21,16 +21,18 @@
 - **104.15 — `wrapError` field preservation** — ✅ DONE — cli-jaw `b0961de6`
   - A plain error-like object with a string `errorCode` keeps its fields instead of flattening to
     `internal.unhandled` (fallback still overrides). Tests BWAI-WRAPERR-001/002.
+- **104.1 + 104.2 — session-store lock PID-liveness + deadline-aware active** — ✅ DONE — cli-jaw `0c47cdf5`
+  - `isStaleLock` now reclaims a crashed holder's lock immediately (PID-liveness) vs acquiredAt-age only;
+    `isSessionActive` extracted + deadline-aware (expired sessions inactive). Tests BWAI-SLOCK-001/002.
 
-**Gate so far:** full cli-jaw `npm test` → **4792 tests, 4774 pass, 0 fail**; tsc 0.
+**Gate so far:** full cli-jaw `npm test` → **4794 tests, 4776 pass, 0 fail**; tsc 0.
 
 ### Remaining Cycle-6 items (P1/P2, next continuations)
-104.1 command-lock TTL/heartbeat/PID · 104.2 isSessionActive deadline-aware · 104.5 modelSelection
-evidence · 104.7 legacy-pro reject · 104.8/.9 vendor capability+model probes · 104.10 code-extract nav ·
-104.11 zip chronological order · 104.12 composer resolved-targets · 104.13 attachment filename-verify ·
-104.14 composer CDP insertText · 104.16 typed code-mode error · 104.17 copy scroll-suppression ·
-104.18 pollWebAi per-tick drift/crash · 104.20 occurrenceIndex · 104.21 contract-audit 7-feature ·
-104.22 observation-bundle shape.
+104.5 modelSelection evidence · 104.7 legacy-pro reject · 104.8/.9 vendor capability+model probes ·
+104.10 code-extract nav · 104.11 zip chronological order · 104.12 composer resolved-targets ·
+104.13 attachment filename-verify · 104.14 composer CDP insertText · 104.16 typed code-mode error ·
+104.17 copy scroll-suppression · 104.18 pollWebAi per-tick drift/crash · 104.20 occurrenceIndex ·
+104.21 contract-audit 7-feature · 104.22 observation-bundle shape.
 
 ## Verification
 Per-item gates above; A-phase audit (Cycle 1) confirmed these as line-diff divergences.
