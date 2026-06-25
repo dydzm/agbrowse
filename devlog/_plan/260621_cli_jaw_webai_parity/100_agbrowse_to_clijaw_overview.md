@@ -16,7 +16,8 @@ The agbrowse → cli-jaw backlog: features agbrowse has that cli-jaw lacks or is
 | [102_webai_remaining_modules.md](102_webai_remaining_modules.md) | Other agbrowse web-ai modules cli-jaw lacks (images, archive, project-sources, upload-surface, navigation-ready, …) + agbrowse-only out-of-scope list |
 | [103_search_agbrowse_research_for_clijaw.md](103_search_agbrowse_research_for_clijaw.md) | cli-jaw `search` skill should leverage agbrowse's coded `research`/`enrich-fetch`/`browse-plan` pipeline (it currently cites only `research plan`) |
 | [104_webai_shared_module_divergences.md](104_webai_shared_module_divergences.md) | **Pass 1** — 18 shared-module + vendor behavioral gaps found by line-diff (session lock/active, model evidence+i18n, code-mode nav, composer resolved-targets, attachment filename-verify, watcher/profile locks, vendor capability probes) |
-| [105_systemic_parity_surfaces.md](105_systemic_parity_surfaces.md) | **Pass 2** — cross-cutting surfaces the per-module analysis missed: error-code taxonomy (33 vs 15 codes), CLI flag delta (73 vs 37 — incl. inline `--system`/`--context` prompt-channel), test-coverage delta |
+| [105_systemic_parity_surfaces.md](105_systemic_parity_surfaces.md) | **Pass 2/3/4** — 8 cross-cutting surfaces the per-module analysis missed: error-code taxonomy (33 v 15), CLI flag delta (73 v 37 incl. inline `--system`/`--context`), test-cov, tier→timeout table (**P1 bug**), persisted session fields, retryHint (34 v 22), stage vocab, selector member-array drift |
+| [106_deep_research_multiturn_tooling_drift.md](106_deep_research_multiturn_tooling_drift.md) | **Pass 4** — cli-jaw's ported-but-behind modules: deep-research (no not-started guard / saves non-reports as reports **P1**), multi-turn (drops history + corrupts indices on resume **P1**), composer-tooling (More-submenu / aria-checked), tab-lease (capacity/dead-PID), response-dom de-dup + 2 confirmed secondaries |
 
 ## Headline (port priority)
 

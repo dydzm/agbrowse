@@ -70,7 +70,26 @@ Distinct from [105.1](#1051--error-code-taxonomy-agbrowse--cli-jaw)'s *error-cod
 - **cli-jaw-only (~8)** e.g. `feature-fallback`, `reset-cache`, `wait-and-retry`, `retry-or-skip-visual` (200-dir, minor).
 - **Pri: P3** — adopt hints alongside their owning module ports; like 105.1, a checklist not a module.
 
+## 105.7 — `stage:` pipeline-label vocabulary (agbrowse → cli-jaw) · **Pass 4**
+
+A third unsynchronized vocabulary (after error-code 105.1 + retryHint 105.6): the `stage:` label emitted in errors/diagnostics. agbrowse **34** distinct, cli-jaw **32**, **shared only 13**. Most agbrowse-only labels are missing-module symptoms (already tracked: `deep-research`, `watcher-*`, `code-mode`/`-extract`, `artifact-*`, `multi-turn`, …), but **6 are core happy-path stages cli-jaw has no synonym for** (grep count 0 each): `connect`, `poll`, `commit-verify`, `composer-prereq`, `context-preflight`, `attachment-verify`.
+
+- agbrowse `chatgpt.mjs`/`session.mjs`/`watcher.mjs`; cli-jaw `chatgpt.ts` (7 `stage:` hits).
+- **Pri: P3** — diagnostics-contract surface (log-scrapers/callers key on `stage`); a checklist that ports with its modules, but the 6 core-path labels are genuinely new. Verified by grep.
+
+## 105.8 — Selector member-array drift on shared constants (agbrowse → cli-jaw) · **Pass 4** (resolves Pass-3 low-confidence item)
+
+The shared selector NAMES match (28 `*_SELECTORS` both sides) but the underlying **member arrays diverge** — real resilience drift, not naming skew (this was Pass 3's deferred low-confidence item, now confirmed):
+
+- **`INPUT_SELECTORS`** (composer): agbrowse has `'textarea:not([disabled])'`; cli-jaw narrowed it to `'main textarea…'` + `'form textarea…'` → **misses bare textareas**. `chatgpt-composer.mjs:52` vs `chatgpt-composer.ts:61`.
+- **`SEND_BUTTON_SELECTORS`**: agbrowse has `'form button[type="submit"]'` + `'button[aria-label*="Send" i]'`; cli-jaw has neither (only `Send prompt`/`Send message`) → **loses the generic Send fallback**. `:64` vs `:74`.
+- **`UPLOAD_BUTTON_SELECTORS`**: agbrowse (`chatgpt-upload-surface.mjs:36`, a module cli-jaw lacks) has 8 members incl. `[data-testid="composer-plus-btn"]`, `button[aria-label="Add files and more"]`, and Korean `button[aria-label="파일 추가 및 기타"]`; cli-jaw `chatgpt-attachments.ts:163` lacks the data-testid plus-btn + the i18n/explicit-label entries.
+- **Pri: P2** — selector resilience is load-bearing for composer/upload; the narrower cli-jaw arrays fail on layouts agbrowse handles.
+
+> Ruled NOT a gap (Pass 4): `--json` envelope is largely symmetric (1 low-confidence `answer:` vs `text:` key-name nit, possibly intentional); session **status enums** match once capability-registry metadata is excluded.
+
 ## Notes
 - 105.1 and 105.2 are **derivative aggregations** — they re-frame already-documented module gaps as contract surfaces, plus surface a few genuinely-new items (inline prompt-channel `--system`/`--context`, `cdp.headless`/`cdp.unreachable` codes). They do not invalidate any prior doc.
 - **Pass 3 (105.4–105.6):** 105.4 (tier-timeout) is **NOT** derivative — a genuine early-timeout bug for long ChatGPT runs (**P1**). 105.5/105.6 are schema/vocabulary surfaces that partly map to module gaps.
+- **Pass 4 (105.7–105.8):** 105.7 stage-vocab is the 3rd vocabulary surface (checklist-style); 105.8 selector drift is a genuine resilience gap. The systemic axis now has 8 surfaces — error-code / flag / test-cov / tier-timeout / persisted-fields / retryHint / stage / selector-arrays.
 - One file-coverage miss from the critic — `code-dev-context-template.ts` (cli-jaw split it out; agbrowse inlines the template in `code-dev-context.mjs`) — is noted in [201](201_webai_capability_registry_and_tools.md); near-trivial.
