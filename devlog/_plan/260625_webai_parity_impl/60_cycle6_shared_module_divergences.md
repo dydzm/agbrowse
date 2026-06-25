@@ -1,6 +1,6 @@
 # 60 — Cycle (cli-jaw (.ts))
 
-> Part of [00_plan.md](00_plan.md) · Goal `68727b6d-d01` · **Status: ⬜ PENDING (stub — diff-level detail filled at this cycle's P/B phase)**
+> Part of [00_plan.md](00_plan.md) · Goal `68727b6d-d01` · **Status: ✅ DONE (104.7 deferred with rationale)**
 
 ## Target
 - **Repo / lang:** cli-jaw (.ts)
@@ -65,11 +65,46 @@
   - copy evaluate patches `scrollIntoView`→noop + `focus`→preventScroll around the copy, restored in
     finally. Browser-only behavior → verified by tsc + no-regression (no unit test); GPT-Pro live gate covers it.
 
-**Gate so far:** full cli-jaw `npm test` → **4803 tests, 4785 pass, 0 fail**; tsc 0.
+- **104.14 — composer CDP `Input.insertText` for large prompts** — ✅ DONE — cli-jaw `cae7b825`
+  - `insertTextLikeProvider` mirrors agbrowse: after the `insertText` override and before the keyboard
+    fallback, an optional `getCdpSession()` routes large prompts through CDP `Input.insertText`,
+    detaching in `finally`. `getCdpSession?` added to `VendorEditorAdapterOptions`. Exported for test.
+    Tests BWAI-COMPOSER-CDP-001/002.
+- **104.12 — composer accepts resolver-verified send/composer targets** — ✅ DONE — cli-jaw `2c2b22c6`
+  - send-path resolved `composer.fill`/`send.click` targets but discarded them (resolved path dead).
+    `findComposerCandidate` short-circuits to a resolved composer selector; `submitPromptFromComposer`
+    tries `clickResolvedSendButton` (plain click → forced retry) before the scan, then Enter;
+    `clickEnabledSendButton` timeout configurable; `adapter.submitPrompt(submitOptions)` merges per-call.
+    `chatgpt.ts` threads resolved selectors into a `liveAdapter` + upload-aware `sendButtonTimeoutMs`
+    (45s w/ attachments, 20s else). Tests BWAI-COMPOSER-RESOLVED-001..005.
+- **104.18 — pollWebAi per-tick conversation-drift + tab-crash guards** — ✅ DONE — cli-jaw `d4dc46d7`
+  - `captureAssistantResponse` runs an optional `driftCheck()` per tick (bails as `conversation-mismatch`
+    when the held tab's `/c/<id>` differs from baseline — ignores the expected fresh-chat none→id), and
+    wraps the tick so a page-death returns a recoverable `tab-crashed`; non-page-death errors propagate.
+    `poll()` maps `result.drift` → WebAiOutput, marks session `crashed`. `WebAiStatus`/`WebAiSessionStatus`
+    gain the new states; `WebAiOutput` gains `recoverable?`. Tests BWAI-POLL-DRIFT-001..003.
+- **104.8 — runtime capability-probe engine + vendor arrays** — ✅ DONE — cli-jaw `0bb92f5d` + `5ea6af26`
+  - new `capability-probe.ts` (port of `capability.mjs`): `defineCapability`/`runCapabilities`/
+    `worstCapabilityState` + shared `probeHostMatches`/`probeFirstVisibleSelector`. Vendor arrays in
+    dedicated `gemini-capabilities.ts`/`grok-capabilities.ts` (gemini-live.ts is already >500 lines;
+    separate module also avoids a live↔capabilities cycle): 6 probes each (active-tab/composer/model-alias/
+    upload/copy/streaming). `geminiStatus`/`grokStatus` attach `capabilityProbes`+`capabilityState`
+    (named distinct from the DECLARATIVE `capabilities`/201 rows). Tests BWAI-CAP-ENGINE-001..007,
+    BWAI-VCAP-G01..G04/K01.
+- **104.9 — Gemini/Grok model capability probe + fallback ladder** — ✅ DONE — cli-jaw `a561f835`
+  - `geminiModelCapabilityProbe`/`grokModelCapabilityProbe`: read-only, report ok (already active) /
+    warn (selectable, not active) / fail (unavailable) / unknown (no model; Gemini deep-think=tool).
+    `closeGeminiModelMenu`/`closeGrokModelMenu` restore the menu via Escape — selection never mutated.
+    Tests BWAI-MODELPROBE-G01..G05, K01..K03. (fail-not-selectable is a 5s live path → Cycle-12 gate.)
 
-### Remaining Cycle-6 items (next continuations — browser-context-heavy)
-104.8/.9 vendor capability+model probes · 104.12 composer resolved-targets · 104.14 composer CDP insertText ·
-104.18 pollWebAi per-tick drift/crash. (104.7 deferred.)
+**Gate (Cycle 6 complete):** full cli-jaw `npm test` → **4833 tests, 4815 pass, 0 fail** (one unrelated
+orchestrate state-machine test is flaky across the suite — passes in isolation/on re-run; zero orchestrate
+files touched this cycle); tsc 0.
+
+### Cycle-6 disposition
+All P1/P2 shared-module divergences ported except **104.7** (legacy-pro reject) — DEFERRED with rationale
+above (cli-jaw's `isLegacyProModelLabel` targets effort-pills, not legacy model rows; matching agbrowse
+risks cli-jaw's effort handling). 104.7 carried forward as a standalone follow-up, not a blocker.
 
 ## Verification
 Per-item gates above; A-phase audit (Cycle 1) confirmed these as line-diff divergences.
