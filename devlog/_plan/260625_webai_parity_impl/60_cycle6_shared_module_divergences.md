@@ -39,13 +39,19 @@
   - `isElementRef` (`@?e\d+`) accepts bare `e3`, rejects `@x`; emits `observationId`/`targetId`/`basis`.
     Test BWAI-OBSBUNDLE-001.
 
-**Gate so far:** full cli-jaw `npm test` → **4797 tests, 4779 pass, 0 fail**; tsc 0.
+- **104.11 — zip scan chronological order** — ✅ DONE — cli-jaw `ce3ac51a`
+  - `orderedConversationMessages` (create_time/update_time then mapping order) used by both zip scans →
+    the resolved zip is the most-recent one deterministically. Test BWAI-ZIPORD-001.
+- **104.16 — typed code-mode error + zip write-guard** — ✅ DONE — cli-jaw `afa61347`
+  - `codeWebAi`/`extractCodeArtifacts` throw typed `code-mode.vendor-unsupported`; `downloadAndSaveZip`
+    write wrapped → `code-artifact:write-failed`. Test BWAI-CODEMODE-001.
+
+**Gate so far:** full cli-jaw `npm test` → **4799 tests, 4781 pass, 0 fail**; tsc 0.
 
 ### Remaining Cycle-6 items (next continuations)
-104.8/.9 vendor capability+model probes · 104.10 code-extract nav · 104.11 zip chronological order ·
-104.12 composer resolved-targets · 104.13 attachment filename-verify · 104.14 composer CDP insertText ·
-104.16 typed code-mode error · 104.17 copy scroll-suppression · 104.18 pollWebAi per-tick drift/crash ·
-104.21 contract-audit 7-feature. (104.7 deferred.)
+104.8/.9 vendor capability+model probes · 104.10 code-extract nav · 104.12 composer resolved-targets ·
+104.13 attachment filename-verify · 104.14 composer CDP insertText · 104.17 copy scroll-suppression ·
+104.18 pollWebAi per-tick drift/crash · 104.21 contract-audit 7-feature. (104.7 deferred.)
 
 ## Verification
 Per-item gates above; A-phase audit (Cycle 1) confirmed these as line-diff divergences.
