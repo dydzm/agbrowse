@@ -8,7 +8,7 @@ const BROWSER_AGENT_HOME = process.env.BROWSER_AGENT_HOME || join(homedir(), '.b
 
 /**
  * @typedef {Object} ArtifactDescriptor
- * @property {'transcript'|'report'|'image'} kind
+ * @property {'transcript'|'report'|'image'|'file'} kind
  * @property {string} label
  * @property {string} path
  * @property {string} [mimeType]
@@ -172,6 +172,65 @@ export function trySaveImageArtifact(sessionId, image) {
         return {
             ok: false,
             stage: 'artifact-image',
+            error: /** @type {Error} */ (err)?.message || String(err),
+        };
+    }
+}
+
+/**
+ * Build a safe artifact basename for a generic file: strip any directory,
+ * preserve the resolved filename's extension when present, else fall back to the
+ * MIME subtype. The stem is path-traversal sanitized.
+ * @param {string} filename
+ * @param {string} mimeType
+ * @returns {string}
+ */
+function safeFileArtifactName(filename, mimeType) {
+    const base = basename(String(filename || ''));
+    const dot = base.lastIndexOf('.');
+    const stem = sanitizeSegment(dot > 0 ? base.slice(0, dot) : base);
+    const rawExt = dot > 0 ? base.slice(dot + 1) : '';
+    const ext = sanitizeSegment(rawExt || (mimeType ? (mimeType.split('/')[1] || '').split(';')[0] : ''));
+    return ext && ext !== 'unknown' ? `${stem}.${ext}` : stem;
+}
+
+/**
+ * Save a generic downloadable-file artifact (CSV/PDF/ZIP/...), separate from
+ * image artifacts. Preserves the resolved filename's extension.
+ * @param {string} sessionId
+ * @param {{ filename: string, buffer: Buffer, mimeType: string, sourceUrl?: string }} file
+ * @returns {ArtifactDescriptor}
+ */
+export function saveFileArtifact(sessionId, { filename, buffer, mimeType, sourceUrl }) {
+    const dir = resolveArtifactsDir(sessionId);
+    ensureDir(dir);
+    const safeName = safeFileArtifactName(filename, mimeType);
+    const fullPath = join(dir, safeName);
+    writeFileSync(fullPath, buffer);
+    return {
+        kind: 'file',
+        label: filename,
+        path: safeName,
+        mimeType,
+        sizeBytes: buffer.length,
+        sourceUrl: sourceUrl || undefined,
+        savedAt: new Date().toISOString(),
+    };
+}
+
+/**
+ * Save a file artifact and convert failures into a result.
+ * @param {string} sessionId
+ * @param {{ filename: string, buffer: Buffer, mimeType: string, sourceUrl?: string }} file
+ * @returns {ArtifactSaveResult}
+ */
+export function trySaveFileArtifact(sessionId, file) {
+    try {
+        return { ok: true, descriptor: saveFileArtifact(sessionId, file) };
+    } catch (err) {
+        return {
+            ok: false,
+            stage: 'artifact-file',
             error: /** @type {Error} */ (err)?.message || String(err),
         };
     }
