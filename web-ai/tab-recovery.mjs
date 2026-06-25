@@ -1,5 +1,5 @@
 // @ts-check
-import { createTab, isTabAlive, getPageByTargetId, waitForPageByTargetId, listManagedTabs } from '../skills/browser/tab-manager.mjs';
+import { createTab, isTabAlive, getPageByTargetId, waitForPageByTargetId, listManagedTabs, closeTab } from '../skills/browser/tab-manager.mjs';
 import { updateSession, getSession, incrementRecoveryCount, listSessions } from './session.mjs';
 import { waitForConversationReady, isProviderUrl } from './navigation-ready.mjs';
 
@@ -244,6 +244,39 @@ export function isSafeChatGptConversationUrl(url) {
     if (u.protocol !== 'https:') return false;
     if (u.hostname !== 'chatgpt.com' && u.hostname !== 'chat.openai.com') return false;
     return /\/c\/[A-Za-z0-9_-]+/.test(u.pathname);
+}
+
+/**
+ * New-tab conversation recovery (35.1). Opens a saved ChatGPT conversation URL
+ * in a FRESH tab — the agreed alternative to oracle's sidebar DOM-search
+ * (master plan 36 §2). The 32.3 guard runs FIRST, so an unsafe target never
+ * opens a tab. On URL mismatch the stray tab is closed. Never throws.
+ * @param {{ getPort: () => number }} deps
+ * @param {{ conversationUrl?: string|null }} [opts]
+ * @returns {Promise<{ opened: true, page: any, targetId: string, conversationUrl: string } | { opened: false, reason: string, targetId?: string|null }>}
+ */
+export async function openConversationInNewTab(deps, { conversationUrl } = {}) {
+    if (!isSafeChatGptConversationUrl(conversationUrl)) {
+        return { opened: false, reason: 'unsafe-conversation-url' };
+    }
+    const safeUrl = /** @type {string} */ (conversationUrl);
+    const port = deps.getPort();
+    let targetId = null;
+    try {
+        const newTab = await createTab(port, safeUrl);
+        targetId = newTab.targetId;
+        const newPage = await waitForPageByTargetId(port, targetId).catch(() => null);
+        if (!newPage) return { opened: false, reason: 'page-unavailable', targetId };
+        await waitForConversationReady(newPage, newPage.url()).catch(() => undefined);
+        if (!urlsCompatible(safeUrl, newPage.url())) {
+            await closeTab(port, targetId).catch(() => undefined);
+            return { opened: false, reason: 'conversation-mismatch' };
+        }
+        return { opened: true, page: newPage, targetId, conversationUrl: safeUrl };
+    } catch (err) {
+        if (targetId) await closeTab(port, targetId).catch(() => undefined);
+        return { opened: false, reason: `new-tab-failed:${/** @type {any} */ (err)?.message || 'unknown'}` };
+    }
 }
 
 /**

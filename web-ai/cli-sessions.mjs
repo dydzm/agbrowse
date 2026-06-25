@@ -8,8 +8,8 @@ import { pollWebAi } from './chatgpt.mjs';
 import { geminiPollWebAi } from './gemini-live.mjs';
 import { grokPollWebAi } from './grok-live.mjs';
 import { WebAiError } from './errors.mjs';
-import { getSession, listSessions, pruneSessionsOlderThan } from './session.mjs';
-import { resolveSessionPage, withSessionPage } from './tab-recovery.mjs';
+import { getSession, listSessions, pruneSessionsOlderThan, updateSession } from './session.mjs';
+import { resolveSessionPage, withSessionPage, openConversationInNewTab } from './tab-recovery.mjs';
 import { withSessionCommandLock } from './session-store.mjs';
 import { buildSessionDoctorReport } from './session-doctor.mjs';
 
@@ -122,6 +122,33 @@ export async function runSessionsCommand(args, values, deps, input) {
         }
         const resolved = await resolveSessionPage(deps, id, { allowNavigate: input.navigate === true });
         if (resolved.mismatch) {
+            // 35.1 new-tab recovery: when navigation is authorized, open the saved
+            // ChatGPT conversation in a fresh tab (32.3-guarded) instead of failing.
+            if (input.navigate === true && session.vendor === 'chatgpt') {
+                const reopened = await openConversationInNewTab(deps, { conversationUrl: session.conversationUrl });
+                if (reopened.opened) {
+                    updateSession(id, { targetId: reopened.targetId });
+                    return {
+                        ok: true,
+                        status: 'reattached',
+                        sessionId: id,
+                        targetId: reopened.targetId,
+                        url: /** @type {any} */ (reopened.page).url?.() || reopened.conversationUrl,
+                        recovered: true,
+                        strategy: 'new-tab',
+                        warnings: ['recovered-via-new-tab'],
+                    };
+                }
+                return {
+                    ok: false,
+                    status: 'reattach-mismatch',
+                    sessionId: id,
+                    targetId: resolved.targetId,
+                    url: resolved.url,
+                    conversationUrl: resolved.conversationUrl,
+                    warnings: [...(resolved.warnings || []), `new-tab-recovery-failed:${reopened.reason}`],
+                };
+            }
             return {
                 ok: false,
                 status: 'reattach-mismatch',
