@@ -24,13 +24,13 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 | `skills/browser/` | 46 | 13866 | Chrome lifecycle, CDP connection, refs, tabs, diagnostics, adaptive fetch v2, Runway task-runner preflight/poll |
 | `skills/vision-click/` | 4 | 1182 | screenshot to coordinate click helper |
 | `skills/web-ai/` | 3 | 850 | bundled agent workflow skill |
-| `web-ai/` | 101 | 23539 | provider automation, sessions, MCP, eval, policy, trace |
+| `web-ai/` | 101 | 23642 | provider automation, sessions, MCP, eval, policy, trace |
 | `web-ai/context-pack/` | 8 | 858 | file selection, token budget, context rendering |
 | `web-ai/eval/` | 5 | 552 | offline provider DOM fixture harness |
 | `web-ai/policy/` | 4 | 238 | mutation and content-boundary guardrails |
 | `web-ai/trace/` | 5 | 444 | trace ID, redaction, report, writer helpers |
 | `scripts/` | 10 | 1617 | eval runner, release scripts, named release gates, strict-baseline / module-graph / bin smoke checks |
-| `test/unit/` | 113 | 13795 | deterministic module tests |
+| `test/unit/` | 114 | 13864 | deterministic module tests |
 | `test/integration/` | 18 | 2513 | CLI, MCP, policy, provider fixture tests |
 | `test/e2e/` | 1 | 50 | browser smoke coverage |
 | `test/spec/` | 2 | 35 | high-level contract specs |
@@ -66,9 +66,9 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 | `skills/browser/adaptive-fetch/transforms.mjs` | 86 | URL transforms, HTML-to-text, content-type checks |
 | `skills/browser/adaptive-fetch/third-party-readers.mjs` | 46 | Jina Reader integration |
 | `skills/browser/adaptive-fetch/browser-runtime.mjs` | 38 | browser page acquisition and cleanup |
-| `web-ai/cli.mjs` | 1886 | `web-ai` subcommand parser and command orchestration |
+| `web-ai/cli.mjs` | 1903 | `web-ai` subcommand parser and command orchestration |
 | `web-ai/session-target-guard.mjs` | 151 | shared CDP session candidate selection, ambiguity errors, and target-mismatch recovery envelopes |
-| `web-ai/chatgpt.mjs` | 1047 | ChatGPT provider send/poll/query/status |
+| `web-ai/chatgpt.mjs` | 1046 | ChatGPT provider send/poll/query/status |
 | `web-ai/gemini-live.mjs` | 801 | Gemini provider send/poll/query/status |
 | `web-ai/grok-live.mjs` | 593 | Grok provider send/poll/query/status |
 | `web-ai/mcp-server.mjs` | 384 | stdio JSON-RPC MCP bridge |

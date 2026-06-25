@@ -9,9 +9,14 @@ import {
     preflightAttachment,
     scoreFileInputCandidate,
     sendButtonTimeoutMs,
+    UPLOAD_BUTTON_SELECTORS,
 } from '../../web-ai/chatgpt-attachments.mjs';
 
 describe('ChatGPT attachment upload surface', () => {
+    it('tracks the current ChatGPT plus button label for upload capability probes', () => {
+        expect(UPLOAD_BUTTON_SELECTORS).toContain('button[aria-label="Add files and more"]');
+    });
+
     it('prefers a resolver-selected upload target before scanning legacy selectors', async () => {
         const page = createUploadPage();
         const result = await attachLocalFileLive(page, {

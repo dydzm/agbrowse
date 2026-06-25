@@ -33,6 +33,7 @@ import {
     attachLocalFilesLive,
     fileInfoFromPath,
     sendButtonTimeoutMs,
+    UPLOAD_BUTTON_SELECTORS as CHATGPT_UPLOAD_SELECTORS,
     verifySentTurnAttachmentLive,
 } from './chatgpt-attachments.mjs';
 import { selectChatGptModel, chatGptModelCapabilityProbe } from './chatgpt-model.mjs';
@@ -43,7 +44,7 @@ import { resolveTargetForIntent } from './target-resolver.mjs';
 import { createTraceContext, getSessionTrace, recordTraceStep, summarizeTraceSteps } from './action-trace.mjs';
 import { appendTraceToSession } from './trace-persistence.mjs';
 import { isPageDeathError } from './tab-recovery.mjs';
-import { waitForConversationReady, isProviderUrl } from './navigation-ready.mjs';
+import { waitForConversationReady, isProviderUrl, shouldNavigateToRequestedProviderUrl, waitForPageUrl } from './navigation-ready.mjs';
 import { collectImages, isImageOnlyGeneratedImageChromeText } from './chatgpt-images.mjs';
 import { resolveArtifactsDir } from './session-artifacts.mjs';
 import { sendDeepResearch } from './chatgpt-deep-research.mjs';
@@ -102,11 +103,6 @@ export async function renderWebAi(input = {}) {
     };
 }
 
-const CHATGPT_UPLOAD_SELECTORS = [
-    'button[aria-label*="Upload" i]',
-    'button[aria-label*="Attach" i]',
-    'button[data-testid*="plus" i]',
-];
 const CHATGPT_STOP_SELECTORS = [
     'button[data-testid="stop-button"]',
     'button[aria-label*="Stop" i]',
@@ -165,7 +161,10 @@ export async function sendWebAi(deps, input = {}) {
     const envelope = normalizeEnvelope(input);
     if (input.url) {
         const page = await deps.getPage();
-        await page.goto(input.url, { waitUntil: 'load', timeout: 30_000 });
+        const currentUrl = await waitForPageUrl(page, { state: 'load' });
+        if (shouldNavigateToRequestedProviderUrl(currentUrl, input.url)) {
+            await page.goto(input.url, { waitUntil: 'load', timeout: 30_000 });
+        }
         const redirectedUrl = page.url();
         await waitForConversationReady(page, redirectedUrl);
         if (redirectedUrl !== input.url && isProviderUrl(redirectedUrl)) {
