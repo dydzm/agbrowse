@@ -109,13 +109,27 @@ Goal completes only when:
 
 Audit verdict: plan feasible & safe; proceed to B. Employee/sub-agent verification is advisory (non-blocking) per goal.
 
+## Wiring follow-ups (capability ported + tested; activation into the orchestrator pending)
+
+A few P0 ports landed as verified, gated modules but are not yet *invoked* from the live send/capture
+flow (the activation is behavior-changing orchestrator integration, deliberately grouped into a dedicated
+capture-flow pass rather than rushed per-cycle). Tracked so they are not mistaken for fully closed:
+
+| # | Capability (done) | Activation pending | Target |
+|---|---|---|---|
+| **2.4** | `chatgpt-files` downloadable capture (`bcc8268c`) | invoke `saveAssistantDownloadableFiles` post-answer | `chatgpt.ts` (mirror agbrowse `chatgpt.mjs:483`) |
+| **3.3** | response-observer early-wake + recovery (`1517d1f0`) | early-wake race + timeout recovery tier | `captureAssistantResponse` (`chatgpt-response.ts`; cf. agbrowse `chatgpt.mjs:364/549`) |
+
+These ride together in a **chatgpt.ts/capture-flow integration cycle** (also natural home for 101 #9
+streaming-recovery + #6 model-pill, which are chatgpt.ts-resident).
+
 ## Convergence tracker (filled per cycle)
 
 | Cyc | Status | Commit(s) | Gate | Checkpoint |
 |---|---|---|---|---|
 | 1 | ✅ DONE | cli-jaw `0d80a71f` (multi-turn) + `f3b2708f` (deep-research) | full suite 4747 pass / 0 fail; tsc 0 | 106.1 + 106.2/.5 fixed |
 | 2 | ✅ DONE (planned) | cli-jaw `98760f5b` + `7fa38482` + `bcc8268c` | full suite 4754 pass / 0 fail; tsc 0 | 2.1/2.2/2.3 done; #1 auto-wire = follow-up 2.4 |
-| 3 | ⬜ PENDING | — | — | — |
+| 3 | ✅ DONE (modules) | cli-jaw `a943ba84` (dedup) + `1517d1f0` (observer) | full suite 4761 pass / 0 fail; tsc 0 | 106.13 + 101#2 symbols; wiring = follow-up 3.3 |
 | 4 | ⬜ PENDING | — | — | — |
 | 5 | ⬜ PENDING | — | — | — |
 | 6 | ⬜ PENDING | — | — | — |

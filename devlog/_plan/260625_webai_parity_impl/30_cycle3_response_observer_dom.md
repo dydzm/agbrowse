@@ -10,11 +10,25 @@
 ## Gaps in scope
 101 #2 response-observer (MutationObserver early-wake + 3rd-tier recovery); chatgpt-response-dom readTopLevelAssistantTexts; 106.13 descendant de-dup
 
-## Plan (filled at cycle P-phase)
-_Diff-level precision (exact files NEW/MODIFY, before/after) added when this cycle begins. Source evidence: ../260621_cli_jaw_webai_parity/ catalog rows above._
+## Build log (cli-jaw branch `feat/webai-parity-100-260625`)
 
-## Build log (filled at cycle B-phase)
-_Commits + gate output recorded here._
+- **3.1 — descendant-dedup reads (106.13)** — ✅ DONE — cli-jaw `a943ba84`
+  - NEW `chatgpt-response-dom.ts` (`readTopLevelAssistantTexts` + locator fallback); `readAssistantTexts`
+    now uses it (page.evaluate first, locator fallback), replacing the flat `captureTextBaseline`+`safeAll`
+    path so a nested assistant match never double-counts its parent. Tests BWAI-RESPDOM-001/002.
+- **3.2 — response-observer module (101 #2)** — ✅ DONE (capability) — cli-jaw `1517d1f0`
+  - NEW `chatgpt-response-observer.ts`: `buildResponseObserverExpression` (MutationObserver short-circuit),
+    `observeAssistantResponse` (early-wake), `recoverAssistantResponse` (3rd-tier last-turn re-read,
+    injected `isFinalAnswer`). Tests BWAI-OBS-001..005.
+- **Cycle 3 gate:** full cli-jaw `npm test` → **4779 tests, 4761 pass, 0 fail**; tsc 0. ✅
 
 ## Verification
-_A-phase audit result (advisory) + C-phase gate result._
+A-phase audit (Cycle 1) confirmed 101 #2 ABSENT + 106.13 flat. C-phase: gate green above; regression
+on `browser-web-ai-response-capture` (the `readAssistantTexts` consumer) clean.
+
+## TRACKED follow-up (wiring) — see consolidated note in 00_plan
+**3.3 — wire the observer into the capture poll loop** (NOT yet done). agbrowse weaves
+`observeAssistantResponse` (early-wake) + `recoverAssistantResponse` (timeout recovery) into
+`chatgpt.mjs:364/549` with an observer budget; cli-jaw's authoritative loop is `captureAssistantResponse`
+(`chatgpt-response.ts`), a different structure. Behavior-changing capture-path integration → dedicated
+wiring pass with an integration test, grouped with follow-up 2.4 (chatgpt-files).
