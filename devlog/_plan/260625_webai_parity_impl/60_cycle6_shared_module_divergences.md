@@ -46,12 +46,17 @@
   - `codeWebAi`/`extractCodeArtifacts` throw typed `code-mode.vendor-unsupported`; `downloadAndSaveZip`
     write wrapped → `code-artifact:write-failed`. Test BWAI-CODEMODE-001.
 
-**Gate so far:** full cli-jaw `npm test` → **4799 tests, 4781 pass, 0 fail**; tsc 0.
+- **104.21 — contract-audit shared 7-feature contract + excludeNames** — ✅ DONE — cli-jaw `05112f52`
+  - audit against `editorContractForVendor(vendor).semanticTargets` (catches responseFeed/streamingIndicator
+    drift) + honours `excludeNames` (a "search" textbox no longer false-satisfies composer); forked
+    `CONTRACTS` map removed. Existing test reworked + new excludeNames case.
 
-### Remaining Cycle-6 items (next continuations)
+**Gate so far:** full cli-jaw `npm test` → **4800 tests, 4782 pass, 0 fail**; tsc 0.
+
+### Remaining Cycle-6 items (next continuations — browser-context-heavy)
 104.8/.9 vendor capability+model probes · 104.10 code-extract nav · 104.12 composer resolved-targets ·
 104.13 attachment filename-verify · 104.14 composer CDP insertText · 104.17 copy scroll-suppression ·
-104.18 pollWebAi per-tick drift/crash · 104.21 contract-audit 7-feature. (104.7 deferred.)
+104.18 pollWebAi per-tick drift/crash. (104.7 deferred.)
 
 ## Verification
 Per-item gates above; A-phase audit (Cycle 1) confirmed these as line-diff divergences.
