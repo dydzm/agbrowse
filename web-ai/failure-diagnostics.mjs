@@ -185,7 +185,7 @@ export function emptyDiagnostics(stage = 'unknown') {
  */
 export function toWebAiErrorEnvelope(error, fallbackStage = 'unknown', diagnostics) {
     const e = /** @type {any} */ (error);
-    const typed = (e && typeof e === 'object' && e.name === 'WebAiError' && typeof e.toJSON === 'function') ? e.toJSON() : null;
+    const typed = (e && typeof e === 'object' && typeof e.errorCode === 'string' && typeof e.toJSON === 'function') ? e.toJSON() : null;
     if (typed) {
         const stage = normalizeFailureStage(String(typed.stage ?? diagnostics?.stage ?? fallbackStage));
         const envelope = {
