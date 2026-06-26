@@ -25,6 +25,8 @@ must be treated as historical  do not edit them after release.evidence
 | --- | --- | --- |
 | Oracle stability gap analysis | `_fin/260608_oracle_stability_gap/` | ✅ Done — 31–35 backlog implemented (v0.1.16-preview); 05/07/08·profile-copy·ZIP deferred by decision; live B4/B5 = QA. |
 | cli-jaw web-ai parity mirror | `_plan/260621_cli_jaw_webai_parity/` | External cli-jaw mirror plan; verify closeout in cli-jaw before moving from agbrowse `_plan`. |
+| Parity impl (Cycle 1–12) | `_plan/260625_webai_parity_impl/` | 11/12 cycles DONE; Cycle 12 GPT-Pro verdict = CONCERNS; remediation in 260627. |
+| GPT-Pro remediation (R1–R9) | `_plan/260627_gptpro_remediation/` | 🔧 Active — 5 PABCD cycles patching GPT-Pro's 4 blockers + structural wiring + hygiene. |
 | Strict migration | `_plan/strict-migration/` | Deferred migration planning and arbitration notes. |
 
 Other grouped planning folders under `_plan/` remain until they receive a
