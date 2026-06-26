@@ -16,6 +16,12 @@ import { classifyChallengeType } from './challenge-detector.mjs';
 import { shouldTryUserSession, navigateInUserSession } from './browser-session.mjs';
 import { humanResolve } from './human-loop.mjs';
 import { compactAdaptiveFetchResult, writeStdoutLine } from './output.mjs';
+import { bm25Filter } from './bm25-filter.mjs';
+import { parsePublicFeed, formatFeedEvidence } from './feed-parser.mjs';
+import { extractStructuredContent } from './structured-extractor.mjs';
+import { extractCandidateUrlsFromText, rankDiscoveredCandidates } from './candidate-discovery.mjs';
+import { ytdlpMetadata, ytdlpSubtitles, formatYtdlpEvidence } from './ytdlp-reader.mjs';
+import { fetchViaCamoufox } from './camoufox-session.mjs';
 
 /**
  * @typedef {'strong_ok'|'weak_ok'|'blocked'|'auth_required'|'challenge'|'paywall'|'browser_required'|'unsupported'|'error'} AdaptiveFetchVerdict
@@ -273,6 +279,47 @@ export async function runAdaptiveFetch(input, deps = {}) {
         }
     }
 
+    // Phase 04c (203.3): Camoufox stealth-browser fallback. When TLS-impersonation also
+    // fails (or wasn't attempted), try a hardened-fingerprint render before CDP browser.
+    if (!readerCandidates.some(c => c.verdict === 'strong_ok') && options.browserMode !== 'never') {
+        const camoResult = await fetchViaCamoufox(parsed.href, {
+            timeoutMs: options.timeoutMs,
+        }).catch(() => null);
+        if (camoResult?.ok) {
+            const camoCandidate = fromFetchResult({
+                ok: true, status: 200, finalUrl: camoResult.url || parsed.href,
+                contentType: 'text/html', text: camoResult.content || '', headers: {},
+            }, { source: 'fetch', label: 'camoufox' });
+            camoCandidate.evidence = [...(camoCandidate.evidence || []), 'camoufox-render'];
+            const scored = scoreReaderCandidate(camoCandidate);
+            appendAttempt(trace, {
+                source: 'fetch', verdict: scored.verdict, url: parsed.href,
+                reason: 'camoufox-render', evidence: scored.evidence,
+            });
+            if (camoCandidate.text) readerCandidates.push(camoCandidate);
+        }
+    }
+
+    // Phase 1c (203.2): yt-dlp media/transcript reader. Detect media URLs and extract
+    // metadata + subtitles as evidence.
+    {
+        const meta = await ytdlpMetadata(parsed.href, { timeoutMs: options.timeoutMs }).catch(() => null);
+        if (meta) {
+            const subs = await ytdlpSubtitles(parsed.href, 'en', { timeoutMs: options.timeoutMs }).catch(() => null);
+            const evidence = formatYtdlpEvidence(meta, subs || undefined);
+            appendAttempt(trace, {
+                source: 'metadata', verdict: 'strong_ok', url: parsed.href,
+                reason: 'ytdlp-media', evidence: [evidence.title || 'media-detected'],
+            });
+            const mediaCandidate = fromFetchResult({
+                ok: true, status: 200, finalUrl: parsed.href,
+                contentType: 'text/plain', text: evidence.text || meta.title || '', headers: {},
+            }, { source: 'metadata', label: 'ytdlp' });
+            mediaCandidate.evidence = [...(mediaCandidate.evidence || []), ...(evidence.evidence || [])];
+            if (mediaCandidate.text) readerCandidates.push(mediaCandidate);
+        }
+    }
+
     let best = chooseBestReaderCandidate(readerCandidates);
     if (shouldReturnWithoutBrowser(best, options)) return finishResult(resultFromReaderCandidate(best), options, trace);
 
@@ -522,6 +569,26 @@ function resultFromReaderCandidate(scored) {
  * @param {{ chromeUsed?: boolean }} [runtime]
  */
 function finishResult(result, options, trace, runtime = {}) {
+    let content = result.content;
+    const evidence = [...(result.evidence || [])];
+
+    if (content && options.query) {
+        const filtered = bm25Filter(content, { query: options.query, topK: 20 });
+        if (filtered && filtered.length < content.length) {
+            content = filtered;
+            evidence.push('bm25-filtered');
+        }
+    }
+
+    if (result.html || (content && content.startsWith('<'))) {
+        try {
+            const structured = extractStructuredContent(result.html || content);
+            if (structured?.tables?.length || structured?.headings?.length) {
+                evidence.push(`structured:${structured.tables?.length || 0}t/${structured.headings?.length || 0}h`);
+            }
+        } catch { /* non-critical enrichment */ }
+    }
+
     return {
         ok: result.ok,
         verdict: result.verdict,
@@ -533,11 +600,11 @@ function finishResult(result, options, trace, runtime = {}) {
         chromeUsed: Boolean(runtime.chromeUsed),
         chromeRequired: result.verdict === 'browser_required' || (options.browserMode === 'required' && !result.ok),
         title: result.title,
-        content: result.content,
+        content,
         summary: result.summary,
         attempts: options.trace ? trace.attempts : [],
         safetyFlags: Array.isArray(result.safetyFlags) ? result.safetyFlags : [],
-        evidence: result.evidence || [],
+        evidence,
         warnings: [...(options.optionWarnings || []), ...(result.warnings || [])],
         metadata: result.metadata || null,
         _traceSummary: summarizeAttempts(trace.attempts),
