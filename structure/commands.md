@@ -22,6 +22,7 @@ aliases: [agbrowse commands, agbrowse CLI 표면, web-ai commands]
 | Lifecycle | `start`, `stop`, `status`, `reset` | Chrome CDP lifecycle |
 | Observe | `snapshot`, `screenshot`, `text`, `get-dom` | DOM/ref/text/screenshot 관찰 |
 | URL read | `fetch` | candidate URL을 public endpoint, HTTP fetch, metadata, optional reader, browser render/network 후보로 읽음. Generic search 아님 |
+| Search | `search` | standalone deep search: query rewrite → adaptive-fetch → evidence scoring. 어떤 CLI agent든 사용 가능 |
 | Research | `research`, `research plan`, `research normalize-results`, `research enrich-fetch`, `research browse-plan` | Korean/source-sensitive search plan 생성, provider search result URL-candidate 정규화, 원문 fetch evidence enrichment, browse escalation planning |
 | Act | `click`, `type`, `press`, `hover`, `select`, `check`, `uncheck`, `drag`, `mouse-click`, `move-mouse`, `mouse-down`, `mouse-up` | ref 기반 또는 coordinate 기반 mutation |
 | Navigate | `navigate`, `reload`, `resize`, `tabs`, `active-tab`, `tab-switch`, `select-tab`, `new-tab`, `tab-close`, `tab-cleanup`, `scroll` | navigation, viewport, active target 조회, tab 관리 (multi-tab create/close 포함) |
@@ -53,6 +54,27 @@ Safety contract:
 - 세 번째 제출에서 Runway가 `You're on a roll` / `Please wait for your last generation` / `Credits Mode` gate를 보여줄 때만 `queue_full`/`queue-gate` terminal signal로 기록한다.
 - 첫 구현 focus는 `apps`, `custom-tools`다.
 - `agent`, `recents`, `workflow`, `characters`는 surface-only로 유지한다.
+
+## Search Command
+
+`agbrowse search`는 어떤 CLI agent든 사용할 수 있는 standalone deep search다.
+Agent가 자체 web search로 URL 후보를 얻은 뒤, 원본 페이지 검증과 증거 채점을
+agbrowse에 위임한다. `research` commands와 `adaptive-fetch`를 하나의 파이프라인으로 묶는다.
+
+| 명령 | Browser 필요 | 역할 |
+| --- | ---: | --- |
+| `search "<query>" [--json] [--browser auto\|never] [--max-results N]` | auto | query rewrite → candidate discovery → adaptive-fetch → evidence score → output |
+| `search --verify <url> [--json] [--browser auto\|never]` | auto | 단일 URL을 adaptive-fetch ladder로 검증, verdict + excerpt 반환 |
+| `search "<query>" --stdin-results [--json]` | auto | stdin으로 받은 외부 search results를 fetch-enrichment |
+| `search "<query>" --deep [--vendor grok\|chatgpt\|gemini]` | Yes (web-ai) | evidence 부족 시 web-ai로 deep research escalation |
+
+Safety contract:
+
+- `search`는 기본적으로 `--browser auto`로 Chrome이 필요할 때만 자동 시작한다.
+- `--browser never`로 Chrome 없이 HTTP fetch만으로 실행 가능하다.
+- `--deep`은 web-ai provider에 접속하므로 headed Chrome + 로그인 필요.
+- 증거 상태는 항상 `evidenceStatus` 필드로 보고한다: `sufficient`, `partial`, `browse-needed`, `insufficient`.
+- Snippet은 evidence가 아니다. 원본 페이지 fetch 없이 `sufficient`를 주장하지 않는다.
 
 ## Research Commands
 

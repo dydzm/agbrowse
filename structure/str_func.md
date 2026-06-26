@@ -16,12 +16,13 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 
 ## 현재 구조 스냅샷
 
-마지막 측정: 2026-06-25.
+마지막 측정: 2026-06-27.
 
 | 경로 | 파일 수 | 라인 수 | 역할 |
 | --- | ---: | ---: | --- |
 | `bin/` | 2 | 6 | published bin wrapper |
-| `skills/browser/` | 53 | 15051 | Chrome lifecycle, CDP connection, refs, tabs, diagnostics, adaptive fetch v2, Runway task-runner preflight/poll |
+| `skills/browser/` | 54 | 15587 | Chrome lifecycle, CDP connection, refs, tabs, diagnostics, adaptive fetch v2, search orchestrator, Runway task-runner preflight/poll |
+| `skills/search/` | 1 | 187 | standalone search skill doc (any CLI agent) |
 | `skills/vision-click/` | 4 | 1182 | screenshot to coordinate click helper |
 | `skills/web-ai/` | 3 | 850 | bundled agent workflow skill |
 | `web-ai/` | 112 | 25409 | provider automation, sessions, MCP, eval, policy, trace |
@@ -30,12 +31,12 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 | `web-ai/policy/` | 4 | 238 | mutation and content-boundary guardrails |
 | `web-ai/trace/` | 5 | 444 | trace ID, redaction, report, writer helpers |
 | `scripts/` | 10 | 1621 | eval runner, release scripts, named release gates, strict-baseline / module-graph / bin smoke checks |
-| `test/unit/` | 132 | 15055 | deterministic module tests |
-| `test/integration/` | 18 | 2527 | CLI, MCP, policy, provider fixture tests |
+| `test/unit/` | 136 | 15340 | deterministic module tests |
+| `test/integration/` | 19 | 2639 | CLI, MCP, policy, provider fixture tests |
 | `test/e2e/` | 1 | 50 | browser smoke coverage |
 | `test/spec/` | 2 | 35 | high-level contract specs |
 | `docs/` | 41 | 2635 | adoption, trace, production-readiness, comparison, benchmark, EXTERNAL_CDP, migration docs, GitHub Pages developer docs |
-| `devlog/` | 419 | 50490 | phased plan, research, implementation notes (incl. strict-migration phases) |
+| `devlog/` | 432 | 51016 | phased plan, research, implementation notes (incl. strict-migration phases) |
 
 `structure/` 자체는 이 문서가 검증 대상으로 삼는 source tree 밖의 문서 허브라서 위 집계에서 제외한다. `verify-counts.sh`는 이 표의 경로별 파일 수와 라인 수를 live source 기준으로 비교한다.
 
@@ -43,17 +44,18 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 
 | 파일 | 라인 수 | 설명 |
 | --- | ---: | --- |
-| `skills/browser/browser.mjs` | 3485 | root CLI parser, Chrome lifecycle, browser primitive commands |
+| `skills/browser/browser.mjs` | 3498 | root CLI parser, Chrome lifecycle, browser primitive commands |
+| `skills/browser/search.mjs` | 410 | standalone search orchestrator: query rewrite → fetch → evidence score → output |
 | `skills/browser/runway.mjs` | 598 | Runway Apps/Custom selector contract, status/open/preflight command surface |
 | `skills/browser/runway-monitor.mjs` | 383 | Runway read-only queue/completion poller and progress signal extraction |
 | `skills/browser/tab-manager.mjs` | 446 | CDP target list, create, close, switch |
 | `skills/browser/tab-lifecycle.mjs` | 382 | idle cleanup, pinned target, duration parsing |
 | `skills/browser/skill-install.mjs` | 372 | bundled skill list/get/install |
-| `skills/browser/adaptive-fetch/index.mjs` | 637 | adaptive fetch v2 CLI + 6-phase escalation scheduler |
-| `skills/browser/adaptive-fetch/safety.mjs` | 315 | URL validation, SSRF guard, DNS rebinding guard |
+| `skills/browser/adaptive-fetch/index.mjs` | 737 | adaptive fetch v2 CLI + 6-phase escalation scheduler |
+| `skills/browser/adaptive-fetch/safety.mjs` | 320 | URL validation, SSRF guard, DNS rebinding guard with --resolve pinning |
 | `skills/browser/adaptive-fetch/content-scorer.mjs` | 142 | multi-signal content scoring with source trust |
 | `skills/browser/adaptive-fetch/waf-profiles.mjs` | 134 | WAF fingerprinting (Cloudflare, Akamai, AWS WAF, Imperva/Incapsula, DataDome, PerimeterX) |
-| `skills/browser/adaptive-fetch/tls-fetch.mjs` | 158 | TLS/JA3 impersonation rung via curl-impersonate (chrome131/safari18/firefox133), ladder fallback on 403/429/challenge |
+| `skills/browser/adaptive-fetch/tls-fetch.mjs` | 166 | TLS/JA3 impersonation rung via curl-impersonate, per-hop SSRF-safe redirect with DNS pinning |
 | `skills/browser/adaptive-fetch/reader-adapters.mjs` | 146 | reader candidate normalization (fetch, browser, user-session, network, human-resolved) |
 | `skills/browser/adaptive-fetch/fetcher.mjs` | 136 | browser-grade HTTP fetch with identity headers + DNS rebinding guard |
 | `skills/browser/adaptive-fetch/challenge-detector.mjs` | 91 | WAF-aware challenge/auth/paywall classification |
@@ -63,6 +65,17 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 | `skills/browser/adaptive-fetch/endpoint-resolvers.mjs` | 367 | public endpoint resolution (GitHub, Reddit, HN, Wikipedia, npm, etc.) |
 | `skills/browser/adaptive-fetch/metadata.mjs` | 182 | HTML metadata + JSON-LD extraction |
 | `skills/browser/adaptive-fetch/browser-escalation.mjs` | 206 | isolated Chrome render + network API JSON discovery + defuddle markdown candidate |
+| `skills/browser/adaptive-fetch/feed-parser.mjs` | 234 | RSS/Atom/JSON-feed parser → evidence formatting |
+| `skills/browser/adaptive-fetch/candidate-discovery.mjs` | 164 | lane-classified URL candidate extraction from text |
+| `skills/browser/adaptive-fetch/structured-extractor.mjs` | 168 | table/heading structured content extraction |
+| `skills/browser/adaptive-fetch/camoufox-session.mjs` | 93 | Camoufox stealth browser session |
+| `skills/browser/adaptive-fetch/ytdlp-reader.mjs` | 127 | yt-dlp media metadata + subtitle reader |
+| `skills/browser/search-research/search-strategy.mjs` | 292 | Korean query rewrite, constraint extraction, atomic query planning |
+| `skills/browser/search-research/normalizer.mjs` | 131 | provider-agnostic search result normalization |
+| `skills/browser/search-research/fetch-enrichment.mjs` | 168 | adaptive-fetch enrichment with constraint ledger updates |
+| `skills/browser/search-research/constraint-ledger.mjs` | 221 | anchor/rival/disconfirmation candidate×constraint matrix |
+| `skills/browser/search-research/browse-escalation.mjs` | 208 | browser escalation action planning |
+| `skills/browser/search-research/korean-routes.mjs` | 62 | Korean source hint detection and route URL building |
 | `skills/browser/adaptive-fetch/validators.mjs` | 104 | boundary signal classification |
 | `skills/browser/adaptive-fetch/transforms.mjs` | 86 | URL transforms, HTML-to-text, content-type checks |
 | `skills/browser/adaptive-fetch/third-party-readers.mjs` | 46 | Jina Reader integration |
