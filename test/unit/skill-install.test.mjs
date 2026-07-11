@@ -28,10 +28,21 @@ describe('skill installer', () => {
             const result = installBundledSkills({ sourceRoot, targetRoot });
 
             expect(result.mode).toBe('copy');
-            expect(result.installed.map(item => item.name)).toEqual(['browser', 'web-ai', 'vision-click']);
+            expect(result.installed.map(item => item.name)).toEqual(['browser', 'web-ai', 'search', 'vision-click']);
             expect(existsSync(join(targetRoot, 'browser', 'SKILL.md'))).toBe(true);
             expect(existsSync(join(targetRoot, 'web-ai', 'SKILL.md'))).toBe(true);
+            expect(existsSync(join(targetRoot, 'search', 'SKILL.md'))).toBe(true);
             expect(existsSync(join(targetRoot, 'vision-click', 'SKILL.md'))).toBe(true);
+
+            for (const name of ['browser', 'search']) {
+                const skill = readFileSync(join(targetRoot, name, 'SKILL.md'), 'utf8');
+                expect(skill).toContain('Playwright');
+                expect(skill).toContain('playwrite');
+                expect(skill).toContain('플레이라이트');
+                expect(skill).toContain('browser QA');
+                expect(skill).toContain('브라우저 QA');
+                expect(skill).toMatch(/Playwright E2E/);
+            }
         } finally {
             rmSync(targetRoot, { recursive: true, force: true });
         }
@@ -46,7 +57,7 @@ describe('skill installer', () => {
 
             writeFileSync(join(targetRoot, 'browser', 'local.txt'), 'stale');
             const result = installBundledSkills({ sourceRoot, targetRoot, force: true });
-            expect(result.installed).toHaveLength(3);
+            expect(result.installed).toHaveLength(4);
             expect(existsSync(join(targetRoot, 'browser', 'local.txt'))).toBe(false);
             expect(readFileSync(join(targetRoot, 'browser', 'SKILL.md'), 'utf8')).toContain('browser');
         } finally {
@@ -73,7 +84,7 @@ describe('skill installer', () => {
         const sourceRoot = join(process.cwd(), 'skills');
         const skills = listBundledSkills(sourceRoot);
 
-        expect(skills.map(skill => skill.name)).toEqual(['browser', 'web-ai', 'vision-click']);
+        expect(skills.map(skill => skill.name)).toEqual(['browser', 'web-ai', 'search', 'vision-click']);
         expect(skills.every(skill => skill.available)).toBe(true);
         expect(skills.find(skill => skill.name === 'web-ai').description).toContain('ChatGPT');
     });
@@ -97,7 +108,7 @@ describe('skill installer', () => {
     it('routes agent-first skills commands', () => {
         const sourceRoot = join(process.cwd(), 'skills');
 
-        expect(runSkillsCli(['list'], { sourceRoot }).skills).toHaveLength(3);
+        expect(runSkillsCli(['list'], { sourceRoot }).skills).toHaveLength(4);
         expect(runSkillsCli(['get', 'core'], { sourceRoot }).text).toContain('Decision Loop');
         expect(runSkillsCli(['path', 'web-ai'], { sourceRoot }).text).toBe(join(sourceRoot, 'web-ai'));
     });

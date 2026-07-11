@@ -19,8 +19,9 @@ import { DEFAULT_EVAL_RUN_VARIANTS, normalizeEvalVariant, normalizeEvalVendor, c
  *   variant?: string,
  *   htmlPath: string,
  *   fixturePath?: string,
- *   configPath?: string,
- *   [extra: string]: unknown,
+*   configPath?: string,
+*   requiredIntents?: string[],
+*   [extra: string]: unknown,
  * }} FixtureConfigEntry
  */
 

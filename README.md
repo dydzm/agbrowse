@@ -31,6 +31,34 @@ workflow. It gives an agent a small CLI surface for:
 It does not require a long-running MCP server. Each command is a short-lived
 Node process that reconnects to the same Chrome DevTools Protocol endpoint.
 
+## What's New in 0.1.17
+
+- **GPT-5.6 Chat contract**: select Chat families with
+  `--family gpt-5.6-sol|gpt-5.5|gpt-5.4|gpt-5.3|o3` and use canonical
+  `--effort medium|high|xhigh` values. The runtime understands the current
+  flat `Instant (5.5) / Medium / High / Extra High / Pro` Intelligence picker.
+- **ChatGPT Work surface v1**: submit through the dedicated
+  `agbrowse web-ai work send --prompt "..." --power 1..6` command or MCP
+  `web_ai_work_send`. Chat `send/query/poll/watch` and
+  `web_ai_submit_prompt` fail closed on an active Work surface.
+- **Long-run recovery**: ChatGPT Pro polls receive a 5400-second default
+  deadline, while Grok Heavy and Deep Research keep independent 3600-second
+  tiers. Saved sessions retain their original deadline across shell exits.
+- **Search and extraction**: the modular `search` skill now separates discovery
+  from original-page proof, and `agbrowse extract` maps tables or JSON-LD to a
+  supplied schema with fail-closed validation.
+- **Agent-first distribution and QA routing**: `skills install` ships
+  `browser`, `web-ai`, `search`, and `vision-click`; Playwright/browser-QA
+  intent routes to agbrowse for ad-hoc inspection while preserving maintained
+  project E2E suites.
+- **GitHub Pages redesign**: the docs landing page now presents browser control,
+  web-AI, search, and evidence as full-screen product lanes with reduced-motion
+  support.
+
+Provider UI automation remains beta because provider DOM and account state can
+change. Schema-bound CLI extraction remains experimental; see the
+[capability truth table](structure/CAPABILITY_TRUTH_TABLE.md) for exact labels.
+
 ## Public Surface
 
 | Surface | Link | Status |
@@ -72,9 +100,10 @@ agbrowse web-ai query \
 For long Pro / Deep Think runs that should survive shell exit:
 
 ```bash
-SID=$(agbrowse web-ai send --vendor chatgpt --inline-only \
+SID=$(agbrowse web-ai send --vendor chatgpt --model pro --inline-only \
         --prompt "..." --json | jq -r .sessionId)
-agbrowse web-ai poll --vendor chatgpt --session "$SID" --timeout 1800
+agbrowse web-ai poll --vendor chatgpt --session "$SID"
+agbrowse web-ai work send --prompt "Analyze this repository" --power 4
 ```
 
 Agent rule: observe before acting. Use `status`, `tabs`, `snapshot
@@ -95,6 +124,45 @@ echo '[{"url":"...","title":"..."}]' | agbrowse search "query" --stdin-results -
 
 # Escalate to web-ai when evidence is insufficient
 agbrowse search "서울시 2026 청년 지원금" --deep --vendor grok --json
+```
+
+#### Research Subcommands
+
+The `research` command family breaks a search problem into smaller, inspectable
+planning and enrichment steps. None of them execute a live web search on their
+own.
+
+```bash
+agbrowse research plan --query "Next.js 15 app router migration" --json
+agbrowse research normalize-results --file results.json --backend exa --json
+agbrowse research enrich-fetch --plan plan.json --results results.json --json
+agbrowse research browse-plan --plan plan.json --enrichment enrichment.json --json
+```
+
+`plan` decomposes a query into constraints, source hints, and focused
+sub-queries. `normalize-results` converts provider-specific rows (Exa, Tavily,
+Perplexity, Brave, browser SERP) into a `search-results-v1` candidate list.
+`enrich-fetch` reads those candidates through the adaptive fetch ladder and
+produces a `research-fetch-enrichment-v1` evidence ledger. `browse-plan`
+converts remaining weak candidates into a reasoned browser command plan without
+mutating browser state.
+
+### Structured Extraction
+
+`agbrowse extract` pulls structured data from a URL or local HTML file using a
+JSON schema, without calling an LLM. When no structure matches the schema, it
+returns a fail-closed `no_mappable_structure` verdict instead of silent partial
+data. Tier 2 web-ai escalation is available as an explicit opt-in.
+
+```bash
+# Extract table data matching a schema (Tier 1, LLM-free)
+agbrowse extract "https://example.com/products" --schema products.json --json
+
+# Extract from a local HTML file
+agbrowse extract --from-file page.html --schema products.json --json
+
+# Tier 2: escalate to web-ai on Tier 1 failure
+agbrowse extract "https://example.com/products" --schema products.json --escalate-web-ai --vendor grok
 ```
 
 ## What It Is Good For
@@ -162,6 +230,9 @@ passing on `main`. Release publishing is dispatched through `release.yml`.
   committed or shared.
 - CAPTCHA bypass, stealth, credential stuffing, and guaranteed provider account
   entitlement checks are out of scope.
+- Adaptive fetch uses DNS pinning (`curl --resolve`) and per-hop validated
+  redirects to mitigate SSRF and DNS rebinding; see the Adaptive URL Fetch
+  section for details.
 - The package metadata says MIT; this repository currently has no standalone
   root `LICENSE` file, so downstream users should rely on package metadata until
   one is added.
@@ -169,6 +240,18 @@ passing on `main`. Release publishing is dispatched through `release.yml`.
 ## Status
 
 This repository is packaged as a standalone skill/runtime.
+
+Source structure as of 2026-07-11:
+
+| Path | Files | Lines | Role |
+| --- | ---: | ---: | --- |
+| `skills/browser/` | 55 | 16 320 | Chrome lifecycle, CDP, refs, tabs, adaptive fetch v2, search, extract, Runway |
+| `skills/search/` | 5 | 896 | proof-first search skill hub and modular references |
+| `web-ai/` | 113 | 27 441 | provider automation, sessions, MCP, eval, policy, trace |
+| `test/unit/` | 141 | 17 628 | deterministic module tests |
+| `test/integration/` | 21 | 3 165 | CLI, MCP, policy, provider fixture tests |
+| `scripts/` | 10 | 1 621 | release gates, eval runner, strict-baseline checks |
+| `docs/` | 41 | 3 540 | adoption, trace, production-readiness, developer docs |
 
 Architecture and release-claim source of truth live in
 [`structure/INDEX.md`](structure/INDEX.md) and the Phase 11+ truth table lives
@@ -190,6 +273,10 @@ Ready surfaces:
 - offline DOM churn eval fixtures
 - trace and safety-policy schemas
 - benchmark trajectory schema and offline bundle writer
+- standalone search (`agbrowse search`) with query rewrite, adaptive fetch,
+  and evidence scoring
+- research subcommands (`plan`, `normalize-results`, `enrich-fetch`,
+  `browse-plan`) for decomposed search planning
 
 Beta surfaces:
 
@@ -202,6 +289,11 @@ Beta surfaces:
 Experimental or deferred surfaces:
 
 - adaptive URL fetch (`agbrowse fetch <url>`) as a URL reader, not search
+- adaptive fetch 203.x modules: TLS impersonation, yt-dlp media reader,
+  Camoufox stealth lane, feed parser, BM25 reranker, structured extractor,
+  lane-classified candidate discovery
+- web-ai capability registry, interstitial detector, freshness gate,
+  diagnostics stage taxonomy, and provider lifecycle adapter
 - hosted/cloud browser operation
 - remote `external-cdp` provider mode
 - broader MCP production bridge beyond the listed tools
@@ -276,6 +368,37 @@ Escalation ladder (code execution order): public endpoints + direct fetch with
 identity headers → third-party readers (opt-in) → isolated Chrome render +
 network API discovery → user session (opt-in) → human-in-the-loop (interactive).
 Content scoring runs after each phase to decide whether to escalate.
+
+### Fetch Modules (203.x)
+
+The v2 ladder includes specialized modules that run at specific escalation
+rungs:
+
+| Module | Purpose |
+| --- | --- |
+| 203.1 TLS impersonation | JA3 fingerprint spoofing via `curl-impersonate` on 403/429/challenge, inserted before browser escalation |
+| 203.2 yt-dlp media reader | Extracts metadata and transcripts from video URLs via `yt-dlp` |
+| 203.3 Camoufox browser lane | Optional Firefox-based browser session via Camoufox for alternate rendering |
+| 203.4 Feed parser | RSS, Atom, and JSON Feed detection and parsing into structured evidence |
+| 203.5 BM25 lexical reranker | Content-relevance scoring using BM25 term weighting |
+| 203.6 Structured extractor | Table and heading extraction from HTML into structured records |
+| 203.7 Candidate discovery | Lane-classified candidate URL discovery from page content |
+
+### WAF Profile Detection
+
+Before escalation decisions, the fetch ladder fingerprints known WAF/bot-
+management systems from HTTP response headers and body markers:
+Cloudflare (managed challenge + Turnstile), Akamai Bot Manager, AWS WAF,
+Imperva/Incapsula, DataDome, and PerimeterX. Detection results feed into the
+escalation decision (e.g. TLS impersonation or browser escalation).
+
+### SSRF Mitigation and Redirect Safety
+
+All HTTP fetches pin resolved DNS addresses via `curl --resolve` to close the
+TOCTOU window between DNS resolution and connection (R4-SSRF). The legacy
+`curl -L` redirect behavior is replaced by a per-hop validated redirect loop
+that re-validates each hop's target against the SSRF allowlist before
+following it (R4).
 
 Key flags: `--browser auto|never|required`, `--browser-session
 none|isolated|existing|user|interactive`, `--identity auto|minimal|chrome`,
@@ -375,8 +498,9 @@ For Codex:
 agbrowse skills install --target ~/.codex/skills
 ```
 
-The default mode copies the bundled `browser`, `web-ai`, and `vision-click`
-skill directories. Use `--json` when another agent will parse the result:
+The default mode copies the bundled `browser`, `web-ai`, `search`, and
+`vision-click` skill directories. Use `--json` when another agent will parse
+the result:
 
 ```bash
 agbrowse skills install --target ~/.cli-jaw-3460/skills --json
@@ -537,19 +661,45 @@ Every prompt automatically appends an `[INSTRUCTIONS]` block telling the
 model to use web search and cite sources inline. Run `web-ai render` to
 inspect the exact text that is typed into the composer.
 
+### Web-AI Runtime Capabilities (201.x / 203.8)
+
+Recent releases added several cross-cutting runtime features to the web-ai
+layer:
+
+| ID | Capability | Summary |
+| --- | --- | --- |
+| 201#1-8 | Capability registry | Declarative per-vendor capability lookup via `lookupCapability`; fail-closed when a feature is unsupported |
+| 201#3, #5 | Annotated screenshots | Screenshots with element annotations and read-only product-surface metadata |
+| 201#4 | Interstitial detector | Unified interstitial, popup, and overlay detection across providers |
+| 201#6 | Diagnostics stage taxonomy | Richer failure diagnostics with typed `stage` values in error envelopes |
+| 201#7 | Provider lifecycle adapter | Contract for provider lifecycle management (startup, teardown, health) |
+| 201#9 | Freshness gate | Docs-first freshness gate that checks source-of-truth currency before answering |
+| 203.8 | Live-status report | Typed standalone status struct for ongoing web-ai sessions |
+
 ### Polling Timeouts
 
-`web-ai poll` / `query` / `watch` accept `--timeout <seconds>`. Default:
+`web-ai poll` / `query` / `watch` accept `--timeout <seconds>`.
+Timeout resolution is `explicit timeout → stored session deadline remainder → tier
+default → vendor fallback`. A resumed poll keeps the deadline created by
+the original submit unless the caller explicitly overrides it.
 
-| Vendor | Default `--timeout` | Roughly |
+| Long-running tier | Default `--timeout` | Roughly |
+| --- | ---: | --- |
+| `chatgpt-pro` | 5400 | 90 minutes |
+| `grok-heavy` | 3600 | 60 minutes |
+| `deep-research` | 3600 | 60 minutes |
+
+| Vendor fallback when the tier is unknown | Default `--timeout` | Roughly |
 | --- | ---: | --- |
 | ChatGPT | 1200 | 20 minutes |
 | Gemini  | 1200 | 20 minutes |
 | Grok    | 600  | 10 minutes |
 
-Pass `--timeout 1800` for unusually long Pro/Deep Think runs. The provider
-tab and the agbrowse Chrome process stay open across a poll timeout —
-only the polling loop gives up.
+Do not equate ChatGPT's UI-side reasoning budget with the agbrowse poll deadline.
+The roughly 40-minute Pro budget is a user report and was not present in the
+2026-07-10 DOM. The 5400-second (90-minute) `chatgpt-pro` default is agbrowse
+polling headroom; `grok-heavy` and `deep-research` remain independent 3600-second tiers.
+The provider tab and agbrowse Chrome process remain open when polling times out.
 
 ### Sessions
 
@@ -559,11 +709,11 @@ OS sleep, and Bash timeouts. Sessions persist at
 
 ```bash
 # Long Pro / Deep Think run — fire-and-forget from one shell, resume from another.
-SID=$(agbrowse web-ai send --vendor chatgpt --inline-only \
+SID=$(agbrowse web-ai send --vendor chatgpt --model pro --inline-only \
         --prompt "long Pro prompt..." --json | jq -r .sessionId)
 
 # Later, in any shell, on the same machine:
-agbrowse web-ai poll --vendor chatgpt --session "$SID" --timeout 1800
+agbrowse web-ai poll --vendor chatgpt --session "$SID"
 ```
 
 `poll` resolves the session in priority order: `--session <id>` > active
@@ -688,16 +838,36 @@ agbrowse web-ai query \
 
 Model aliases:
 
-- `instant`, `fast`, `gpt-5.3`
-- `thinking`, `think`, `gpt-5.5-thinking`
-- `pro`, `gpt-5.5-pro`
+| Input | Current resolution |
+| --- | --- |
+| `instant`, `fast` | GPT-5.5 `Instant`; no reasoning effort |
+| `thinking`, `think` | selected family + thinking tier; defaults to `medium` |
+| `pro` | selected family + flat `Pro` row; omit effort |
+| `--effort medium\|high\|xhigh` | `Medium` / `High` / `Extra High` |
+| `--family gpt-5.6-sol\|gpt-5.5\|gpt-5.4\|gpt-5.3\|o3` | Chat family aliases; omit to preserve current UI family |
 
-Current headed ChatGPT UI may expose a simplified `Intelligence` picker instead
-of the older model row plus separate effort submenu. The runtime maps
-`thinking --effort light|standard|extended|heavy` to `Instant|Medium|High|Extra
-High`, and maps Pro requests through `Pro Extended` when that is the visible Pro
-entry. Legacy `model-switcher-*` rows and composer-pill fallbacks remain
-supported.
+Legacy effort normalization: `light|standard → medium`, `extended → high` (one
+stderr warning), `heavy → xhigh`. Legacy Pro effort resolves to flat Pro and
+emits one no-selection stderr warning. `gpt-5.3` is no longer a synonym for
+`instant`; use `--family gpt-5.3`.
+
+### Legacy UI (before 2026-07-10)
+
+The simplified Intelligence picker in the Legacy UI (before 2026-07-10) exposed `Instant`, `Medium`, `High`, `Extra High`, and `Pro Extended`.
+Legacy `model-switcher-*` rows and composer-pill fallbacks remained supported.
+
+### ChatGPT Work
+
+Use the dedicated Work entrypoint; Chat `send/query/poll/watch` and
+`web_ai_submit_prompt` reject an active Work surface.
+
+```bash
+agbrowse web-ai work send --prompt "Analyze this repository" --power 4
+```
+
+`--power` is an integer from 1 through 6. For MCP clients, use
+`web_ai_work_send` with `prompt` and `power`. Do not add a `surface` field
+to `web_ai_submit_prompt`.
 
 ### ChatGPT Code Mode
 
@@ -721,7 +891,7 @@ Single zip:
 agbrowse web-ai code \
   --vendor chatgpt \
   --model thinking \
-  --effort standard \
+  --effort medium \
   --prompt "Create a Flask hello-world MVP." \
   --output-zip ./result.zip
 ```
@@ -735,7 +905,7 @@ Several named zips:
 agbrowse web-ai code \
   --vendor chatgpt \
   --model thinking \
-  --effort standard \
+  --effort medium \
   --multi-zip \
   --output-dir ./artifacts \
   --prompt "Create backend.zip and frontend.zip as separate deliverables."

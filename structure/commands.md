@@ -23,13 +23,14 @@ aliases: [agbrowse commands, agbrowse CLI 표면, web-ai commands]
 | Observe | `snapshot`, `screenshot`, `text`, `get-dom` | DOM/ref/text/screenshot 관찰 |
 | URL read | `fetch` | candidate URL을 public endpoint, HTTP fetch, metadata, optional reader, browser render/network 후보로 읽음. Generic search 아님 |
 | Search | `search` | standalone deep search: query rewrite → adaptive-fetch → evidence scoring. 어떤 CLI agent든 사용 가능 |
+| Extract | `extract` | schema-bound structured extraction: HTML에서 JSON-schema 기반 데이터 추출 (Tier 1 LLM-free, fail-closed) |
 | Research | `research`, `research plan`, `research normalize-results`, `research enrich-fetch`, `research browse-plan` | Korean/source-sensitive search plan 생성, provider search result URL-candidate 정규화, 원문 fetch evidence enrichment, browse escalation planning |
 | Act | `click`, `type`, `press`, `hover`, `select`, `check`, `uncheck`, `drag`, `mouse-click`, `move-mouse`, `mouse-down`, `mouse-up` | ref 기반 또는 coordinate 기반 mutation |
 | Navigate | `navigate`, `reload`, `resize`, `tabs`, `active-tab`, `tab-switch`, `select-tab`, `new-tab`, `tab-close`, `tab-cleanup`, `scroll` | navigation, viewport, active target 조회, tab 관리 (multi-tab create/close 포함) |
 | Wait | `wait`, `wait-for-selector`, `wait-for-text`, `wait-for` | time, selector, text, legacy ref wait |
 | Diagnostics | `console`, `network`, `evaluate` | console/network capture와 page JS evaluation |
 | Web AI | `web-ai` | provider workflow subcommand |
-| Runway | `runway` | Runway Apps/Custom selector contract, current-tab status, read-only preflight |
+| Runway | `runway` | Runway Apps/Custom media task-runner: Level 0 read-only preflight table 아래 문서화, 전체 13-command generation surface는 `agbrowse runway help` |
 
 ## Runway Commands
 
@@ -55,6 +56,11 @@ Safety contract:
 - 첫 구현 focus는 `apps`, `custom-tools`다.
 - `agent`, `recents`, `workflow`, `characters`는 surface-only로 유지한다.
 
+The read-only table above covers the five Level 0 commands asserted by the
+drift gate. The full Runway generation surface (13 commands, 3 safety levels,
+with submit-class actions gated behind explicit `--allow-submit` / `--allow-mutation`
+flags) is documented in `agbrowse runway help`.
+
 ## Search Command
 
 `agbrowse search`는 어떤 CLI agent든 사용할 수 있는 standalone deep search다.
@@ -75,6 +81,25 @@ Safety contract:
 - `--deep`은 web-ai provider에 접속하므로 headed Chrome + 로그인 필요.
 - 증거 상태는 항상 `evidenceStatus` 필드로 보고한다: `sufficient`, `partial`, `browse-needed`, `insufficient`.
 - Snippet은 evidence가 아니다. 원본 페이지 fetch 없이 `sufficient`를 주장하지 않는다.
+
+## Extract Command
+
+`agbrowse extract`는 URL이나 로컬 HTML에서 JSON-schema에 맞는 구조화 데이터를
+LLM 없이 추출한다. 매핑 불가 시 명시적 `no_mappable_structure` verdict로
+fail-closed하며, 조용한 부분 데이터를 반환하지 않는다.
+
+| 명령 | Browser 필요 | 역할 |
+| --- | ---: | --- |
+| `extract <url> --schema <file.json> [--source auto\|table\|jsonld] [--json]` | No | URL fetch 후 schema-bound 구조 추출 (Tier 1 LLM-free) |
+| `extract --from-file <page.html> --schema <file.json> [--json]` | No | 로컬 HTML 파일에서 schema-bound 구조 추출 |
+| `extract <url> --schema <file.json> --escalate-web-ai [--vendor grok\|chatgpt\|gemini]` | Yes (web-ai) | Tier 1 실패 시 web-ai vendor로 Tier 2 escalation |
+
+Safety contract:
+
+- Tier 1은 LLM-free이며 raw HTML fetch만 사용한다. JS-rendered 페이지는 Tier 1 비목표로, fail-closed verdict로 보고한다.
+- 스키마에 매핑 가능한 구조가 없으면 `no_mappable_structure` verdict와 가용 구조 요약을 반환한다. 조용한 부분 데이터 반환 금지.
+- Tier 2 (`--escalate-web-ai`)는 Tier 1 실패 시에만 활성화되며, logged-in web-ai provider 세션이 필요하다.
+- JSON envelope version은 `agbrowse-extract-v1`이다.
 
 ## Research Commands
 
@@ -176,11 +201,17 @@ dev.to, DOI/CrossRef, OpenLibrary, Wayback CDX, YouTube oEmbed, X/Twitter oEmbed
 
 ## Provider Alias
 
-| Provider | Model alias | 비고 |
+| Provider | Model/tier alias | Family/effort 계약 |
 | --- | --- | --- |
-| ChatGPT | `instant`, `thinking`, `pro` | `--effort`는 `--model`과 함께 사용 |
+| ChatGPT | tier `instant`, `thinking`, `pro`; Chat family `gpt-5.6-sol`, `gpt-5.5`, `gpt-5.4`, `gpt-5.3`, `o3`; Work command `web-ai work send --prompt ... --power N`; MCP `web_ai_work_send` | `instant`는 GPT-5.5에 고정된다. `thinking`의 canonical effort는 `medium`, `high`, `xhigh`이고 legacy `light|low|standard|normal|regular|default → medium`, `extended → high`, `heavy|extra-high|extra_high|extra high → xhigh`를 mutation 전에 정규화한다. `pro`는 flat `Pro`이며 새 호출은 effort를 생략한다. Work-only Model/Effort/Speed는 WP1 재프로브로 확정한 `--power N` 매핑을 전용 Work 진입점에서만 조작한다. |
 | Gemini | `fast`, `thinking`, `pro`, `deepthink` | `deepthink`는 tool alias로 취급 |
 | Grok | `auto`, `fast`, `expert`, `thinking`, `heavy` | source-audit 연구 흐름은 `expert`나 `heavy`를 우선 사용 |
+
+ChatGPT Pro의 약 40분 추론 예산은 사용자 보고의 UI-side 값이며 2026-07-10
+DOM에서는 확인되지 않았다. agbrowse poll deadline은 provider-정확 tier별로
+`chatgpt-pro=5400`(90분), `grok-heavy=3600`, `deep-research=3600`이다. timeout
+우선순위는 explicit timeout → stored session deadline remainder → tier default →
+vendor fallback이며, 새 Pro 예시에 옛 1800/2400초 timeout 상수를 넣지 않는다.
 
 ## Failure Envelope
 
@@ -231,10 +262,20 @@ JSON 모드에서는 실패가 parseable envelope로 나온다. 이 shape는 MCP
 `web_ai_*` 입력은 strict schema로 검증한다. Runtime에서 쓰는 호환 alias
 (`vendor`, `policy`, submit의 `filePath`/`reasoningEffort` 등)만 명시적으로
 허용하고, 오탈자/미등록 top-level field는 command 실행 전에 fail-fast한다.
+ChatGPT `send/query/poll/watch`와 MCP `web_ai_submit_prompt`는 Chat surface, 별도
+family, tier alias `instant|thinking|pro`, canonical thinking effort
+`medium|high|xhigh`와 문서화된 legacy remap만 받으며 Work에서는 hard-error한다.
+Work mutation은 CLI `agbrowse web-ai work send --prompt "..." --power N`과 MCP
+`web_ai_work_send`만 받는다. 기존 Chat 명령/도구에 `surface=work`를 추가하지 않는다.
 Submit MCP는 `maxUploadFileSize`만 live upload cap으로 허용한다. Generated
 image output, Deep Research, batch follow-ups, archive mutation, Project
 Sources, context package fields는 이 release에서 CLI-only/deferred이며 MCP
 tool description에도 그 제한을 명시한다.
+
+MCP timeout도 explicit timeout → stored session deadline remainder → tier default
+순서를 공유한다. tier default는 `chatgpt-pro=5400`, `grok-heavy=3600`,
+`deep-research=3600`을 독립 적용하며, 사용자 보고 약 40분 UI 예산을 MCP timeout
+기본값으로 변환하지 않는다.
 
 ## MCP-ready vs CLI-ready Matrix (G04)
 

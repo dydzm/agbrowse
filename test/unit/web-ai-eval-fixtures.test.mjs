@@ -25,4 +25,26 @@ describe('web-ai eval fixtures', () => {
         expect(config.fixtures).toHaveLength(3);
         expect(config.fixtures[0].fixturePath).toMatch(/chatgpt-parallel-a\.html$/);
     });
+
+    it('loads GPT-5.6 eval config with two fixtures and requiredIntents', async () => {
+        const config = await loadFixtureConfig('test/fixtures/provider-dom/chatgpt-gpt56-eval.json');
+        expect(config.fixtures).toHaveLength(2);
+        expect(config.fixtures.map(entry => entry.variant)).toEqual(['gpt56-chat', 'gpt56-work']);
+        expect(config.fixtures[0].fixturePath).toMatch(/chatgpt-gpt56-chat\.html$/);
+        expect(config.fixtures[1].fixturePath).toMatch(/chatgpt-gpt56-work\.html$/);
+        expect(config.fixtures[1].requiredIntents).toEqual(['composer.fill']);
+        expect(config.fixtures[0].requiredIntents).toBeUndefined();
+    });
+
+    it('GPT-5.6 Chat fixture file is accessible and non-empty', async () => {
+        const html = await readFixtureHtml('test/fixtures/provider-dom', 'chatgpt-gpt56-chat.html');
+        expect(html).toContain('data-provider="chatgpt"');
+        expect(html).toContain('data-variant="gpt56-chat"');
+    });
+
+    it('GPT-5.6 Work fixture file is accessible and non-empty', async () => {
+        const html = await readFixtureHtml('test/fixtures/provider-dom', 'chatgpt-gpt56-work.html');
+        expect(html).toContain('data-provider="chatgpt"');
+        expect(html).toContain('data-variant="gpt56-work"');
+    });
 });

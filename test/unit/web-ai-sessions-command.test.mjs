@@ -146,8 +146,11 @@ describe('web-ai sessions list / show / prune via runSessionsCommand', () => {
             patchSession(s.sessionId, {
                 modelSelection: {
                     requestedModel: 'pro',
-                    resolvedLabel: 'GPT-5.5 Pro',
+                    resolvedLabel: 'Pro',
                     normalizedModel: 'pro',
+                    surface: 'chat',
+                    familyLabel: 'GPT-5.6 Sol',
+                    tierLabel: 'Pro',
                     strategy: 'select',
                     status: 'switched',
                     verified: true,
@@ -168,9 +171,42 @@ describe('web-ai sessions list / show / prune via runSessionsCommand', () => {
 
             const output = logs.join('\n');
             expect(output).toContain('Browser evidence:');
-            expect(output).toContain('model requested=pro; resolved=GPT-5.5 Pro; status=switched; strategy=select; verified=yes');
+            expect(output).toContain('model requested=pro; resolved=Pro; surface=chat; family=GPT-5.6 Sol; tier=Pro; taskId=(unavailable); taskUrl=(unavailable); responseContract=(unavailable); status=switched; strategy=select; verified=yes');
             expect(output).toContain('warning browser-pro-fast-large-run: Large browser Pro run completed quickly.');
             expect(output).not.toContain('legacy warning string');
+        } finally {
+            console.log = originalLog;
+        }
+    });
+
+    it('human show falls back gracefully for legacy sessions without surface/family/tier', async () => {
+        const logs = [];
+        const originalLog = console.log;
+        console.log = (line = '') => logs.push(String(line));
+        try {
+            const { runWebAiCli } = await import('../../web-ai/cli.mjs');
+            const { createSession } = await import('../../web-ai/session.mjs');
+            const { patchSession } = await import('../../web-ai/session-store.mjs');
+            const s = createSession({ vendor: 'chatgpt', prompt: 'x', attachmentPolicy: 'inline-only' });
+            patchSession(s.sessionId, {
+                modelSelection: {
+                    requestedModel: 'pro',
+                    resolvedLabel: 'GPT-5.5 Pro',
+                    normalizedModel: 'pro',
+                    strategy: 'select',
+                    status: 'switched',
+                    verified: true,
+                    source: 'chatgpt-model-picker',
+                    capturedAt: '2026-05-14T00:00:00.000Z',
+                },
+            });
+
+            await runWebAiCli(['sessions', 'show', s.sessionId]);
+
+            const output = logs.join('\n');
+            expect(output).toContain('surface=(unknown)');
+            expect(output).toContain('family=(unavailable)');
+            expect(output).toContain('tier=GPT-5.5 Pro');
         } finally {
             console.log = originalLog;
         }
@@ -195,3 +231,49 @@ describe('web-ai sessions list / show / prune via runSessionsCommand', () => {
 function readSrc(rel) {
     return readFileSync(join(process.cwd(), rel), 'utf8');
 }
+
+describe('work session poll routing (source-string contracts)', () => {
+    const sessionsSrc = readSrc('web-ai/cli-sessions.mjs');
+    const cliSrc = readSrc('web-ai/cli.mjs');
+    const mcpSrc = readSrc('web-ai/mcp-server.mjs');
+    const watcherSrc = readSrc('web-ai/watcher.mjs');
+
+    it('cli-sessions.mjs imports isWorkSession and pollWorkSession', () => {
+        expect(sessionsSrc).toContain('isWorkSession');
+        expect(sessionsSrc).toContain('pollWorkSession');
+    });
+
+    it('cli-sessions.mjs resume routes work sessions to pollWorkSession', () => {
+        expect(sessionsSrc).toMatch(/isWorkSession\(session\).*pollWorkSession/s);
+    });
+
+    it('cli.mjs imports isWorkSession and pollWorkSession', () => {
+        expect(cliSrc).toContain('isWorkSession');
+        expect(cliSrc).toContain('pollWorkSession');
+    });
+
+    it('cli.mjs runBoundCommand routes work sessions to pollWorkSession', () => {
+        expect(cliSrc).toMatch(/isWorkSession\(session\).*pollWorkSession/s);
+    });
+
+    it('mcp-server.mjs routes work sessions in session poll', () => {
+        expect(mcpSrc).toContain('isWorkSession');
+        expect(mcpSrc).toContain('pollWorkSession');
+    });
+
+    it('watcher.mjs routes work sessions in callVendorPoll', () => {
+        expect(watcherSrc).toContain('isWorkSession');
+        expect(watcherSrc).toContain('pollWorkSession');
+    });
+
+    it('cli.mjs runWorkCommand uses submitWorkPrompt (button-only, no Enter)', () => {
+        expect(cliSrc).toContain('submitWorkPrompt');
+        expect(cliSrc).toContain('submitWork');
+        // Verify no submitPromptFromComposer in the work path
+        // (the old Enter-fallback path is removed)
+    });
+
+    it('mcp-server.mjs web_ai_work_send uses submitWorkPrompt', () => {
+        expect(mcpSrc).toContain('submitWorkPrompt');
+    });
+});

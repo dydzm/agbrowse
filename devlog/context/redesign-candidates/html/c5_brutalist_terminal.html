@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C5 - Neo-Brutalist Terminal</title>
+<style>
+  :root{
+    --bg:#e8e6e1; --ink:#111111; --chart:#a3e635; --mono:"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Helvetica Neue",Arial,sans-serif;line-height:1.45}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 32px}
+  nav{border-bottom:3px solid var(--ink);background:var(--bg)}
+  .nav-in{display:flex;justify-content:space-between;align-items:center;padding:16px 0}
+  .brand{font-weight:900;font-size:16px;letter-spacing:.02em;text-transform:uppercase}
+  .links{display:flex;gap:20px;font:700 12px var(--mono);text-transform:uppercase}
+  .links a{color:var(--ink);text-decoration:none}
+  .hero{padding:60px 0 0}
+  h1{font-size:88px;line-height:.92;font-weight:900;text-transform:uppercase;letter-spacing:0;max-width:12ch}
+  h1 .hl{background:var(--chart);padding:0 10px}
+  .sub{margin-top:24px;font:14px/1.8 var(--mono);max-width:60ch}
+  .cta{display:inline-block;margin-top:26px;background:var(--chart);color:var(--ink);font:800 15px var(--mono);padding:16px 26px;border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);text-decoration:none}
+  .term{margin:52px 0 0;background:#fff;border:3px solid var(--ink);box-shadow:8px 8px 0 var(--ink)}
+  .term .tb{background:var(--ink);color:#fff;font:700 12px var(--mono);padding:10px 16px;display:flex;justify-content:space-between}
+  .term .bd{padding:22px 24px;font:13.5px/2 var(--mono)}
+  .term .p{font-weight:700}
+  .term .out{color:#57534e}
+  .term .ok{background:var(--chart);padding:1px 6px;font-weight:700}
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding:56px 0 60px}
+  .tile{background:#fff;border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);padding:20px 20px 18px}
+  .tile h3{font-size:22px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+  .tile h3 .dot{width:12px;height:12px;background:var(--chart);border:2px solid var(--ink);display:inline-block}
+  .tile ul{list-style:none;margin-top:14px;font:12px/2.1 var(--mono);text-transform:uppercase;color:#44403c}
+  .strip{border-top:3px solid var(--ink);background:var(--ink);color:#fff;padding:14px 0}
+  .strip .in{display:flex;gap:34px;font:700 12px var(--mono);text-transform:uppercase}
+  .strip b{color:var(--chart)}
+</style>
+</head>
+<body>
+<nav><div class="wrap nav-in">
+  <div class="brand">agbrowse</div>
+  <div class="links"><a href="#">Web-AI</a><a href="#">Workflow</a><a href="#">Docs</a><a href="#">GitHub</a></div>
+</div></nav>
+<div class="wrap">
+  <header class="hero">
+    <h1>Browser <span class="hl">hands</span> for AI agents.</h1>
+    <p class="sub">Real Chrome tabs. Real ChatGPT / Gemini / Grok web sessions. Short-lived commands, durable session ids, zero MCP server.</p>
+    <a class="cta" href="#">$ npm i -g agbrowse</a>
+    <div class="term">
+      <div class="tb"><span>AGBROWSE — TERMINAL</span><span>CDP :9222</span></div>
+      <div class="bd">
+        <div><span class="p">$</span> agbrowse start --headed</div>
+        <div class="out">chrome attached · 4 tabs</div>
+        <div><span class="p">$</span> agbrowse web-ai send --vendor grok --prompt "Summarize this repo."</div>
+        <div class="out">session s_4d90aa · <span class="ok">QUEUED</span></div>
+        <div><span class="p">$</span> agbrowse web-ai poll --session s_4d90aa --timeout 1800</div>
+        <div class="out">done · answer → result.md · screenshot → evidence.png</div>
+      </div>
+    </div>
+  </header>
+</div>
+<div class="wrap">
+  <div class="tiles">
+    <div class="tile"><h3><span class="dot"></span>ChatGPT</h3><ul><li>pro / thinking / code</li><li>zip artifacts</li><li>code-extract later</li></ul></div>
+    <div class="tile"><h3><span class="dot"></span>Gemini</h3><ul><li>deep-think</li><li>durable poll</li><li>file upload</li></ul></div>
+    <div class="tile"><h3><span class="dot"></span>Grok</h3><ul><li>expert mode</li><li>web ui exec</li><li>markdown capture</li></ul></div>
+  </div>
+</div>
+<div class="strip"><div class="wrap in"><span><b>118</b> stable refs / snapshot</span><span><b>3</b> vendors, one CLI</span><span><b>0</b> MCP servers required</span><span><b>1800s</b> poll timeout</span></div></div>
+</body>
+</html>

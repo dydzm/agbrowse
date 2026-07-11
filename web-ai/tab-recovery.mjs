@@ -2,6 +2,7 @@
 import { createTab, isTabAlive, getPageByTargetId, waitForPageByTargetId, listManagedTabs, closeTab } from '../skills/browser/tab-manager.mjs';
 import { updateSession, getSession, incrementRecoveryCount, listSessions } from './session.mjs';
 import { waitForConversationReady, isProviderUrl } from './navigation-ready.mjs';
+import { isWorkSession as _isWorkSession } from './chatgpt-work-picker.mjs';
 
 /** @typedef {import('./session-store.mjs').WebAiSession} WebAiSession */
 
@@ -29,6 +30,19 @@ export async function recoverSessionTab(deps, session) {
 
     const port = deps.getPort();
     const targetUrl = session.conversationUrl || session.originalUrl || 'about:blank';
+    const isRunningWork = _isWorkSession(session) && session.status !== 'complete';
+
+    // Work-session guard (04 section 6, round-2): a running Work session with a
+    // bare-origin conversationUrl (e.g. "https://chatgpt.com/") must NOT be
+    // recovered by opening that URL -- it would land on a home tab, not the task.
+    // Fail closed with a typed error so the poll path can surface it.
+    if (isRunningWork && isWorkSessionWithBareOrigin(session)) {
+        throw new Error(
+            `Work session ${session.sessionId} has bare-origin conversationUrl ` +
+            `(${session.conversationUrl}); cannot recover to correct task tab. ` +
+            `Error: provider.work-reattach-unverified`
+        );
+    }
 
     // 1. Check if original tab still exists
     const alive = await isTabAlive(port, /** @type {string} */ (session.targetId));
@@ -39,6 +53,17 @@ export async function recoverSessionTab(deps, session) {
         if (page) {
             try {
                 const currentUrl = page.url();
+
+                // Work-session guard: for running Work sessions, verify the tab
+                // shows the correct task URL, not a random chatgpt.com home tab.
+                if (isRunningWork && !isWorkTabUrlConsistent(session, currentUrl)) {
+                    throw new Error(
+                        `Work session ${session.sessionId} tab URL (${currentUrl}) ` +
+                        `is not consistent with task; failing closed. ` +
+                        `Error: provider.work-reattach-unverified`
+                    );
+                }
+
                 if (shouldPreferCurrentProviderUrl(targetUrl, currentUrl)) {
                     await updateSession(session.sessionId, { conversationUrl: currentUrl });
                     return {
@@ -186,6 +211,74 @@ export function isPageDeathError(err) {
         msg.includes('crash')
     );
 }
+
+// ─── Work-session recovery guards (04 section 6, round-2 fix) ──────────
+
+/**
+ * Check whether a URL is a bare ChatGPT origin (home page, not a /c/<id> task).
+ * A bare-origin conversationUrl on a running Work session is the root cause of
+ * the wrong-tab rebind bug: recovery resolves ANY chatgpt.com tab as a match.
+ * @param {string|null|undefined} url
+ * @returns {boolean}
+ */
+export function isBareOriginUrl(url) {
+    if (!url) return false;
+    try {
+        const u = new URL(url);
+        const path = u.pathname.replace(/\/+$/, '') || '/';
+        return path === '/' || path === '';
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * For a RUNNING work session, verify that the tab's current URL is consistent
+ * with the session's taskUrl (a /c/<uuid> page). Returns false for:
+ *   - generic home page tabs (bare origin)
+ *   - tabs showing a DIFFERENT /c/<uuid> conversation
+ * Returns true when the tab shows the exact taskUrl or any /c/<uuid> page
+ * (in case of minor URL variations). For sessions without taskUrl, any /c/ page
+ * is acceptable; bare-origin is not.
+ * @param {Record<string, unknown>} session
+ * @param {string|null|undefined} tabUrl
+ * @returns {boolean}
+ */
+export function isWorkTabUrlConsistent(session, tabUrl) {
+    if (!tabUrl) return false;
+    const taskUrl = /** @type {string|null|undefined} */ (
+        session.envelopeSummary?.taskUrl || session.conversationUrl
+    );
+
+    // Bare-origin tab URL is never valid for a running Work session
+    if (isBareOriginUrl(tabUrl)) return false;
+
+    // If we have a taskUrl with /c/<uuid>, the tab must match it
+    if (taskUrl && /\/c\/[a-f0-9-]+/.test(taskUrl)) {
+        try {
+            const taskPath = new URL(taskUrl).pathname;
+            const tabPath = new URL(tabUrl).pathname;
+            return taskPath === tabPath;
+        } catch {
+            return false;
+        }
+    }
+
+    // No specific taskUrl -- accept any /c/<uuid> page, reject bare origin
+    return /\/c\/[a-f0-9-]+/.test(tabUrl);
+}
+
+/**
+ * Detect sessions with bare-origin conversationUrl on surface=work.
+ * These are the dangerously broken shape from the round-1 bug.
+ * @param {Record<string, unknown>} session
+ * @returns {boolean}
+ */
+export function isWorkSessionWithBareOrigin(session) {
+    if (!_isWorkSession(session)) return false;
+    return isBareOriginUrl(/** @type {string|null|undefined} */ (session.conversationUrl));
+}
+
 
 /**
  * @template T
@@ -400,6 +493,21 @@ export async function resolveSessionPage(deps, sessionId, options = {}) {
                 };
             }
         } else {
+            // Work-session guard (round-2): for running Work sessions, also reject
+            // bare-origin conversationUrl via the same mismatch path.
+            if (_isWorkSession(current) && current.status !== 'complete' && isWorkSessionWithBareOrigin(current)) {
+                return {
+                    mismatch: true,
+                    page: null,
+                    targetId: /** @type {string} */ (current.targetId),
+                    session: current,
+                    recovered: false,
+                    strategy: 'existing-tab',
+                    warnings: [`Work session ${sessionId} has bare-origin conversationUrl (${current.conversationUrl}); refusing to navigate. Error: provider.work-reattach-unverified`],
+                    url: liveUrl,
+                    conversationUrl: current.conversationUrl,
+                };
+            }
             // 32.3 fail-closed: never navigate a ChatGPT session to a non-concrete
             // target (provider root / foreign host / non-/c/ path) — that would
             // open a new chat or the wrong thread instead of recovering this one.

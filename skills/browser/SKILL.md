@@ -1,13 +1,20 @@
 ---
 name: browser
 description: >-
-  Chrome browser control and adaptive URL reading: open pages, fetch one candidate URL,
-  take ref snapshots, click, type, screenshot. No external server required.
+  Chrome/CDP browser control and browser QA: open and smoke-test web UIs,
+  inspect console/network state, fetch URLs, extract schema-bound data,
+  snapshot, click, type, and screenshot. Prefer agbrowse for ad-hoc
+  Playwright/browser QA before adding a separate runner or MCP.
   NOT for: sending prompts to AI providers like ChatGPT, Gemini, Grok (use web-ai skill instead).
   NOT for: system-level screen capture (use screen-capture skill).
-  Triggers: browser, 브라우저, Chrome, 크롬, open page, navigate, snapshot,
-  screenshot, 스크린샷, click element, type text, 웹페이지, page interaction,
-  DOM, ref ID, 페이지 열기, 탭, tab, CDP, 브라우저 열기, adaptive fetch, URL 읽기
+  Triggers: browser, 브라우저, Chrome, 크롬, Playwright, playwrite,
+  playwright QA, browser QA, web QA, page QA, QA browser, browser test,
+  browser smoke test, screenshot QA, URL QA, visual QA, 플레이라이트,
+  플레이라이트 QA, 브라우저 QA, 웹 QA, 페이지 QA, QA 브라우저,
+  브라우저 테스트, 브라우저 스모크 테스트, 스크린샷 QA, 비주얼 QA,
+  open page, navigate, snapshot, screenshot, 스크린샷, click, type,
+  웹페이지, DOM, ref ID, 페이지 열기, 탭, CDP, URL 읽기, extract,
+  structured extraction, 구조화 추출, schema extraction, 스키마 추출
 ---
 
 # Browser Control
@@ -47,7 +54,9 @@ npm install playwright-core
 agbrowse start                               # Start Chrome (CDP auto port)
 agbrowse start --headless                    # Headless mode (server/CI/WSL)
 agbrowse navigate "https://example.com"      # Go to URL
-agbrowse fetch "https://example.com" --json  # Read one candidate URL; not search
+agbrowse search "query" --json               # Standalone deep search
+agbrowse fetch "https://example.com" --json  # Read one candidate URL
+agbrowse extract "https://example.com/table" --schema spec.json --json  # Structured extraction
 agbrowse snapshot --interactive              # Interactive elements with ref IDs
 agbrowse click e3                            # Click ref e3
 agbrowse type e5 "hello" --submit           # Type + Enter
@@ -122,26 +131,51 @@ agbrowse network --reload --duration 1000         # Fresh page-load + async requ
 ### Adaptive URL Fetch (v2)
 
 Use `agbrowse fetch` after a candidate URL already exists. Do not use it as the
-first step for broad generic search.
+first step for broad generic search. See Command Routing below for when to use
+`fetch` vs `search` vs `extract`.
 
 ```bash
 agbrowse fetch "https://example.com/article"
 agbrowse fetch "https://example.com/article" --json --trace
 agbrowse fetch "https://example.com/article" --browser never
-agbrowse fetch "https://example.com/article" --no-browser
 agbrowse fetch "https://example.com/article" --browser required
 agbrowse fetch "https://example.com/article" --allow-third-party-reader
 agbrowse fetch "https://example.com/article" --browser-session user
-agbrowse fetch "https://example.com/article" --browser-session interactive
 agbrowse fetch "https://example.com/article" --identity chrome
 ```
 
-Routing rule:
+#### Command Routing
+
+Pick the right command by what you have and what you need:
 
 ```text
-generic search request -> use a search tool first
-known URL / search-result URL / source URL -> use agbrowse fetch
+generic search request                -> agbrowse search  (or external search tool)
+known / candidate URL to read         -> agbrowse fetch
+structured data from URL + JSON schema -> agbrowse extract
+prompting AI providers (ChatGPT,
+  Gemini, Grok) with a question       -> agbrowse web-ai  (web-ai skill)
 ```
+
+#### QA / Playwright Intent Routing
+
+When a user asks to "run Playwright", "플레이라이트로 확인", "browser QA",
+"브라우저 테스트", or equivalent without naming an existing test file, treat
+the phrase as an intent to verify the page, not as a dependency requirement.
+Use agbrowse first:
+
+```text
+page opens and renders                 -> navigate -> snapshot -> screenshot
+critical interaction works            -> snapshot --interactive -> click/type -> snapshot
+runtime errors or failed requests      -> console/network with --reload
+public URL/source claim is correct     -> search skill -> agbrowse search --verify/fetch
+maintained project E2E regression      -> run/extend the repository's existing Playwright suite
+```
+
+Do not install a separate Playwright runner, Playwright MCP, Puppeteer, or
+browser driver for ad-hoc QA. agbrowse already exposes the required browser
+control through its CLI and uses `playwright-core` internally. Preserve an
+existing project-owned Playwright E2E suite when the request explicitly targets
+that regression surface.
 
 #### Escalation Ladder (code execution order in index.mjs)
 
@@ -215,6 +249,74 @@ Detects Cloudflare (managed challenge + Turnstile), Akamai Bot Manager, AWS WAF,
 Imperva/Incapsula, DataDome, and PerimeterX from response headers before browser
 escalation. WAF profile informs challenge classification and wait strategies.
 
+### Schema-bound Structured Extraction
+
+`agbrowse extract` pulls structured data from a page into a validated JSON
+envelope, driven by a JSON schema you supply. It is LLM-free by default
+(Tier 1) and fail-closed: when no candidate structure in the page satisfies
+the schema, it returns `verdict: "no_mappable_structure"` with a summary of
+what was considered. It never silently returns partial data.
+
+```bash
+# Tier 1 (LLM-free, default) -- fetch HTML, find tables/JSON-LD, map to schema
+agbrowse extract "https://example.com/pricing" --schema pricing.json --json
+
+# From a local HTML file instead of fetching
+agbrowse extract --from-file page.html --schema pricing.json --json
+
+# Restrict source type
+agbrowse extract "https://example.com" --schema spec.json --source table --json
+agbrowse extract "https://example.com" --schema spec.json --source jsonld --json
+
+# Tier 2 opt-in: on Tier 1 failure, escalate to a web-ai vendor session
+agbrowse extract "https://example.com" --schema spec.json --escalate-web-ai --json
+agbrowse extract "https://example.com" --schema spec.json --escalate-web-ai --vendor chatgpt --json
+```
+
+#### Options
+
+| Flag | Values | Default | Description |
+|------|--------|---------|-------------|
+| `--schema` | file path | *(required)* | JSON schema file (`extract-schema-v1` subset) |
+| `--from-file` | file path | -- | Read local HTML instead of fetching a URL |
+| `--source` | `auto\|table\|jsonld` | `auto` | Which page structures to consider |
+| `--json` | -- | -- | Machine-readable JSON envelope |
+| `--escalate-web-ai` | -- | -- | Tier 2: web-ai fallback on Tier 1 failure |
+| `--vendor` | `chatgpt\|gemini\|grok` | `grok` | Tier 2 vendor |
+| `--timeout` | ms | -- | Fetch timeout |
+
+#### Tier Architecture
+
+**Tier 1 (default, LLM-free):** `fetchTextCandidate` raw HTML -> structured
+extractor (tables, JSON-LD) -> schema mapping (header-to-property matching,
+conservative type coercion) -> `validateExtraction`. Fail-closed with
+`verdict: "no_mappable_structure"` when no candidate satisfies all required
+schema properties.
+
+**Tier 2 (`--escalate-web-ai`, opt-in):** Activated only on Tier 1 failure.
+Sends page text + schema to a logged-in web-ai vendor session (default: grok)
+and validates the response JSON through the same validator.
+
+JS-rendered pages are a Tier 1 non-goal. Client-rendered content that never
+appears in the raw HTML is reported as fail-closed rather than guessed.
+
+#### JSON Envelope
+
+`--json` output uses the `agbrowse-extract-v1` envelope:
+
+| Field | Description |
+|-------|-------------|
+| `schemaVersion` | `"agbrowse-extract-v1"` |
+| `ok` | `true` if extraction succeeded |
+| `tier` | `1` or `2` |
+| `verdict` | e.g. `"ok"`, `"no_mappable_structure"` |
+| `data` | Extracted array/object or `null` |
+| `errors` | Validation errors (if any) |
+| `candidatesConsidered` | Number of structures evaluated |
+| `source` | `"table"`, `"jsonld"`, or `"web-ai"` |
+| `finalUrl` | Resolved URL after redirects |
+| `evidence` | Extraction trace entries |
+
 ### Snapshot Output Example
 
 ```
@@ -238,6 +340,8 @@ agbrowse press Escape
 agbrowse press Tab
 agbrowse hover e5              # Mouse hover
 agbrowse select e7 "option1"   # Select dropdown option
+agbrowse check e8              # Check checkbox/radio
+agbrowse uncheck e9            # Uncheck checkbox
 agbrowse drag e3 e5            # Drag element to another
 agbrowse move-mouse 400 300    # Move mouse only
 agbrowse mouse-down            # Hold left mouse button

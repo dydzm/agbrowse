@@ -238,7 +238,7 @@ const REGISTRY = [
         vendor: 'chatgpt',
         status: 'ported-cli-jaw',
         ownerPrd: '32.8/32.9',
-        commandBehavior: 'support --model instant|thinking|pro via ChatGPT model switcher and aria-checked verification',
+        commandBehavior: 'support Chat --family plus --model/--reasoning-effort tier selection through the composer-scoped Intelligence picker with exact role/label and aria-checked verification; normalize legacy aliases before selection',
         browserMutationAllowed: true,
         failClosedStage: 'provider-select-model',
         requiredOfficialDocs: [],

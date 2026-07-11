@@ -12,11 +12,12 @@ import {
 } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-export const INSTALLABLE_SKILLS = Object.freeze(['browser', 'web-ai', 'vision-click']);
+export const INSTALLABLE_SKILLS = Object.freeze(['browser', 'web-ai', 'search', 'vision-click']);
 /** @type {Readonly<Record<string, string>>} */
 export const SKILL_DESCRIPTIONS = Object.freeze({
     browser: 'Chrome/CDP browser control: navigate, inspect, click, type, screenshot, logs, and network.',
     'web-ai': 'Browser web-ai workflow for ChatGPT, Gemini, and Grok: send, poll, upload files, and capture answers.',
+    search: 'Standalone deep search: query rewrite, original-page fetch verification, and evidence scoring.',
     'vision-click': 'Screenshot-to-coordinate click helper for targets with no reliable DOM ref.',
 });
 
@@ -28,7 +29,7 @@ export const SKILLS_USAGE = [
     'Commands:',
     '  list [--json]                         List bundled skills',
     '  get core [--full]                     Print the recommended agent operating guide',
-    '  get <browser|web-ai|vision-click>     Print one bundled SKILL.md',
+    '  get <browser|web-ai|search|vision-click>  Print one bundled SKILL.md',
     '  path [skill]                          Print the package skills path or one skill path',
     '  install --target <skills-dir> [opts]  Install bundled skills into an agent skill root',
     '',
@@ -77,9 +78,10 @@ export const INSTALL_SKILLS_USAGE = [
     '',
     'Installs the bundled agbrowse skills into an explicit agent skill root.',
     '',
-    'Installed skills:',
+'Installed skills:',
     '  browser       Chrome/CDP browser control skill',
     '  web-ai        ChatGPT, Gemini, and Grok browser web-ai workflow skill',
+    '  search        Standalone deep search and URL evidence verification skill',
     '  vision-click  Screenshot-to-coordinate click helper skill',
     '',
     'Options:',
@@ -346,7 +348,7 @@ export function runSkillsCli(args = [], options = {}) {
 
     if (command === 'get') {
         const name = args[1];
-        if (!name) throw new Error('Usage: agbrowse skills get <core|browser|web-ai|vision-click> [--full]');
+        if (!name) throw new Error('Usage: agbrowse skills get <core|browser|web-ai|search|vision-click> [--full]');
         return {
             type: 'text',
             text: readBundledSkill(/** @type {string} */ (options.sourceRoot), name, { full: args.includes('--full') }),

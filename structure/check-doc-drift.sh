@@ -58,6 +58,124 @@ const comparisonDoc = read('docs/comparison.md');
 const benchmarksDoc = read('docs/benchmarks.md');
 const pkg = JSON.parse(read('package.json'));
 
+const semanticContractFiles = [
+  'structure/CAPABILITY_TRUTH_TABLE.md',
+  'structure/phase_status.md',
+  'structure/commands.md',
+  'structure/runtime_contracts.md',
+  'structure/release_gates.md',
+  'skills/browser/browser.mjs',
+  'skills/web-ai/SKILL.md',
+  'README.md',
+  'docs/dev/index.html',
+  'docs/dev/quickstart.html',
+  'docs/dev/guides/web-ai.html',
+  'docs/dev/guides/code-mode.html',
+  'docs/dev/reference/cli.html',
+  'docs/dev/reference/release-gates.html',
+  'docs/dev/ko/index.html',
+  'docs/dev/ko/quickstart.html',
+  'docs/dev/ko/guides/web-ai.html',
+  'docs/dev/ko/guides/code-mode.html',
+  'docs/dev/ko/reference/cli.html',
+  'docs/dev/ko/reference/release-gates.html',
+].filter(f => fs.existsSync(f));
+
+const staleChatGptDocTokens = [
+  'Pro Extended',
+  'Pro Standard',
+  'Pro \uD655\uC7A5',
+  'model-switcher-gpt-5-5',
+  'model-switcher-dropdown-button',
+  'composer-intelligence-pro-thinking-effort-trigger',
+  'Pro: standard/extended',
+  'Thinking: light/standard/extended/heavy',
+  '--effort light',
+  '--effort standard',
+  '--effort extended',
+  '--effort heavy',
+  '--timeout 1800',
+];
+
+const requiredSemanticTokensByFile = new Map([
+  ['skills/browser/browser.mjs', [
+    '--surface <chat>',
+    '--family <alias>',
+    'gpt-5.6-sol',
+    'Thinking canonical: medium/high/xhigh',
+    'chatgpt-pro=5400',
+    'grok-heavy=3600',
+    'deep-research=3600',
+  ]],
+]);
+
+function lineNumberAt(source, offset) {
+  return source.slice(0, offset).split('\n').length;
+}
+
+function lineAt(source, offset) {
+  const start = source.lastIndexOf('\n', offset - 1) + 1;
+  const end = source.indexOf('\n', offset);
+  return source.slice(start, end === -1 ? source.length : end);
+}
+
+function isLegacyUiOccurrence(file, source, offset) {
+  const marker = 'Legacy UI (before 2026-07-10)';
+  if (file === 'README.md') return lineAt(source, offset).includes(marker);
+  if (file !== 'skills/web-ai/SKILL.md') return false;
+
+  const start = source.lastIndexOf('### ' + marker, offset);
+  if (start === -1) return false;
+  const ends = [
+    source.indexOf('\nGemini:', start),
+    source.indexOf('\n## ', start + marker.length),
+  ].filter(candidate => candidate !== -1);
+  const end = ends.length > 0 ? Math.min(...ends) : source.length;
+  return offset < end;
+}
+
+function isAllowedStaleOccurrence(file, token, source, offset) {
+  if (token === '--timeout 1800') {
+    const deepResearchExampleFiles = [
+      'skills/web-ai/SKILL.md',
+      'README.md',
+      'docs/dev/guides/web-ai.html',
+      'docs/dev/ko/guides/web-ai.html',
+    ];
+    if (!deepResearchExampleFiles.includes(file)) return false;
+    return source.slice(Math.max(0, offset - 240), offset).includes('--research deep');
+  }
+  if (token.startsWith('--effort ')) {
+    return /(?:Legacy|legacy|compatibility)/.test(lineAt(source, offset));
+  }
+  return isLegacyUiOccurrence(file, source, offset);
+}
+
+for (const file of semanticContractFiles) {
+  const source = read(file);
+  const violations = [];
+  for (const token of staleChatGptDocTokens) {
+    let offset = source.indexOf(token);
+    while (offset !== -1) {
+      if (!isAllowedStaleOccurrence(file, token, source, offset)) {
+        violations.push(JSON.stringify(token) + ' at line ' + lineNumberAt(source, offset));
+      }
+      offset = source.indexOf(token, offset + token.length);
+    }
+  }
+  for (const token of requiredSemanticTokensByFile.get(file) || []) {
+    if (!source.includes(token)) {
+      violations.push('missing required current token ' + JSON.stringify(token));
+    }
+  }
+  if (violations.length > 0) {
+    fail(file + ' has ChatGPT semantic doc-contract violations: ' + violations.join(', '));
+  } else {
+    pass(file + ' has current required tokens and no unallowlisted stale ChatGPT doc-contract tokens');
+  }
+}
+
+
 const rootCommands = [
   'start', 'stop', 'status', 'reset',
   'snapshot', 'screenshot', 'text', 'get-dom',

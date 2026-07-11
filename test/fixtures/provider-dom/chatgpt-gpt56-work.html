@@ -1,0 +1,144 @@
+ <!doctype html>
+ <html lang="en">
+   <head>
+     <meta charset="utf-8">
+     <title>Sanitized ChatGPT GPT-5.6 Work picker fixture</title>
+   </head>
+   <body data-provider="chatgpt" data-variant="gpt56-work">
+     <header>
+       <div role="radiogroup" aria-label="Composer surface">
+         <button
+           type="button"
+           role="radio"
+           aria-checked="false"
+           data-state="off"
+           data-radix-collection-item
+           data-eval-key="surface.chat"
+           data-eval-label="Chat"
+         >Chat</button>
+         <button
+           type="button"
+           role="radio"
+           aria-checked="true"
+           data-state="on"
+           data-radix-collection-item
+           data-eval-key="surface.work"
+           data-eval-label="Work"
+         >Work</button>
+       </div>
+     </header>
+
+     <main aria-label="ChatGPT">
+       <form aria-label="Prompt composer" data-eval-key="work.composer">
+         <div
+           role="textbox"
+           contenteditable="true"
+           aria-label="Chat with ChatGPT"
+           placeholder="Work on anything"
+           data-eval-intent="composer.fill"
+           data-eval-ref="chatgpt-gpt56-work-composer"
+         ></div>
+         <button
+           type="button"
+           aria-haspopup="menu"
+           aria-expanded="true"
+           data-eval-key="work.picker-trigger"
+           data-eval-label="5.6 Sol Light"
+         >5.6 Sol Light</button>
+       </form>
+
+       <div role="menu" data-state="open">
+         <div
+           role="group"
+           data-testid="composer-intelligence-picker-content"
+           data-eval-key="work.intelligence-group"
+         >
+           <div data-testid="composer-model-picker-slider-simple-view" data-eval-key="work.simple-view">
+             <div
+               role="slider"
+               aria-label="Power"
+               aria-valuemin="0"
+               aria-valuemax="5"
+               aria-valuenow="1"
+               aria-valuetext="5.6 Sol Light, 2 of 6."
+               data-eval-key="work.power-slider"
+             ></div>
+             <div
+               role="menuitem"
+               aria-label="Show advanced options"
+               data-eval-key="work.advanced-toggle"
+             >Advanced</div>
+             <div
+               role="menuitemcheckbox"
+               aria-checked="false"
+               aria-label="Enable fast mode"
+               data-eval-key="work.fast-toggle"
+             ><span>Faster</span><span>Smarter</span><span>Consumes usage limits faster</span></div>
+           </div>
+
+           <div data-testid="composer-model-picker-slider-advanced-view" data-eval-key="work.advanced-view">
+             <div
+               role="menuitem"
+               data-has-submenu
+               aria-label="Model GPT-5.6 Sol"
+               data-eval-key="work.advanced.model"
+               data-eval-label="GPT-5.6 Sol"
+             >Model<span>GPT-5.6 Sol</span></div>
+             <div
+               role="menuitem"
+               data-has-submenu
+               aria-label="Effort Light"
+               data-eval-key="work.advanced.effort"
+               data-eval-label="Light"
+             >Effort<span>Light</span></div>
+             <div
+               role="menuitem"
+               data-has-submenu
+               aria-label="Speed Standard"
+               data-eval-key="work.advanced.speed"
+               data-eval-label="Standard"
+             >Speed<span>Standard</span></div>
+           </div>
+         </div>
+       </div>
+
+       <template data-eval-state="work-model-submenu-open">
+         <div role="menu" data-state="open" data-eval-key="work.model-submenu">
+           <div role="menuitemradio" aria-checked="true" data-eval-key="work.model.gpt-5.6-sol" data-eval-label="GPT-5.6 Sol"><span>GPT-5.6 Sol</span></div>
+           <div role="menuitemradio" aria-checked="false" data-eval-key="work.model.gpt-5.6-terra" data-eval-label="GPT-5.6 Terra"><span>GPT-5.6 Terra</span></div>
+           <div role="menuitemradio" aria-checked="false" data-eval-key="work.model.gpt-5.6-luna" data-eval-label="GPT-5.6 Luna"><span>GPT-5.6 Luna</span></div>
+           <div role="menuitemradio" aria-checked="false" data-eval-key="work.model.gpt-5.5" data-eval-label="GPT-5.5"><span>GPT-5.5</span></div>
+         </div>
+       </template>
+
+       <template data-eval-state="work-effort-submenu-open">
+         <div role="menu" data-state="open" data-eval-key="work.effort-submenu">
+           <div role="menuitemradio" aria-checked="true" data-eval-key="work.effort.light" data-eval-label="Light"><span>Light</span></div>
+           <div role="menuitemradio" aria-checked="false" data-eval-key="work.effort.medium" data-eval-label="Medium"><span>Medium</span></div>
+           <div role="menuitemradio" aria-checked="false" data-eval-key="work.effort.high" data-eval-label="High"><span>High</span></div>
+           <div role="menuitemradio" aria-checked="false" data-eval-key="work.effort.extra-high" data-eval-label="Extra High"><span>Extra High</span></div>
+           <div role="menuitemradio" aria-checked="false" data-eval-key="work.effort.max" data-eval-label="Max"><span>Max</span></div>
+           <div role="menuitemradio" aria-checked="false" data-eval-key="work.effort.ultra" data-eval-label="Ultra"><span>Ultra</span><span>Consumes usage limits faster</span></div>
+         </div>
+       </template>
+
+       <template data-eval-state="work-speed-submenu-open">
+         <div role="menu" data-state="open" data-eval-key="work.speed-submenu">
+           <div role="menuitemradio" aria-checked="true" data-eval-key="work.speed.standard" data-eval-label="Standard"><span>Standard</span><span>Default usage</span></div>
+           <div role="menuitemradio" aria-checked="false" data-eval-key="work.speed.fast" data-eval-label="Fast"><span>Fast</span><span>1.5x speed, more usage</span></div>
+         </div>
+       </template>
+
+       <template data-eval-state="work-power-mapping">
+         <table data-eval-key="work.power-mapping">
+           <tr data-power="1"><td>1</td><td>0</td><td>5.6 Terra Light</td><td>GPT-5.6 Terra</td><td>Light</td></tr>
+           <tr data-power="2"><td>2</td><td>1</td><td>5.6 Sol Light</td><td>GPT-5.6 Sol</td><td>Light</td></tr>
+           <tr data-power="3"><td>3</td><td>2</td><td>5.6 Sol Medium</td><td>GPT-5.6 Sol</td><td>Medium</td></tr>
+           <tr data-power="4"><td>4</td><td>3</td><td>5.6 Sol High</td><td>GPT-5.6 Sol</td><td>High</td></tr>
+           <tr data-power="5"><td>5</td><td>4</td><td>5.6 Sol Extra High</td><td>GPT-5.6 Sol</td><td>Extra High</td></tr>
+           <tr data-power="6"><td>6</td><td>5</td><td>5.6 Sol Ultra</td><td>GPT-5.6 Sol</td><td>Ultra</td></tr>
+         </table>
+       </template>
+     </main>
+   </body>
+ </html>

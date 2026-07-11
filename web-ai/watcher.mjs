@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { pollWebAi } from './chatgpt.mjs';
+import { isWorkSession, pollWorkSession } from './chatgpt-work-picker.mjs';
 import { geminiPollWebAi } from './gemini-live.mjs';
 import { grokPollWebAi } from './grok-live.mjs';
 import { getSession, updateSession } from './session.mjs';
@@ -68,7 +69,9 @@ export async function watchSession(deps, input = {}, notifier = null) {
 
     let final = null;
     try {
-        if (options.deadlineAt) updateSession(options.sessionId, { deadlineAt: options.deadlineAt });
+        if (options.hasExplicitDeadlineOverride && options.deadlineAt) {
+            updateSession(options.sessionId, { deadlineAt: options.deadlineAt });
+        }
         await emit({ type: 'watch.start', status: 'watching', intervalMs: options.intervalMs, pollTimeoutSec: options.pollTimeoutSec });
 
         for (let iteration = 1; ; iteration += 1) {
@@ -311,9 +314,12 @@ export function normalizeWatchOptions(input = {}) {
     const pollTimeoutSec = Number(input.pollTimeoutSec || input.pollTimeout || DEFAULT_WATCH_POLL_TIMEOUT_SEC);
     const maxIterations = input.maxIterations === undefined || input.maxIterations === null || input.maxIterations === ''
         ? null : Number(input.maxIterations);
+    const hasExplicitTimeout = input.timeout !== undefined
+        && input.timeout !== null
+        && input.timeout !== '';
     const deadlineAt = input.deadline
         ? toIsoDeadline(input.deadline, 'deadline')
-        : input.timeout && Number(input.timeout) > 0
+        : hasExplicitTimeout && Number(input.timeout) > 0
             ? new Date(Date.now() + Number(input.timeout) * 1000).toISOString()
             : input.deadlineAt || null;
     return {
@@ -323,6 +329,7 @@ export function normalizeWatchOptions(input = {}) {
         pollTimeoutSec: Number.isFinite(pollTimeoutSec) && pollTimeoutSec > 0 ? pollTimeoutSec : DEFAULT_WATCH_POLL_TIMEOUT_SEC,
         maxIterations: Number.isFinite(maxIterations) && (/** @type {number} */ (maxIterations)) > 0 ? maxIterations : null,
         deadlineAt,
+        hasExplicitDeadlineOverride: Boolean(deadlineAt),
         once: input.once === true,
         navigate: input.navigate === true,
         json: input.json === true,
@@ -497,7 +504,8 @@ async function ensureWatcherAttached(page, session, options) {
  * @param {any} options
  */
 async function callVendorPoll(deps, vendor, session, options) {
-    const pollFn = vendor === 'gemini' ? geminiPollWebAi
+    const pollFn = isWorkSession(session) ? pollWorkSession
+        : vendor === 'gemini' ? geminiPollWebAi
         : vendor === 'grok' ? grokPollWebAi
             : pollWebAi;
     try {

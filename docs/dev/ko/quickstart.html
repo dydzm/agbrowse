@@ -4,9 +4,10 @@ agbrowse navigate https://example.com
 agbrowse snapshot --interactive</code></pre><h2>Web-AI query</h2><pre><code>agbrowse web-ai query \
   --vendor chatgpt \
   --inline-only \
-  --prompt "Summarize this page and cite visible sources."</code></pre><h2>코드 artifact 생성</h2><p>처음 쓰는 사용자는 <code>web-ai code</code>부터 시작합니다. <code>code-extract</code>는 기존 ChatGPT conversation에 sandbox zip이 이미 있을 때 다시 회수하는 명령입니다.</p><pre><code>agbrowse web-ai code \
+  --prompt "Summarize this page and cite visible sources."</code></pre><h2>독립 검색</h2><p><code>agbrowse search</code>로 full deep search 파이프라인을 실행합니다: query rewrite, adaptive-fetch ladder를 통한 원본 페이지 fetch, 증거 채점.</p><pre><code>agbrowse search "Next.js 15 app router migration" --json</code></pre><p>단일 URL 검증 또는 외부 검색 결과를 enrichment할 수도 있습니다:</p><pre><code>agbrowse search --verify "https://nextjs.org/docs/app" --json
+echo '[{"url":"...","title":"..."}]' | agbrowse search "query" --stdin-results --json</code></pre><h2>코드 artifact 생성</h2><p>처음 쓰는 사용자는 <code>web-ai code</code>부터 시작합니다. <code>code-extract</code>는 기존 ChatGPT conversation에 sandbox zip이 이미 있을 때 다시 회수하는 명령입니다.</p><pre><code>agbrowse web-ai code \
   --vendor chatgpt \
   --model thinking \
-  --effort standard \
+  --effort medium \
   --prompt "Create a CLI todo app with tests." \
   --output-zip ./result.zip</code></pre><div class="next"><a href="quickstart-first-run.html">첫 실행 점검</a><a href="guides/code-mode.html">코드 모드</a></div></main></div><footer>현재 CLI 표면은 <code>agbrowse --help</code>와 <code>agbrowse web-ai --help</code>를 기준으로 확인합니다.</footer><script src="../_search.js"></script></body></html>

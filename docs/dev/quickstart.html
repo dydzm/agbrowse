@@ -4,9 +4,10 @@ agbrowse navigate https://example.com
 agbrowse snapshot --interactive</code></pre><h2>Web-AI query</h2><pre><code>agbrowse web-ai query \
   --vendor chatgpt \
   --inline-only \
-  --prompt "Summarize this page and cite visible sources."</code></pre><h2>Code artifact generation</h2><p>New users should start with <code>web-ai code</code>. Use <code>code-extract</code> later when an existing ChatGPT conversation already contains a generated sandbox zip.</p><pre><code>agbrowse web-ai code \
+  --prompt "Summarize this page and cite visible sources."</code></pre><h2>Standalone search</h2><p>Use <code>agbrowse search</code> to run a full deep search pipeline: query rewrite, original-page fetch via the adaptive-fetch ladder, and evidence scoring.</p><pre><code>agbrowse search "Next.js 15 app router migration" --json</code></pre><p>Verify a single URL or pipe in external search results for enrichment:</p><pre><code>agbrowse search --verify "https://nextjs.org/docs/app" --json
+echo '[{"url":"...","title":"..."}]' | agbrowse search "query" --stdin-results --json</code></pre><h2>Code artifact generation</h2><p>New users should start with <code>web-ai code</code>. Use <code>code-extract</code> later when an existing ChatGPT conversation already contains a generated sandbox zip.</p><pre><code>agbrowse web-ai code \
   --vendor chatgpt \
   --model thinking \
-  --effort standard \
+  --effort medium \
   --prompt "Create a CLI todo app with tests." \
   --output-zip ./result.zip</code></pre><div class="next"><a href="quickstart-first-run.html">First-run checks</a><a href="guides/code-mode.html">Code mode guide</a></div></main></div><footer>Use <code>agbrowse --help</code> and <code>agbrowse web-ai --help</code> as the current CLI truth.</footer><script src="_search.js"></script></body></html>

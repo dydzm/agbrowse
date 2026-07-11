@@ -1,5 +1,5 @@
 // @ts-check
-import { updateSession } from './session.mjs';
+import { updateSession, TIER_DEFAULT_TIMEOUT_SEC } from './session.mjs';
 import { trySaveReport, appendArtifactRecord } from './session-artifacts.mjs';
 import { createChatGptEditorAdapter } from './vendor-editor-contract.mjs';
 import { chooseDeepResearchReportRead } from './chatgpt-deep-research-report.mjs';
@@ -213,7 +213,7 @@ export async function extractResearchReport(page, _deps) {
  * @param {{ prompt: string, session: any, timeoutMs?: number, skipModeActivation?: boolean }} opts
  * @returns {Promise<DeepResearchResult>}
  */
-export async function sendDeepResearch(page, deps, { prompt, session, timeoutMs = 1_200_000, skipModeActivation = false }) {
+export async function sendDeepResearch(page, deps, { prompt, session, timeoutMs = TIER_DEFAULT_TIMEOUT_SEC['deep-research'] * 1000, skipModeActivation = false }) {
     const warnings = [];
 
     updateSession(session.sessionId, { researchMode: 'deep' });
@@ -400,7 +400,7 @@ export async function sendDeepResearch(page, deps, { prompt, session, timeoutMs 
  * @param {{ session: any, timeoutMs?: number, stableMs?: number }} opts
  * @returns {Promise<DeepResearchResult>}
  */
-export async function resumeDeepResearch(page, deps, { session, timeoutMs = 1_200_000, stableMs = 5_000 }) {
+export async function resumeDeepResearch(page, deps, { session, timeoutMs = TIER_DEFAULT_TIMEOUT_SEC['deep-research'] * 1000, stableMs = 5_000 }) {
     const warnings = ['deep-research-resumed'];
     const deadline = Date.now() + timeoutMs;
     let stableText = '';

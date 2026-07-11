@@ -5,7 +5,8 @@ import { homedir } from 'node:os';
 import { domHashAround, selectorMatchSummary } from './dom-hash.mjs';
 import { findActiveSession } from './session.mjs';
 import { CHATGPT_COPY_SELECTORS, GEMINI_COPY_SELECTORS, GROK_COPY_SELECTORS } from './copy-markdown.mjs';
-import { CHATGPT_MODEL_SELECTOR_BUTTONS } from './chatgpt-model.mjs';
+import { CHATGPT_MODEL_SELECTOR_BUTTONS, CHATGPT_SURFACE_RADIO_SELECTOR, CHATGPT_WORK_PICKER_MARKER_SELECTOR } from './chatgpt-model.mjs';
+import { CHATGPT_MODEL_SELECTOR_OBSERVATION } from './capability-observation-presets.mjs';
 import { buildWebAiSnapshot, summarizeSnapshotForDoctor } from './ax-snapshot.mjs';
 import { observeProviderTargets } from './observe-targets.mjs';
 import { editorContractForVendor } from './vendor-editor-contract.mjs';
@@ -17,7 +18,8 @@ import { reportCacheMetricsFromEvents } from './cache-metrics.mjs';
 
 const CHATGPT_FEATURES = [
     { feature: 'composer', selectors: ['#prompt-textarea', '[data-testid="composer-textarea"]', 'div[contenteditable="true"]'] },
-    { feature: 'model-picker', selectors: CHATGPT_MODEL_SELECTOR_BUTTONS },
+    { feature: 'model-picker', selectors: [...CHATGPT_MODEL_SELECTOR_OBSERVATION.selectorCandidates] },
+    { feature: 'work-surface', selectors: [CHATGPT_SURFACE_RADIO_SELECTOR, CHATGPT_WORK_PICKER_MARKER_SELECTOR] },
     { feature: 'upload', selectors: ['button[aria-label*="Upload" i]', 'button[aria-label*="Attach" i]', 'button[data-testid*="plus" i]'] },
     { feature: 'response-feed', selectors: ['[data-message-author-role="assistant"]', '[data-turn="assistant"]', 'article[data-testid^="conversation-turn"]'] },
     { feature: 'copy-fallback', selectors: CHATGPT_COPY_SELECTORS.copyButtonSelectors },

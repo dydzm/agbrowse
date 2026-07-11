@@ -9,15 +9,16 @@ import { EVAL_TARGET_INTENTS, probeEvalTargetIntentFromHtml } from './eval/provi
 import { assertScrubbedSafe } from './eval/scrub-dom.mjs';
 
 /**
- * @typedef {{
- *   id?: string,
- *   vendor?: string,
- *   variant?: string,
- *   fixturePath?: string,
- *   scrub?: string[],
- *   mustContain?: string[],
- *   mustNotContain?: string[],
- * }} EvalFixture
+* @typedef {{
+*   id?: string,
+*   vendor?: string,
+*   variant?: string,
+*   fixturePath?: string,
+*   scrub?: string[],
+*   mustContain?: string[],
+*   mustNotContain?: string[],
+*   requiredIntents?: string[],
+* }} EvalFixture
  *
  * @typedef {{
  *   vendor?: string|null,
@@ -100,12 +101,16 @@ export async function runOneFixture(fixture, { fixtureDir = 'test/fixtures/provi
     } catch (error) {
         errors.push(serializeEvalError(error));
     }
-    const probes = Object.fromEntries(EVAL_TARGET_INTENTS.map((intent) => [
-        intent,
-        probeEvalTargetIntentFromHtml(html, { provider, intent, variant: fixture.variant || 'baseline' }),
-    ]));
-    const resolvedCount = Object.values(probes).filter((probe) => probe.status === 'resolved').length;
-    const requiredResolved = probes['composer.fill']?.status === 'resolved' && probes['send.click']?.status === 'resolved';
+   const probes = Object.fromEntries(EVAL_TARGET_INTENTS.map((intent) => [
+       intent,
+       probeEvalTargetIntentFromHtml(html, { provider, intent, variant: fixture.variant || 'baseline' }),
+   ]));
+   const resolvedCount = Object.values(probes).filter((probe) => probe.status === 'resolved').length;
+    const requiredIntents = Array.isArray(fixture.requiredIntents)
+        ? fixture.requiredIntents.filter(i => EVAL_TARGET_INTENTS.includes(/** @type {import('./eval/provider-targets.mjs').EvalTargetIntent} */ (i)))
+        : /** @type {string[]} */ (EVAL_TARGET_INTENTS.filter(i => i === 'composer.fill' || i === 'send.click'));
+    const requiredResolvedCount = requiredIntents.filter(intent => probes[intent]?.status === 'resolved').length;
+    const requiredResolved = requiredResolvedCount === requiredIntents.length;
     const mustContainErrors = (fixture.mustContain || []).filter((text) => !html.includes(text)).map((text) => serializeEvalError(createEvalError(
         'eval.fixture-must-contain-missing',
         'fixture-assert',
@@ -119,11 +124,12 @@ export async function runOneFixture(fixture, { fixtureDir = 'test/fixtures/provi
         { text, fixturePath },
     )));
     errors.push(...mustContainErrors, ...mustNotContainErrors);
-    if (!requiredResolved) {
-        errors.push(serializeEvalError(createEvalError('eval.target-resolution-failed', 'target-probe', 'required composer/send targets did not resolve', {
-            probes,
-        })));
-    }
+   if (!requiredResolved) {
+       errors.push(serializeEvalError(createEvalError('eval.target-resolution-failed', 'target-probe', 'required composer/send targets did not resolve', {
+           probes,
+            requiredIntents,
+       })));
+   }
     const status = /** @type {'pass'|'fail'} */ (errors.length === 0 ? 'pass' : 'fail');
     const text = htmlToText(html);
     return {
@@ -133,11 +139,14 @@ export async function runOneFixture(fixture, { fixtureDir = 'test/fixtures/provi
         fixturePath,
         fixtureSha256: await sha256File(fixturePath),
         snapshotId: crypto.createHash('sha256').update(text).digest('hex').slice(0, 16),
-        metrics: {
-            targetResolution: makeRatioMetric(resolvedCount, EVAL_TARGET_INTENTS.length, DEFAULT_EVAL_THRESHOLDS.uploadOpen),
-            composerFill: makeRatioMetric(probes['composer.fill']?.status === 'resolved' ? 1 : 0, 1, DEFAULT_EVAL_THRESHOLDS.composerFill),
-            uploadOpen: makeRatioMetric(probes['upload.open']?.status === 'resolved' ? 1 : 0, 1, DEFAULT_EVAL_THRESHOLDS.uploadOpen),
-            copyExactness: makeRatioMetric(probes['copy.click']?.status === 'resolved' ? 1 : 0, 1, DEFAULT_EVAL_THRESHOLDS.copyExactness),
+       metrics: {
+            targetResolution: makeRatioMetric(requiredResolvedCount, requiredIntents.length, DEFAULT_EVAL_THRESHOLDS.uploadOpen),
+            composerFill: makeRatioMetric(probes['composer.fill']?.status === 'resolved' ? 1 : 0, 1,
+                requiredIntents.includes('composer.fill') ? DEFAULT_EVAL_THRESHOLDS.composerFill : undefined),
+            uploadOpen: makeRatioMetric(probes['upload.open']?.status === 'resolved' ? 1 : 0, 1,
+                requiredIntents.includes('upload.open') ? DEFAULT_EVAL_THRESHOLDS.uploadOpen : undefined),
+            copyExactness: makeRatioMetric(probes['copy.click']?.status === 'resolved' ? 1 : 0, 1,
+                requiredIntents.includes('copy.click') ? DEFAULT_EVAL_THRESHOLDS.copyExactness : undefined),
             snapshotTokenEstimate: { value: estimateTokens(text), threshold: DEFAULT_EVAL_THRESHOLDS.snapshotTokenEstimateMax },
         },
         thresholds: DEFAULT_EVAL_THRESHOLDS,

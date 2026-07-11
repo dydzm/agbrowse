@@ -230,3 +230,73 @@ describe('web-ai MCP server', () => {
         expect(clicked).toEqual([]);
     });
 });
+
+// 04: web_ai_work_send MCP contract
+describe('web_ai_work_send MCP', () => {
+    it('lists web_ai_work_send in tools/list with correct schema', async () => {
+        const listed = await handleMcpMessage({ jsonrpc: '2.0', id: 100, method: 'tools/list' }, {});
+        const workSend = listed.result.tools.find(t => t.name === 'web_ai_work_send');
+        expect(workSend).toBeTruthy();
+        expect(workSend.inputSchema.properties.prompt.type).toBe('string');
+        expect(workSend.inputSchema.properties.power.minimum).toBe(1);
+        expect(workSend.inputSchema.properties.power.maximum).toBe(6);
+        expect(workSend.inputSchema.properties.speed.enum).toEqual(['standard', 'fast']);
+        expect(workSend.inputSchema.required).toContain('prompt');
+        expect(workSend.inputSchema.required).toContain('power');
+        expect(workSend.inputSchema.additionalProperties).toBe(false);
+    });
+
+    it('rejects unknown fields via additionalProperties:false', async () => {
+        const resp = await handleMcpMessage({
+            jsonrpc: '2.0',
+            id: 101,
+            method: 'tools/call',
+            params: {
+                name: 'web_ai_work_send',
+                arguments: { prompt: 'hello', power: 3, model: 'sol' },
+            },
+        }, {});
+        expect(resp.result.isError).toBe(true);
+        expect(resp.result.content[0].text).toContain('unknown property model');
+    });
+
+    it('rejects power out of range', async () => {
+        const resp = await handleMcpMessage({
+            jsonrpc: '2.0',
+            id: 102,
+            method: 'tools/call',
+            params: {
+                name: 'web_ai_work_send',
+                arguments: { prompt: 'hello', power: 8 },
+            },
+        }, {});
+        expect(resp.result.isError).toBe(true);
+        expect(resp.result.content[0].text).toMatch(/1\.\.6|maximum/i);
+    });
+
+    it('does not include model/effort/project/plugin/surface in schema', async () => {
+        const listed = await handleMcpMessage({ jsonrpc: '2.0', id: 103, method: 'tools/list' }, {});
+        const workSend = listed.result.tools.find(t => t.name === 'web_ai_work_send');
+        const props = Object.keys(workSend.inputSchema.properties);
+        expect(props).not.toContain('model');
+        expect(props).not.toContain('effort');
+        expect(props).not.toContain('project');
+        expect(props).not.toContain('plugin');
+        expect(props).not.toContain('surface');
+        expect(props).not.toContain('filePath');
+    });
+
+   it('web_ai_submit_prompt rejects surface=work', async () => {
+       const resp = await handleMcpMessage({
+           jsonrpc: '2.0',
+           id: 104,
+           method: 'tools/call',
+           params: {
+               name: 'web_ai_submit_prompt',
+               arguments: { prompt: 'hello', surface: 'work' },
+           },
+       }, {});
+        expect(resp.result.isError).toBe(true);
+        expect(resp.result.content[0].text).toContain('surface');
+    });
+});

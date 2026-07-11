@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C1 - Opaque Industrial Dark</title>
+<style>
+  :root {
+    --bg:#111213; --slab:#1a1c1f; --slab2:#212428; --line:#3a3f45;
+    --text:#f2f1ee; --muted:#9aa0a8; --accent:#f59e0b; --mono:"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--text);font-family:"Helvetica Neue",Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 32px}
+  nav{border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+  .brand{font-weight:800;letter-spacing:.08em;font-size:15px}
+  .brand b{color:var(--accent)}
+  .links{display:flex;gap:26px;font-size:13px;color:var(--muted)}
+  .links a{color:inherit;text-decoration:none}
+  .hero{padding:72px 0 40px}
+  .kicker{font:600 12px var(--mono);color:var(--accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:20px}
+  h1{font-size:64px;line-height:1.02;font-weight:800;letter-spacing:0;max-width:17ch;text-wrap:balance}
+  h1 .v{color:var(--accent)}
+  .sub{margin-top:22px;max-width:56ch;color:var(--muted);font-size:17px;text-wrap:balance}
+  .cta-row{display:flex;gap:12px;margin-top:30px;align-items:center}
+  .cta{background:var(--accent);color:#111;font:700 14px var(--mono);padding:13px 22px;border:0;cursor:pointer}
+  .cta2{background:var(--slab2);color:var(--text);font:600 14px/1 "Helvetica Neue",Arial,sans-serif;padding:14px 22px;border:1px solid var(--line);cursor:pointer}
+  /* pipeline */
+  .pipe{margin:58px 0 0;display:grid;grid-template-columns:1.2fr auto 1fr auto 1.1fr;gap:0;align-items:stretch}
+  .term{background:#0c0d0e;border:1px solid var(--line);padding:20px;font:12.5px/1.8 var(--mono);color:#d7dce2}
+  .term .bar{display:flex;gap:6px;margin-bottom:14px}
+  .term .dot{width:9px;height:9px;border-radius:50%;background:#3a3f45}
+  .term .p{color:var(--accent)}
+  .term .c{color:#6b7280}
+  .arrow{display:flex;align-items:center;padding:0 14px}
+  .arrow svg{display:block}
+  .vendors{display:flex;flex-direction:column;gap:10px;justify-content:center}
+  .vch{background:var(--slab);border:1px solid var(--line);padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+  .vch b{font-size:14px}
+  .vch span{font:11px var(--mono);color:var(--muted)}
+  .vch.live{border-left:3px solid var(--accent)}
+  .browser{background:var(--slab);border:1px solid var(--line);display:flex;flex-direction:column}
+  .browser .tb{background:var(--slab2);border-bottom:1px solid var(--line);padding:9px 14px;font:11px var(--mono);color:var(--muted);display:flex;gap:10px;align-items:center}
+  .browser .tb i{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block}
+  .browser .bd{flex:1;padding:16px;font:12px/1.7 var(--mono);color:#c9ced6}
+  .browser .bd em{color:var(--accent);font-style:normal}
+  /* section hint */
+  .sect{margin-top:72px;border-top:1px solid var(--line);padding-top:34px}
+  .sect h2{font-size:22px;font-weight:700;margin-bottom:18px}
+  table{width:100%;border-collapse:collapse;font:12.5px var(--mono)}
+  th{color:var(--muted);text-align:left;font-weight:500;border-bottom:1px solid var(--line);padding:9px 12px}
+  td{border-bottom:1px solid #26282c;padding:11px 12px;color:#d7dce2}
+  td.ok{color:var(--accent)}
+</style>
+</head>
+<body>
+<nav><div class="wrap nav-in">
+  <div class="brand">AG<b>BROWSE</b></div>
+  <div class="links"><a href="#">Workflow</a><a href="#">Web AI</a><a href="#">Code Artifacts</a><a href="#">Docs</a><a href="#">GitHub</a></div>
+</div></nav>
+<div class="wrap">
+  <header class="hero">
+    <p class="kicker">web-ai sessions over real chrome</p>
+    <h1>Run <span class="v">ChatGPT, Gemini &amp; Grok</span> from your terminal.</h1>
+    <p class="sub">agbrowse drives real browser tabs by CDP. Send a prompt, get a session id, poll from any shell — long Pro and Deep Think runs survive terminal exit.</p>
+    <div class="cta-row">
+      <button class="cta">npm install -g agbrowse</button>
+      <button class="cta2">Read the web-ai docs</button>
+    </div>
+    <div class="pipe">
+      <div class="term">
+        <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div><span class="p">$</span> agbrowse web-ai send \</div>
+        <div>&nbsp;&nbsp;--vendor chatgpt --model pro \</div>
+        <div>&nbsp;&nbsp;--prompt "Research and cite."</div>
+        <div class="c">session: s_9f2e41</div>
+        <div><span class="p">$</span> agbrowse web-ai poll \</div>
+        <div>&nbsp;&nbsp;--session s_9f2e41 --timeout 1800</div>
+      </div>
+      <div class="arrow"><svg width="34" height="16" viewBox="0 0 34 16"><path d="M0 8h28m0 0-6-6m6 6-6 6" stroke="#f59e0b" stroke-width="1.5" fill="none"/></svg></div>
+      <div class="vendors">
+        <div class="vch live"><b>ChatGPT</b><span>pro · streaming</span></div>
+        <div class="vch"><b>Gemini</b><span>ready</span></div>
+        <div class="vch"><b>Grok</b><span>ready</span></div>
+      </div>
+      <div class="arrow"><svg width="34" height="16" viewBox="0 0 34 16"><path d="M0 8h28m0 0-6-6m6 6-6 6" stroke="#f59e0b" stroke-width="1.5" fill="none"/></svg></div>
+      <div class="browser">
+        <div class="tb"><i></i> chatgpt.com — observed tab #3</div>
+        <div class="bd">snapshot ok · 118 nodes<br>console: 0 errors<br>network: 12 requests<br><em>answer captured → result.md</em></div>
+      </div>
+    </div>
+  </header>
+  <section class="sect">
+    <h2>Sessions survive your shell.</h2>
+    <table>
+      <tr><th>session</th><th>vendor</th><th>model</th><th>state</th><th>poll timeout</th></tr>
+      <tr><td>s_9f2e41</td><td>chatgpt</td><td>pro</td><td class="ok">streaming</td><td>1800s</td></tr>
+      <tr><td>s_b81c07</td><td>gemini</td><td>deep-think</td><td class="ok">queued</td><td>1200s</td></tr>
+      <tr><td>s_4d90aa</td><td>grok</td><td>expert</td><td>done</td><td>—</td></tr>
+    </table>
+  </section>
+</div>
+</body>
+</html>

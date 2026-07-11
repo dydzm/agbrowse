@@ -192,6 +192,46 @@ describe('web-ai CLI contract', () => {
         expect(invalid.stderr).toContain('unsupported ChatGPT reasoning effort');
     });
 
+    it('accepts canonical ChatGPT effort values medium/high/xhigh for thinking', async () => {
+        for (const effort of ['medium', 'high', 'xhigh']) {
+            const result = await execBrowser(['web-ai', 'render', '--vendor', 'chatgpt', '--prompt', 'hello', '--model', 'thinking', '--effort', effort]);
+            expect(result.code).toBe(0);
+            expect(result.stderr).not.toContain('unsupported');
+        }
+    });
+
+    it('accepts legacy effort aliases for thinking: light/low/standard/normal/regular/default/extended/heavy/extra-high', async () => {
+        for (const effort of ['light', 'low', 'standard', 'normal', 'regular', 'default', 'extended', 'heavy', 'extra-high']) {
+            const result = await execBrowser(['web-ai', 'render', '--vendor', 'chatgpt', '--prompt', 'hello', '--model', 'thinking', '--effort', effort]);
+            expect(result.code).toBe(0);
+            expect(result.stderr).not.toContain('unsupported');
+        }
+    });
+
+    it('accepts Pro legacy efforts standard/normal/regular/default/extended but rejects medium/high/xhigh/light/heavy', async () => {
+        for (const effort of ['standard', 'normal', 'regular', 'default', 'extended']) {
+            const result = await execBrowser(['web-ai', 'render', '--vendor', 'chatgpt', '--prompt', 'hello', '--model', 'pro', '--effort', effort]);
+            expect(result.code).toBe(0);
+        }
+        for (const effort of ['medium', 'high', 'xhigh', 'light', 'heavy']) {
+            const result = await execBrowser(['web-ai', 'render', '--vendor', 'chatgpt', '--prompt', 'hello', '--model', 'pro', '--effort', effort]);
+            expect(result.code).not.toBe(0);
+            expect(result.stderr).toContain('unsupported');
+        }
+    });
+
+    it('rejects instant with any effort', async () => {
+        const result = await execBrowser(['web-ai', 'render', '--vendor', 'chatgpt', '--prompt', 'hello', '--model', 'instant', '--effort', 'medium']);
+        expect(result.code).not.toBe(0);
+        expect(result.stderr).toContain('unsupported');
+    });
+
+    it('rejects --model gpt-5.6-sol (should use --family)', async () => {
+        const result = await execBrowser(['web-ai', 'render', '--vendor', 'chatgpt', '--prompt', 'hello', '--model', 'gpt-5.6-sol']);
+        expect(result.code).not.toBe(0);
+        expect(result.stderr).toContain('unsupported ChatGPT model selection');
+    });
+
     it('accepts observed Gemini and Grok model choices in CLI preflight', async () => {
         const gemini = await execBrowser(['web-ai', 'render', '--vendor', 'gemini', '--prompt', 'hello', '--model', 'thinking']);
         expect(gemini.stderr).not.toContain('unsupported gemini model selection');
@@ -327,5 +367,44 @@ describe('web-ai CLI contract', () => {
         } finally {
             rmSync(tmpDir, { recursive: true, force: true });
         }
+    });
+});
+
+// 04: Work send CLI contract
+describe('web-ai work send CLI', () => {
+    it('rejects work send without --prompt', async () => {
+        const result = await execBrowser(['web-ai', 'work', 'send', '--power', '3']);
+        expect(result.code).not.toBe(0);
+        expect(result.stderr).toContain('--prompt is required');
+    });
+
+    it('rejects work send without --power', async () => {
+        const result = await execBrowser(['web-ai', 'work', 'send', '--prompt', 'hello']);
+        expect(result.code).not.toBe(0);
+        expect(result.stderr).toContain('--power is required');
+    });
+
+    it('rejects invalid power (0)', async () => {
+        const result = await execBrowser(['web-ai', 'work', 'send', '--prompt', 'hello', '--power', '0']);
+        expect(result.code).not.toBe(0);
+        expect(result.stderr).toContain('1..6');
+    });
+
+    it('rejects invalid power (7)', async () => {
+        const result = await execBrowser(['web-ai', 'work', 'send', '--prompt', 'hello', '--power', '7']);
+        expect(result.code).not.toBe(0);
+        expect(result.stderr).toContain('1..6');
+    });
+
+    it('rejects invalid speed', async () => {
+        const result = await execBrowser(['web-ai', 'work', 'send', '--prompt', 'hello', '--power', '3', '--speed', 'turbo']);
+        expect(result.code).not.toBe(0);
+        expect(result.stderr).toContain('standard');
+    });
+
+    it('rejects unknown work subcommand', async () => {
+        const result = await execBrowser(['web-ai', 'work', 'query']);
+        expect(result.code).not.toBe(0);
+        expect(result.stderr).toContain('Unknown work subcommand');
     });
 });

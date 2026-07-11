@@ -7,10 +7,11 @@
 import { createInterface } from 'node:readline';
 import { buildWebAiSnapshot } from './ax-snapshot.mjs';
 import { sendWebAi, pollWebAi } from './chatgpt.mjs';
+import { isWorkSession, pollWorkSession } from './chatgpt-work-picker.mjs';
 import { geminiSendWebAi, geminiPollWebAi } from './gemini-live.mjs';
 import { grokSendWebAi, grokPollWebAi } from './grok-live.mjs';
 import { runDoctor } from './doctor.mjs';
-import { getSession } from './session.mjs';
+import { getSession, resolveTimeoutBudgetSec } from './session.mjs';
 import {
     captureCopiedResponseText,
     CHATGPT_COPY_SELECTORS,
@@ -190,6 +191,15 @@ async function callMcpTool(name, args, deps, state) {
     }
     if (name === 'web_ai_submit_prompt') {
         const provider = providerFromArgs(args);
+        if (args.surface === 'work') {
+            return {
+                ok: false,
+                code: 'capability.unsupported',
+                tool: name,
+                reason: 'Chat submit does not support Work surface; use web_ai_work_send.',
+                retryHint: 'use-work-send',
+            };
+        }
         const rawPolicyKeys = new Set(Object.keys(args.policy === undefined ? {} : args.policy));
         const effectivePolicy = applyProviderDefaults(provider, policy, { explicitKeys: rawPolicyKeys });
         enforcePolicy(effectivePolicy, {
@@ -208,6 +218,72 @@ async function callMcpTool(name, args, deps, state) {
                 attachmentPolicy: 'inline-only',
                 reasoningEffort: args.effort || args.reasoningEffort,
             })),
+        );
+    }
+   if (name === 'web_ai_work_send') {
+        const { configureWorkSurface, normalizeWorkPower, normalizeWorkSpeed, submitWorkPrompt } = await import('./chatgpt-work-picker.mjs');
+        const { insertPromptIntoComposer } = await import('./chatgpt-composer.mjs');
+        const { createSession } = await import('./session.mjs');
+
+        // Validate before any browser mutation
+        const powerMapping = normalizeWorkPower(args.power);
+        const speed = normalizeWorkSpeed(args.speed);
+        const timeoutSec = args.timeout ? Number(args.timeout) : undefined;
+
+        const page = await deps.getPage();
+        const targetId = await deps.getTargetId?.().catch(() => 'default');
+        const tabKey = targetId || 'default';
+
+        return tabMutex.runExclusive(tabKey, () =>
+            withMcpActiveCommand(name, 'chatgpt', deps, args, async () => {
+                const config = await configureWorkSurface(page, {
+                    power: powerMapping.power,
+                    speed,
+                });
+
+                // Insert prompt, then submit via scoped button + commit verification
+                await insertPromptIntoComposer(page, args.prompt, { vendor: 'chatgpt' });
+                const commitResult = await submitWorkPrompt(page, args.prompt);
+
+                // Session is only created AFTER commit evidence is observed
+                const session = createSession(
+                    { vendor: 'chatgpt', prompt: args.prompt },
+                    {
+                        vendor: 'chatgpt',
+                        originalUrl: commitResult.taskUrl,
+                        conversationUrl: commitResult.taskUrl,
+                        deadlineAt: timeoutSec
+                            ? new Date(Date.now() + timeoutSec * 1000).toISOString()
+                            : null,
+                        envelopeSummary: {
+                            surface: 'work',
+                            power: powerMapping.power,
+                            speed,
+                            model: powerMapping.model,
+                            effort: powerMapping.effort,
+                            taskId: commitResult.taskId,
+                            taskUrl: commitResult.taskUrl,
+                        },
+                        responseContract: 'work',
+                    },
+                );
+
+                return {
+                    ok: true,
+                    status: 'work-sent',
+                    surface: 'work',
+                    sessionId: session.sessionId,
+                    taskId: commitResult.taskId,
+                    taskUrl: commitResult.taskUrl,
+                    power: powerMapping.power,
+                    speed,
+                    model: powerMapping.model,
+                    effort: powerMapping.effort,
+                    responseContract: 'work',
+                    evidence: config.evidence,
+                    warnings: commitResult.warnings || [],
+                };
+            }),
         );
     }
     if (name === 'web_ai_wait_response' || name === 'web_ai_session_resume') {
@@ -256,14 +332,21 @@ async function runMcpSessionPoll(name, args, deps) {
                 ...args,
                 sessionId,
             };
-            return withMcpActiveCommand(name, provider, sessionDeps, sessionArgs, () =>
-                pollByProvider(provider, sessionDeps, {
+            return withMcpActiveCommand(name, provider, sessionDeps, sessionArgs, () => {
+                const effectivePollFn = isWorkSession(session)
+                    ? (d, i) => pollWorkSession(d, i)
+                    : (d, i) => pollByProvider(provider, d, i);
+                return effectivePollFn(sessionDeps, {
                     ...args,
                     vendor: session.vendor || provider,
                     session: session.sessionId,
-                    timeout: args.timeout,
-                }),
-            );
+                    timeout: resolveTimeoutBudgetSec(
+                        args,
+                        session,
+                        session.vendor || provider,
+                    ),
+                });
+            });
         }),
     );
 }

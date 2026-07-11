@@ -16,345 +16,430 @@
   <meta name="twitter:description" content="A small, inspectable command surface for AI agents using real browser state and retrievable ChatGPT code artifacts.">
   <meta name="twitter:image" content="https://lidge-jun.github.io/agbrowse/assets/social-preview.svg">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
   <style>
     :root {
-      color-scheme: dark;
-      --bg: #07111f;
-      --panel: #0b1220;
-      --panel-2: #111827;
-      --line: #1e3a5f;
-      --text: #f8fafc;
-      --muted: #a8b3c7;
-      --blue: #38bdf8;
-      --green: #22c55e;
-      --amber: #f59e0b;
-      --red: #ef4444;
-      --max: 1120px;
+      --bg:#e8e6e1;--ink:#111;--panel:#fff;--accent:#a3e635;
+      --mute:#57534e;--mute-dk:#a8a29e;
+      --mono:'SF Mono',Menlo,Consolas,monospace;
+      --head:'Archivo Black','Helvetica Neue',Arial,sans-serif;
+      --body:'Helvetica Neue',Arial,sans-serif;
+      --border:3px solid #111;--shadow:8px 8px 0 #111;
+    }
+    *{box-sizing:border-box;margin:0}
+    body{background:var(--bg);color:var(--ink);font-family:var(--body);line-height:1.5}
+    a{color:inherit}
+    a:focus-visible,.cta:focus-visible,.doc-link:focus-visible,.tile:focus-visible{
+      outline:3px solid var(--ink);outline-offset:2px}
+    .wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+
+    /* --- skip link --- */
+    .skip-link{position:absolute;left:-9999px;top:auto;padding:8px 16px;
+      background:var(--accent);color:var(--ink);font:700 14px var(--mono);z-index:100;text-decoration:none}
+    .skip-link:focus{left:8px;top:8px}
+
+    /* --- nav --- */
+    nav{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:var(--border)}
+    .nav-in{display:flex;align-items:center;justify-content:space-between;padding:14px 0;gap:16px}
+    .brand{font:900 17px var(--head);text-transform:uppercase;text-decoration:none;letter-spacing:0}
+    .nav-links{display:flex;gap:18px;font:700 12px var(--mono);text-transform:uppercase;
+      overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;scrollbar-width:none}
+    .nav-links::-webkit-scrollbar{display:none}
+    .nav-links a{color:var(--ink);text-decoration:none;padding:4px 0}
+
+    /* --- hero --- */
+    .hero{padding:56px 0 40px;min-height:calc(100svh - 56px);display:flex;flex-direction:column;justify-content:flex-end}
+    h1{font:900 clamp(48px,8vw,96px)/0.92 var(--head);text-transform:uppercase;letter-spacing:0;max-width:13ch;overflow-wrap:break-word}
+    h1 .hl{background:var(--accent);padding:0 10px;display:inline}
+    .hero-sub{margin-top:20px;font:14px/1.7 var(--mono);max-width:60ch;color:var(--mute)}
+    .cta-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:28px;align-items:center}
+    .cta{display:inline-block;background:var(--accent);color:var(--ink);
+      font:800 15px var(--mono);padding:16px 26px;border:var(--border);box-shadow:var(--shadow);
+      text-decoration:none;transition:transform 0.15s,box-shadow 0.15s}
+    .cta:hover{transform:translate(-2px,-2px);box-shadow:10px 10px 0 var(--ink)}
+    .cta:active{transform:translate(2px,2px);box-shadow:4px 4px 0 var(--ink)}
+    .cta2{font:600 14px var(--body);color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+
+    /* terminal window */
+    .term{margin-top:40px;background:var(--panel);border:var(--border);box-shadow:var(--shadow)}
+    .term-bar{background:var(--ink);color:var(--panel);font:700 12px var(--mono);
+      padding:10px 16px;display:flex;justify-content:space-between;align-items:center}
+    .term-bar .dots{display:flex;gap:6px}
+    .term-bar .dot{width:10px;height:10px;border:2px solid var(--mute-dk)}
+    .term-bar .dot.g{background:var(--accent);border-color:var(--accent)}
+    .term-body{padding:20px 22px;font:13.5px/2 var(--mono)}
+    .term-body .p{font-weight:700}
+    .term-body .out{color:var(--mute)}
+    .term-body .ok{background:var(--accent);padding:1px 6px;font-weight:700}
+
+    /* caret blink */
+    .caret{display:inline-block;width:8px;height:16px;background:var(--ink);vertical-align:text-bottom;
+      animation:blink 1s step-end infinite}
+    @keyframes blink{50%{opacity:0}}
+    @media(prefers-reduced-motion:reduce){.caret{animation:none;opacity:1}}
+
+    /* --- stat strip --- */
+    .stat-strip{background:var(--ink);color:var(--panel);border-top:var(--border);border-bottom:var(--border);
+      padding:16px 0;overflow:hidden}
+    .stat-in{display:flex;gap:40px;font:700 12px var(--mono);text-transform:uppercase;white-space:nowrap;
+      justify-content:center;flex-wrap:wrap}
+    .stat-in b{color:var(--accent)}
+
+    /* --- fullscreen scrub section --- */
+    .scrub-wrap{position:relative;height:calc(3 * 100svh)}
+    .scrub-stage{position:sticky;top:0;height:100svh;overflow:hidden}
+    .scrub-track{display:flex;width:300%;height:100%;will-change:transform}
+    .vendor-panel{width:calc(100% / 3);height:100%;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;padding:40px 28px;text-align:center}
+    .vendor-panel h2{font:900 clamp(40px,7vw,80px)/1 var(--head);text-transform:uppercase;letter-spacing:0}
+    .vendor-panel .vp-sub{font:12px var(--mono);color:var(--mute);text-transform:uppercase;
+      letter-spacing:0;margin-top:16px}
+    .vendor-panel .vp-dot{width:14px;height:14px;background:var(--accent);border:2px solid var(--ink);
+      display:inline-block;margin-bottom:12px}
+    .vendor-panel .vp-term{background:var(--panel);border:var(--border);box-shadow:6px 6px 0 var(--ink);
+      max-width:560px;width:100%;text-align:left;margin-top:28px}
+    .vendor-panel .vp-term .term-bar{font-size:11px}
+    .vendor-panel .vp-term .term-body{font-size:12.5px;line-height:1.9;padding:16px 18px}
+    .vp-chatgpt{background:#f5f0e8;border-bottom:var(--border)}
+    .vp-gemini{background:#eaeef5;border-bottom:var(--border)}
+    .vp-grok{background:#f0ebe5}
+    .scrub-dots{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
+      display:flex;gap:10px;z-index:2}
+    .scrub-dots span{width:10px;height:10px;border:2px solid var(--ink);background:transparent;transition:background 0.2s}
+    .scrub-dots span.active{background:var(--accent)}
+
+    /* reduced motion: show stacked */
+    @media(prefers-reduced-motion:reduce){
+      .scrub-wrap{height:auto}
+      .scrub-stage{position:relative;height:auto;overflow:visible}
+      .scrub-track{flex-direction:column;width:100%;transform:none !important}
+      .vendor-panel{width:100%;height:auto;min-height:80svh}
+      .scrub-dots{display:none}
     }
 
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at 72% 18%, rgba(56, 189, 248, .2), transparent 28%), var(--bg);
-      color: var(--text);
-      line-height: 1.5;
+    /* --- workflow tiles --- */
+    .section{padding:80px 0}
+    .section h2{font:900 clamp(28px,4vw,44px)/1.05 var(--head);text-transform:uppercase;
+      letter-spacing:0;margin-bottom:36px}
+    .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .tile{background:var(--panel);border:var(--border);box-shadow:6px 6px 0 var(--ink);padding:24px 22px 20px}
+    .tile .n{font:900 48px var(--head);color:var(--accent);
+      -webkit-text-stroke:2px var(--ink);paint-order:stroke fill}
+    .tile h3{font:900 18px var(--head);text-transform:uppercase;margin:10px 0 8px;letter-spacing:0}
+    .tile p{font-size:14px;color:var(--mute);line-height:1.6}
+    .tile code{font:12px var(--mono);background:var(--ink);color:var(--panel);padding:2px 6px}
+
+    /* --- split section (code artifacts) --- */
+    .split{display:grid;grid-template-columns:1fr 1.2fr;gap:40px;align-items:start}
+    .split-text p{font-size:15px;color:var(--mute);margin-top:16px;line-height:1.65}
+    .split-text code{font:12.5px var(--mono);background:var(--ink);color:var(--panel);padding:2px 6px}
+
+    /* --- verification ledger --- */
+    .ledger{list-style:none;padding:0}
+    .ledger li{border-bottom:var(--border);padding:16px 0;font-size:14px;line-height:1.6}
+    .ledger li:first-child{border-top:var(--border)}
+    .ledger li strong{font-family:var(--body);font-weight:700}
+    .ledger li code{font:12px var(--mono);background:var(--ink);color:var(--panel);padding:2px 6px}
+
+    /* --- docs band --- */
+    .docs-band{background:var(--ink);color:var(--panel);padding:56px 0;border-top:var(--border);border-bottom:var(--border)}
+    .docs-band h2{font:900 clamp(24px,3.5vw,36px)/1.1 var(--head);text-transform:uppercase;
+      color:var(--panel);margin-bottom:28px;letter-spacing:0}
+    .doc-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+    .doc-link{display:block;background:transparent;border:2px solid var(--mute-dk);
+      padding:18px 20px;font:700 14px var(--mono);text-transform:uppercase;color:var(--panel);
+      text-decoration:none;transition:border-color 0.15s,color 0.15s}
+    .doc-link:hover{border-color:var(--accent);color:var(--accent)}
+    .doc-link span{display:block;font:400 11px var(--mono);color:var(--mute-dk);
+      text-transform:none;margin-top:4px}
+
+    /* --- footer --- */
+    footer{padding:24px 0;font:12px var(--mono);color:var(--mute);text-align:center}
+
+    /* --- reveal system (JS-gated) --- */
+    html.js .reveal{opacity:0;transform:translateY(16px);
+      transition:opacity 0.6s ease,transform 0.6s ease}
+    html.js .reveal.in{opacity:1;transform:none}
+    html.js .reveal.d1{transition-delay:0.1s}
+    html.js .reveal.d2{transition-delay:0.2s}
+    html.js .reveal.d3{transition-delay:0.3s}
+    @media(prefers-reduced-motion:reduce){
+      html.js .reveal{opacity:1;transform:none;transition:none}
     }
-    a { color: inherit; }
-    .shell { min-height: 100vh; }
-    .nav {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      backdrop-filter: blur(18px);
-      background: rgba(7, 17, 31, .78);
-      border-bottom: 1px solid rgba(148, 163, 184, .16);
+
+    /* --- hover feedback (enumerated properties) --- */
+    .tile,.term,.doc-link{
+      transition:transform 0.15s ease,box-shadow 0.15s ease,border-color 0.15s ease,color 0.15s ease}
+    .tile:hover,.term:hover{transform:translate(-2px,-2px);box-shadow:10px 10px 0 var(--ink)}
+    .tile:active,.term:active{transform:translate(2px,2px);box-shadow:4px 4px 0 var(--ink)}
+
+    /* --- responsive --- */
+    @media(max-width:900px){
+      .tiles{grid-template-columns:1fr}
+      .split{grid-template-columns:1fr}
     }
-    .nav-inner {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 16px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 20px;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-weight: 800;
-      letter-spacing: .04em;
-    }
-    .mark {
-      width: 34px;
-      height: 34px;
-      display: grid;
-      place-items: center;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: var(--panel-2);
-      color: var(--blue);
-      font: 700 16px SFMono-Regular, Menlo, monospace;
-    }
-    .nav-links {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 14px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .nav-links a { text-decoration: none; }
-    .hero {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 84px 24px 52px;
-      display: grid;
-      grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
-      gap: 42px;
-      align-items: center;
-    }
-    .eyebrow {
-      color: var(--blue);
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-    }
-    h1 {
-      margin: 14px 0 20px;
-      max-width: 760px;
-      font-size: clamp(48px, 7vw, 88px);
-      line-height: .95;
-      letter-spacing: 0;
-    }
-    .hero p {
-      max-width: 660px;
-      color: var(--muted);
-      font-size: 20px;
-    }
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 30px;
-    }
-    .button {
-      display: inline-flex;
-      align-items: center;
-      min-height: 44px;
-      padding: 0 16px;
-      border-radius: 8px;
-      border: 1px solid rgba(148, 163, 184, .28);
-      text-decoration: none;
-      font-weight: 700;
-      background: #f8fafc;
-      color: #08111f;
-    }
-    .button.secondary {
-      background: transparent;
-      color: var(--text);
-    }
-    .terminal {
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      overflow: hidden;
-      background: rgba(11, 18, 32, .86);
-      box-shadow: 0 28px 70px rgba(0, 0, 0, .38);
-    }
-    .terminal-head {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      padding: 14px 16px;
-      background: var(--panel-2);
-      border-bottom: 1px solid rgba(148, 163, 184, .12);
-    }
-    .dot { width: 10px; height: 10px; border-radius: 50%; }
-    .red { background: var(--red); }
-    .amber { background: var(--amber); }
-    .green { background: var(--green); }
-    pre {
-      margin: 0;
-      padding: 24px;
-      overflow-x: auto;
-      color: #dbeafe;
-      font: 14px/1.65 SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-    .section {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 42px 24px;
-    }
-    .section h2 {
-      margin: 0 0 20px;
-      font-size: 32px;
-      letter-spacing: 0;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-    }
-    .card {
-      border: 1px solid rgba(148, 163, 184, .18);
-      border-radius: 8px;
-      padding: 20px;
-      background: rgba(15, 23, 42, .68);
-    }
-    .card h3 {
-      margin: 0 0 8px;
-      font-size: 18px;
-    }
-    .card p, .section p {
-      color: var(--muted);
-      margin: 0;
-    }
-    .split {
-      display: grid;
-      grid-template-columns: minmax(0, .9fr) minmax(320px, 1.1fr);
-      gap: 24px;
-      align-items: start;
-    }
-    .checklist {
-      display: grid;
-      gap: 10px;
-      padding: 0;
-      margin: 0;
-      list-style: none;
-    }
-    .checklist li {
-      border: 1px solid rgba(148, 163, 184, .16);
-      border-radius: 8px;
-      padding: 12px 14px;
-      color: var(--muted);
-      background: rgba(15, 23, 42, .46);
-    }
-    footer {
-      max-width: var(--max);
-      margin: 0 auto;
-      padding: 36px 24px 54px;
-      color: var(--muted);
-      border-top: 1px solid rgba(148, 163, 184, .12);
-    }
-    @media (max-width: 860px) {
-      .hero, .split { grid-template-columns: 1fr; }
-      .grid { grid-template-columns: 1fr; }
-      .nav-inner { align-items: flex-start; flex-direction: column; }
-      h1 { font-size: 52px; }
-    }
-    @media (max-width: 440px) {
-      .hero { padding-top: 54px; }
-      h1 { font-size: 42px; }
-      .hero p { font-size: 17px; }
-      pre { font-size: 12px; }
+    @media(max-width:600px){
+      h1{font-size:clamp(30px,8.5vw,44px)}
+      .hero{padding:32px 0 28px;min-height:calc(100svh - 56px)}
+      .stat-in{gap:20px;font-size:11px;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto}
+      .nav-links{gap:14px;font-size:11px}
+      .vendor-panel{padding:32px 20px}
+      .vendor-panel h2{font-size:clamp(32px,9vw,48px)}
     }
   </style>
+  <script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
-  <div class="shell">
-    <nav class="nav" aria-label="Primary">
-      <div class="nav-inner">
-        <div class="brand"><span class="mark">ag</span><span>AGBROWSE</span></div>
-        <div class="nav-links">
-          <a href="#workflow">Workflow</a>
-          <a href="#web-ai">Web AI</a>
-          <a href="#code-artifacts">Code Artifacts</a>
-          <a href="#verification">Verification</a>
-          <a href="dev/index.html">Developer Docs</a>
-          <a href="dev/ko/index.html">한국어</a>
-          <a href="https://github.com/lidge-jun/agbrowse">GitHub</a>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <nav>
+    <div class="wrap nav-in">
+      <a class="brand" href="#">agbrowse</a>
+      <div class="nav-links">
+        <a href="#web-ai">Web-AI</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#code-artifacts">Artifacts</a>
+        <a href="#verification">Gates</a>
+        <a href="dev/index.html">Docs</a>
+        <a href="dev/ko/index.html">한국어</a>
+        <a href="https://github.com/lidge-jun/agbrowse">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main">
+
+    <!-- HERO -->
+    <section class="hero wrap" id="top">
+      <h1>Browser <span class="hl">hands</span> for AI agents.</h1>
+      <p class="hero-sub">Real Chrome tabs. Real ChatGPT / Gemini / Grok web sessions.
+        Short-lived commands, durable session ids, zero MCP server.</p>
+      <div class="cta-row">
+        <a class="cta" href="https://www.npmjs.com/package/agbrowse">$ npm i -g agbrowse</a>
+        <a class="cta2" href="dev/index.html">Developer docs</a>
+      </div>
+      <div class="term">
+        <div class="term-bar">
+          <span>AGBROWSE</span>
+          <span>CDP :9222</span>
+        </div>
+        <div class="term-body">
+          <div><span class="p">$</span> agbrowse start --headed</div>
+          <div class="out">chrome attached &middot; 4 tabs</div>
+          <div><span class="p">$</span> agbrowse web-ai send --vendor chatgpt \</div>
+          <div>&nbsp;&nbsp;--model pro --inline-only \</div>
+          <div>&nbsp;&nbsp;--prompt "Research and cite sources."</div>
+          <div class="out">session s_9f2e41 &middot; <span class="ok">STREAMING</span></div>
+          <div><span class="p">$</span> agbrowse web-ai poll --session s_9f2e41 --timeout 1800</div>
+          <div class="out">done &middot; answer &rarr; result.md &middot; 2,914 words<span class="caret"></span></div>
         </div>
       </div>
-    </nav>
+    </section>
 
-    <main>
-      <section class="hero">
-        <div>
-          <div class="eyebrow">Standalone CDP toolkit</div>
-          <h1>Browser automation for AI agents.</h1>
-          <p>Drive real Chrome tabs from terminal commands, collect visible evidence, and run ChatGPT, Gemini, or Grok web sessions through a durable CLI workflow.</p>
-          <div class="actions">
-            <a class="button" href="https://www.npmjs.com/package/agbrowse">Install from npm</a>
-            <a class="button secondary" href="dev/index.html">Open developer docs</a>
+    <!-- STAT STRIP -->
+    <div class="stat-strip reveal">
+      <div class="wrap stat-in">
+        <span><b>3</b> vendors, one CLI</span>
+        <span><b>0</b> MCP servers required</span>
+        <span>durable <b>session ids</b></span>
+        <span><b>zip</b> code artifacts</span>
+      </div>
+    </div>
+
+    <!-- WEB-AI FULLSCREEN SCRUB -->
+    <section class="scrub-wrap" id="web-ai">
+      <div class="scrub-stage">
+        <div class="scrub-track" id="scrubTrack">
+          <div class="vendor-panel vp-chatgpt">
+            <span class="vp-dot"></span>
+            <h2>ChatGPT</h2>
+            <p class="vp-sub">pro &middot; thinking &middot; code-mode &middot; zip artifacts</p>
+            <div class="vp-term">
+              <div class="term-bar"><span>chatgpt.com</span><span>tab #3</span></div>
+              <div class="term-body">
+                <div><span class="p">$</span> agbrowse web-ai send \</div>
+                <div>&nbsp;&nbsp;--vendor chatgpt --model pro \</div>
+                <div>&nbsp;&nbsp;--inline-only \</div>
+                <div>&nbsp;&nbsp;--prompt "Create a Flask MVP."</div>
+                <div class="out">session s_9f2e41 &middot; streaming</div>
+              </div>
+            </div>
+          </div>
+          <div class="vendor-panel vp-gemini">
+            <span class="vp-dot"></span>
+            <h2>Gemini</h2>
+            <p class="vp-sub">deep-think &middot; durable poll &middot; inline uploads</p>
+            <div class="vp-term">
+              <div class="term-bar"><span>gemini.google.com</span><span>tab #5</span></div>
+              <div class="term-body">
+                <div><span class="p">$</span> agbrowse web-ai send \</div>
+                <div>&nbsp;&nbsp;--vendor gemini \</div>
+                <div>&nbsp;&nbsp;--inline-only \</div>
+                <div>&nbsp;&nbsp;--prompt "Analyze this codebase."</div>
+                <div class="out">session s_b81c07 &middot; queued</div>
+              </div>
+            </div>
+          </div>
+          <div class="vendor-panel vp-grok">
+            <span class="vp-dot"></span>
+            <h2>Grok</h2>
+            <p class="vp-sub">expert mode &middot; web UI exec &middot; markdown capture</p>
+            <div class="vp-term">
+              <div class="term-bar"><span>grok.com</span><span>tab #7</span></div>
+              <div class="term-body">
+                <div><span class="p">$</span> agbrowse web-ai send \</div>
+                <div>&nbsp;&nbsp;--vendor grok \</div>
+                <div>&nbsp;&nbsp;--inline-only \</div>
+                <div>&nbsp;&nbsp;--prompt "Summarize this repo."</div>
+                <div class="out">session s_4d90aa &middot; queued</div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="terminal" aria-label="agbrowse quickstart terminal">
-          <div class="terminal-head">
-            <span class="dot red"></span>
-            <span class="dot amber"></span>
-            <span class="dot green"></span>
-          </div>
-          <pre><code>npm install -g agbrowse
-agbrowse start --headed
-agbrowse navigate "https://chatgpt.com/"
-agbrowse snapshot --interactive
-agbrowse web-ai code \
-  --vendor chatgpt \
-  --model thinking \
-  --effort standard \
-  --prompt "Create a small CLI app with tests." \
-  --output-zip ./result.zip</code></pre>
+        <div class="scrub-dots" id="scrubDots">
+          <span class="active"></span><span></span><span></span>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="section" id="workflow">
-        <h2>Observe before acting.</h2>
-        <div class="grid">
-          <article class="card">
-            <h3>Browser primitives</h3>
-            <p>Navigate, snapshot, click refs, type, resize, screenshot, inspect console output, and capture network evidence.</p>
-          </article>
-          <article class="card">
-            <h3>Durable sessions</h3>
-            <p>Web-ai sends return a session id so a later shell can poll the same provider tab after sleep or timeout.</p>
-          </article>
-          <article class="card">
-            <h3>Code artifacts</h3>
-            <p>ChatGPT code mode generates projects as zip files, then code-extract can recover old artifacts from the original conversation.</p>
-          </article>
+    <!-- WORKFLOW -->
+    <section class="section wrap" id="workflow">
+      <h2 class="reveal">Observe before acting.</h2>
+      <div class="tiles">
+        <div class="tile reveal d1">
+          <div class="n">01</div>
+          <h3>Observe</h3>
+          <p>Snapshot real tabs: <code>agbrowse snapshot --interactive</code> returns stable refs,
+            console output, and network state.</p>
         </div>
-      </section>
-
-      <section class="section split" id="web-ai">
-        <div>
-          <h2>Built for web UI agents, not hidden APIs.</h2>
-          <p>agbrowse treats provider pages as changing user interfaces. The command surface keeps every mutation tied to an observed tab, target id, selector, screenshot, or artifact.</p>
+        <div class="tile reveal d2">
+          <div class="n">02</div>
+          <h3>Act</h3>
+          <p>Send prompts to any vendor: <code>web-ai send --vendor grok</code> returns a session id
+            that outlives your shell.</p>
         </div>
-        <div class="terminal">
-          <pre><code>SID=$(agbrowse web-ai send \
-  --vendor chatgpt \
-  --model pro \
-  --inline-only \
-  --prompt "Research and cite sources." \
-  --json | jq -r .sessionId)
-
-agbrowse web-ai poll \
-  --vendor chatgpt \
-  --session "$SID" \
-  --timeout 1800</code></pre>
+        <div class="tile reveal d3">
+          <div class="n">03</div>
+          <h3>Collect</h3>
+          <p>Poll results, screenshots, traces, and ChatGPT code zips:
+            <code>web-ai poll</code> &middot; <code>code-extract</code>.</p>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="section split" id="code-artifacts">
-        <div>
-          <h2>Generate first, recover later.</h2>
-          <p>Start with <code>web-ai code</code> for a new build. Use <code>code-extract</code> later when the original ChatGPT conversation is still accessible and already contains <code>/mnt/data/*.zip</code> artifacts.</p>
+    <!-- CODE ARTIFACTS -->
+    <section class="section wrap split reveal" id="code-artifacts">
+      <div class="split-text">
+        <h2>Generate first, recover later.</h2>
+        <p>Start with <code>web-ai code</code> for a new build.
+          Use <code>code-extract</code> later when the original ChatGPT conversation
+          is still accessible and already contains <code>/mnt/data/*.zip</code> artifacts.</p>
+      </div>
+      <div class="term">
+        <div class="term-bar"><span>CODE ARTIFACTS</span><span>zip</span></div>
+        <div class="term-body">
+          <div><span class="p">$</span> agbrowse web-ai code \</div>
+          <div>&nbsp;&nbsp;--vendor chatgpt \</div>
+          <div>&nbsp;&nbsp;--model thinking --effort standard \</div>
+          <div>&nbsp;&nbsp;--prompt "Create a Flask MVP." \</div>
+          <div>&nbsp;&nbsp;--output-zip ./result.zip</div>
+          <div class="out">DOWNLOAD: result.zip (sandbox:/mnt/data/result.zip)</div>
+          <div>&nbsp;</div>
+          <div><span class="p">$</span> agbrowse web-ai code-extract \</div>
+          <div>&nbsp;&nbsp;--vendor chatgpt \</div>
+          <div>&nbsp;&nbsp;--url "https://chatgpt.com/c/&lt;id&gt;" \</div>
+          <div>&nbsp;&nbsp;--output-zip ./result.zip</div>
+          <div class="out">extracted 12 files &middot; unzip -t OK</div>
         </div>
-        <div class="terminal">
-          <pre><code>agbrowse web-ai code \
-  --vendor chatgpt \
-  --model thinking \
-  --effort standard \
-  --prompt "Create a Flask MVP." \
-  --output-zip ./result.zip
+      </div>
+    </section>
 
-DOWNLOAD: [result.zip](sandbox:/mnt/data/result.zip)
-MACHINE: /mnt/data/result.zip
+    <!-- VERIFICATION -->
+    <section class="section wrap reveal" id="verification">
+      <h2>Release gates are explicit.</h2>
+      <ul class="ledger">
+        <li><strong>Type and module checks:</strong> <code>npm run typecheck</code>,
+          <code>npm run check:module-graph</code>.</li>
+        <li><strong>Capability truth checks:</strong> <code>npm run test:release-gates</code>
+          and <code>npm run gate:all</code>.</li>
+        <li><strong>Runtime contracts:</strong> MCP, source audit, trace policy, fixture evals,
+          and browser primitive tests.</li>
+        <li><strong>Remote Pages state:</strong> GitHub Pages publishes the repository
+          <code>/docs</code> directory at
+          <code>https://lidge-jun.github.io/agbrowse/</code>.</li>
+      </ul>
+    </section>
 
-agbrowse web-ai code-extract \
-  --vendor chatgpt \
-  --url "https://chatgpt.com/c/&lt;conversation-id&gt;" \
-  --output-zip ./result.zip
-
-unzip -t ./result.zip</code></pre>
+    <!-- DOCS BAND -->
+    <section class="docs-band">
+      <div class="wrap">
+        <h2>Documentation</h2>
+        <div class="doc-links">
+          <a class="doc-link" href="dev/index.html">Developer Docs<span>English</span></a>
+          <a class="doc-link" href="dev/ko/index.html">개발자 문서<span>한국어</span></a>
+          <a class="doc-link" href="https://github.com/lidge-jun/agbrowse">GitHub<span>Source &amp; issues</span></a>
+          <a class="doc-link" href="https://www.npmjs.com/package/agbrowse">npm<span>npm install -g agbrowse</span></a>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="section" id="verification">
-        <h2>Release gates are explicit.</h2>
-        <ul class="checklist">
-          <li><strong>Type and module checks:</strong> <code>npm run typecheck</code>, <code>npm run check:module-graph</code>.</li>
-          <li><strong>Capability truth checks:</strong> <code>npm run test:release-gates</code> and <code>npm run gate:all</code>.</li>
-          <li><strong>Runtime contracts:</strong> MCP, source audit, trace policy, fixture evals, and browser primitive tests.</li>
-          <li><strong>Remote Pages state:</strong> GitHub Pages publishes the repository <code>/docs</code> directory at <code>https://lidge-jun.github.io/agbrowse/</code>.</li>
-        </ul>
-      </section>
-    </main>
+  </main>
 
-    <footer>
-      <p>agbrowse is a public project by lidge-jun. Provider UIs can drift; every ready claim is backed by local gates and contract checks.</p>
-    </footer>
-  </div>
+  <footer>
+    <div class="wrap">
+      <p>agbrowse is a public project by lidge-jun. Provider UIs can drift;
+        every ready claim is backed by local gates and contract checks.</p>
+    </div>
+  </footer>
+
+  <script>
+    /* --- Reveal observer --- */
+    (function(){
+      if(!('IntersectionObserver' in window))return;
+      var els=document.querySelectorAll('.reveal');
+      var obs=new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}
+        });
+      },{threshold:0.15});
+      els.forEach(function(el){obs.observe(el)});
+    })();
+
+    /* --- Fullscreen vendor scrub --- */
+    (function(){
+      var wrap=document.querySelector('.scrub-wrap');
+      var track=document.getElementById('scrubTrack');
+      var dots=document.querySelectorAll('#scrubDots span');
+      if(!wrap||!track)return;
+      /* bail under reduced-motion */
+      if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+
+      var raf=0;
+      function onScroll(){
+        if(raf)return;
+        raf=requestAnimationFrame(function(){
+          raf=0;
+          var rect=wrap.getBoundingClientRect();
+          var travel=wrap.offsetHeight-window.innerHeight;
+          if(travel<=0)return;
+          var progress=Math.min(1,Math.max(0,-rect.top/travel));
+          var maxShift=track.scrollWidth-window.innerWidth;
+          track.style.transform='translateX('+ (-maxShift*progress) +'px)';
+          /* update dots */
+          var panel=Math.min(2,Math.floor(progress*3));
+          dots.forEach(function(d,i){d.classList.toggle('active',i===panel)});
+        });
+      }
+      window.addEventListener('scroll',onScroll,{passive:true});
+      onScroll();
+
+      /* scrollTo support for verification harness */
+      var params=new URLSearchParams(window.location.search);
+      var scrollTo=params.get('scrollto');
+      if(scrollTo)window.scrollTo(0,parseInt(scrollTo,10));
+    })();
+  </script>
 </body>
 </html>

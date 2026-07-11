@@ -7,9 +7,10 @@
 import { pollWebAi } from './chatgpt.mjs';
 import { geminiPollWebAi } from './gemini-live.mjs';
 import { grokPollWebAi } from './grok-live.mjs';
+import { isWorkSession, pollWorkSession } from './chatgpt-work-picker.mjs';
 import { resumeDeepResearch } from './chatgpt-deep-research.mjs';
 import { WebAiError } from './errors.mjs';
-import { getSession, listSessions, pruneSessionsOlderThan, updateSession } from './session.mjs';
+import { getSession, listSessions, pruneSessionsOlderThan, updateSession, resolveTimeoutBudgetSec } from './session.mjs';
 import { resolveSessionPage, withSessionPage, openConversationInNewTab } from './tab-recovery.mjs';
 import { withSessionCommandLock } from './session-store.mjs';
 import { buildSessionDoctorReport } from './session-doctor.mjs';
@@ -104,7 +105,8 @@ export async function runSessionsCommand(args, values, deps, input) {
                     getTargetId: async () => targetId,
                     getCdpSession: async () => /** @type {any} */ (page).context?.().newCDPSession?.(page),
                 };
-                return resumeDeepResearch(page, sessionDeps, { session: refreshed });
+                const budgetMs = resolveTimeoutBudgetSec(input, refreshed, refreshed.vendor || 'chatgpt') * 1000;
+                return resumeDeepResearch(page, sessionDeps, { session: refreshed, timeoutMs: budgetMs });
             }));
             return { ...drResult, status: drResult.status || 'resumed' };
         }
@@ -114,7 +116,10 @@ export async function runSessionsCommand(args, values, deps, input) {
             session: id,
             allowCopyMarkdownFallback: input.allowCopyMarkdownFallback === true,
         };
-        const pollFn = session.vendor === 'gemini' ? geminiPollWebAi : session.vendor === 'grok' ? grokPollWebAi : pollWebAi;
+        const pollFn = isWorkSession(session) ? pollWorkSession
+            : session.vendor === 'gemini' ? geminiPollWebAi
+            : session.vendor === 'grok' ? grokPollWebAi
+            : pollWebAi;
         const result = await withSessionCommandLock(id, () => withSessionPage(deps, id, async ({ page, targetId, session: refreshed }) => {
             const sessionDeps = {
                 ...deps,
@@ -122,7 +127,12 @@ export async function runSessionsCommand(args, values, deps, input) {
                 getTargetId: async () => targetId,
                 getCdpSession: async () => /** @type {any} */ (page).context?.().newCDPSession?.(page),
             };
-            return pollFn(sessionDeps, { ...pollInput, vendor: refreshed.vendor, session: refreshed.sessionId });
+            return pollFn(sessionDeps, {
+                ...pollInput,
+                vendor: refreshed.vendor,
+                session: refreshed.sessionId,
+                timeout: resolveTimeoutBudgetSec(input, refreshed, refreshed.vendor || 'chatgpt'),
+            });
         }));
         return { ...result, status: result.status || 'resumed' };
     }
@@ -279,9 +289,15 @@ function formatBrowserEvidenceLines(session) {
     if (evidence && typeof evidence === 'object') {
         const requested = evidence.requestedModel ?? '(none)';
         const resolved = evidence.resolvedLabel ?? '(unavailable)';
+        const surface = evidence.surface ?? '(unknown)';
+        const family = evidence.familyLabel ?? '(unavailable)';
+        const tier = evidence.tierLabel ?? evidence.resolvedLabel ?? '(unavailable)';
+        const taskId = evidence.taskId ?? '(unavailable)';
+        const taskUrl = evidence.taskUrl ?? '(unavailable)';
+        const responseContract = evidence.responseContract ?? '(unavailable)';
         const strategy = evidence.strategy ?? '(default)';
         const verified = evidence.verified ? 'yes' : 'no';
-        lines.push(`model requested=${requested}; resolved=${resolved}; status=${evidence.status || 'unknown'}; strategy=${strategy}; verified=${verified}`);
+        lines.push(`model requested=${requested}; resolved=${resolved}; surface=${surface}; family=${family}; tier=${tier}; taskId=${taskId}; taskUrl=${taskUrl}; responseContract=${responseContract}; status=${evidence.status || 'unknown'}; strategy=${strategy}; verified=${verified}`);
     }
     for (const warning of session?.warnings || []) {
         if (!warning || typeof warning !== 'object' || !warning.code) continue;

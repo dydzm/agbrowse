@@ -48,9 +48,10 @@ describe('CLI install-skills', () => {
             expect(result.code).toBe(0);
             const parsed = JSON.parse(result.stdout);
             expect(parsed.mode).toBe('copy');
-            expect(parsed.installed.map(item => item.name)).toEqual(['browser', 'web-ai', 'vision-click']);
+            expect(parsed.installed.map(item => item.name)).toEqual(['browser', 'web-ai', 'search', 'vision-click']);
             expect(existsSync(join(target, 'browser', 'SKILL.md'))).toBe(true);
             expect(existsSync(join(target, 'web-ai', 'SKILL.md'))).toBe(true);
+            expect(existsSync(join(target, 'search', 'SKILL.md'))).toBe(true);
             expect(existsSync(join(target, 'vision-click', 'SKILL.md'))).toBe(true);
         } finally {
             rmSync(target, { recursive: true, force: true });
@@ -64,7 +65,7 @@ describe('CLI install-skills', () => {
 
             expect(result.code).toBe(0);
             const parsed = JSON.parse(result.stdout);
-            expect(parsed.installed.map(item => item.name)).toEqual(['browser', 'web-ai', 'vision-click']);
+            expect(parsed.installed.map(item => item.name)).toEqual(['browser', 'web-ai', 'search', 'vision-click']);
             expect(existsSync(join(target, 'browser', 'SKILL.md'))).toBe(true);
         } finally {
             rmSync(target, { recursive: true, force: true });

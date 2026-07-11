@@ -16,8 +16,9 @@
  *   observe-actions <instruction> [--json] [--top-n N] [--include-disabled]  Rank candidate next actions (G02)
  *   runway <command>                    Runway full-surface CLI (13 commands, 3 safety levels)
  *   research plan --query <problem> [--json]  Korean query rewrite and evidence plan
- *   search "<query>" [--json] [--deep] [--verify <url>]  Standalone deep search for any CLI agent
- *   research normalize-results --file <json> [--backend name] [--json]  Normalize search URL candidates
+*   search "<query>" [--json] [--deep] [--verify <url>]  Standalone deep search for any CLI agent
+ *   extract <url> --schema <file.json> [--from-file <page.html>] [--json]  Schema-bound structured extraction (Tier 1 LLM-free, fail-closed)
+*   research normalize-results --file <json> [--backend name] [--json]  Normalize search URL candidates
  *   research enrich-fetch --plan <json> --results <json> [--json]  Fetch original-page evidence
  *   research browse-plan --plan <json> --enrichment <json> [--json]  Plan browser escalation actions
  *   screenshot [--full-page] [--ref eN] [--json]  Capture screenshot
@@ -85,6 +86,7 @@ import { createTab, closeTab, switchToTab, listManagedTabs } from './tab-manager
 import { cleanupIdleTabs, planCleanupIdleTabs, pickCleanupCandidates, isPinned, parseDuration, DEFAULT_MAX_TABS } from './tab-lifecycle.mjs';
 import { runAdaptiveFetchCli } from './adaptive-fetch/index.mjs';
 import { runSearchCli } from './search.mjs';
+import { runExtractCli } from './extract.mjs';
 import { runRunwayCli } from './runway.mjs';
 import { maybeEmitUpdateNotice } from './update-check.mjs';
 import { planKoreanResearch } from './search-research/search-strategy.mjs';
@@ -2292,6 +2294,9 @@ try {
         case 'search':
             await runSearchCli(process.argv.slice(3));
             break;
+        case 'extract':
+            await runExtractCli(process.argv.slice(3));
+            break;
         case 'skills': {
             const result = runSkillsCli(process.argv.slice(3), { sourceRoot: SKILLS_ROOT });
             if (result.type === 'json') {
@@ -3153,12 +3158,21 @@ try {
     agbrowse start --headed                  Launch a visible Chrome
     agbrowse navigate https://example.com    Open a URL
     agbrowse fetch https://example.com --json Read one URL for agent evidence
+    agbrowse search "query" --json           Deep search: fetch + evidence verdicts
+    agbrowse extract <url> --schema s.json   Schema-bound data extraction (LLM-free)
     agbrowse research plan --query "한국어 검색 질문" --json  Plan focused queries
     agbrowse snapshot --interactive          Get refs (e1, e2, …)
     agbrowse click e1                        Click ref e1
     agbrowse runway status                   Inspect Runway tab (plan, model, mode)
     agbrowse runway generate --prompt "..." --allow-submit  Full generation pipeline
     agbrowse stop                            Close Chrome
+
+  Pick the right command (natural-language → CLI):
+    "search / look up / 검색해줘"            → agbrowse search "<query>"
+    "read this URL / 이 링크 읽어줘"          → agbrowse fetch <url> --json
+    "pull the table as JSON / 표로 뽑아줘"    → agbrowse extract <url> --schema <file>
+    "ask ChatGPT / Gemini / Grok"            → agbrowse web-ai send|query
+    "click that button on screen"            → snapshot refs first; vision-click fallback
 
   Stuck? Run:
     agbrowse doctor                          Diagnose start/CDP/profile issues
@@ -3203,7 +3217,7 @@ try {
     skills get core [--full]
       Print the recommended agent operating guide. --full includes all bundled SKILL.md files.
 
-    skills get <browser|web-ai|vision-click>
+    skills get <browser|web-ai|search|vision-click>
       Print one bundled SKILL.md so an agent can load exact workflow rules.
 
     skills path [skill]
@@ -3226,6 +3240,7 @@ try {
       Installs:
         browser       Chrome/CDP browser control skill
         web-ai        ChatGPT, Gemini, and Grok browser web-ai workflow skill
+        search        Standalone deep search and URL evidence verification skill
         vision-click  Screenshot-to-coordinate click helper skill
 
   Search (standalone — any CLI agent can use):
@@ -3235,6 +3250,16 @@ try {
 
     search --verify <url> [--json] [--browser auto|never]
       Fetch and score a single URL. Returns verdict + evidence excerpt.
+
+  Extract (schema-bound, LLM-free by default):
+    extract <url> --schema <file.json> [--source auto|table|jsonld] [--json]
+      Map page tables/JSON-LD into JSON matching your schema. Fail-closed:
+      returns verdict no_mappable_structure instead of silent partial data.
+    extract --from-file <page.html> --schema <file.json>
+      Extract from local HTML (offline, no fetch).
+    extract <url> --schema <file.json> --escalate-web-ai [--vendor grok|chatgpt|gemini]
+      Tier 2 opt-in: on Tier 1 failure, ask a logged-in web-ai vendor and
+      validate its JSON with the same schema validator.
 
   Research planning:
     research plan --query <problem> [--max-queries N] [--json]
@@ -3349,6 +3374,7 @@ try {
 	    web-ai render          Render the provider prompt without a browser
 	    web-ai status          Check active provider tab state
 	    web-ai send            Send a prompt; returns a sessionId for later resume
+	    web-ai work send       Send a prompt through ChatGPT Work with --power N
 	    web-ai poll            Poll a session (or latest baseline) for completion
 	    web-ai query           send + poll in one call
 	    web-ai code            ChatGPT-only code generation + verified zip retrieval
@@ -3365,19 +3391,25 @@ try {
 
       Common flags:
         --vendor <chatgpt|gemini|grok>
-        --model <alias>                ChatGPT: pro/thinking/instant
+        --surface <chat>               Chat commands reject an active Work surface
+        --family <alias>               ChatGPT: gpt-5.6-sol | gpt-5.5 | gpt-5.4 |
+                                       gpt-5.3 | o3; omit to leave unchanged
+        --model <alias>                ChatGPT tiers: pro/thinking/instant
                                        Gemini:  flash-lite/flash/pro + tool deepthink
                                        Grok:    heavy/expert/thinking/fast/auto
         --effort <alias>               ChatGPT only; requires --model
-                                       Pro: standard/extended
-                                       Thinking: light/standard/extended/heavy
+                                       Thinking canonical: medium/high/xhigh
+                                       Legacy normalization: see web-ai skill
         --reasoning-effort <alias>     Alias for --effort
         --url <conversation-or-provider-url>
         --inline-only | --file <path> | --context-from-files <glob>
         --context-transport <upload|inline>
         --allow-copy-markdown-fallback Capture provider Copy button output
         --allow-grok-context-pack      Override Grok hard-gate (prefer inline)
-        --timeout <sec>                Default 1200 ChatGPT/Gemini · 600 Grok
+        --timeout <sec>                Long tier defaults: chatgpt-pro=5400 ·
+                                       grok-heavy=3600 · deep-research=3600;
+                                       unknown tier falls back
+                                       to 1200 ChatGPT/Gemini · 600 Grok
         --session <id>                 Resume a previous session; surviving
                                        shell exit + OS sleep
         --deadline <iso>               Override session deadline
@@ -3388,6 +3420,11 @@ try {
                                         without contending with another in-flight one.
         --reuse-tab                    Reuse active tab (legacy behavior)
         --json                         JSON output (or AGBROWSE_JSON_ERRORS=1)
+
+      Work send flags:
+        --prompt <text>                Required Work prompt
+        --power <1..6>                 Required Work Power step
+                                       (mapping follows the WP1-probed contract)
 
       Tab lease policy:
         Completed provider tabs are runtime leases. Defaults: maxPerKey=3,
@@ -3414,9 +3451,10 @@ try {
         agbrowse web-ai query  --vendor gemini  --model deepthink --inline-only --prompt "Reply OK"
         agbrowse web-ai query  --vendor chatgpt --context-from-files "src/**/*.ts" \\
                                                 --context-transport upload --prompt "Review this"
-        SID=$(agbrowse web-ai send --vendor chatgpt --inline-only \\
+        SID=$(agbrowse web-ai send --vendor chatgpt --model pro --inline-only \\
                 --prompt "long Pro prompt" --json | jq -r .sessionId)
-        agbrowse web-ai poll --vendor chatgpt --session "$SID" --timeout 1800
+        agbrowse web-ai poll --vendor chatgpt --session "$SID"
+        agbrowse web-ai work send --prompt "Analyze this repository" --power 4
 
   Runway (run "agbrowse runway help" for full usage):
     Level 0 — read-only (default; never submits a generation):

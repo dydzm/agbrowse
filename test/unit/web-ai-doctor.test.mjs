@@ -30,7 +30,7 @@ function fakePageForDoctor(url, locatorMap = {}) {
 
 describe('web-ai doctor', () => {
     it('featureDefinitionsForVendor returns 6 features for each vendor', () => {
-        expect(featureDefinitionsForVendor('chatgpt').length).toBe(6);
+        expect(featureDefinitionsForVendor('chatgpt').length).toBe(7);
         expect(featureDefinitionsForVendor('gemini').length).toBe(6);
         expect(featureDefinitionsForVendor('grok').length).toBe(6);
         expect(featureDefinitionsForVendor('unknown').length).toBe(0);
@@ -47,7 +47,7 @@ describe('web-ai doctor', () => {
 
     it('featureDefinitionsForVendor includes all expected features', () => {
         const names = featureDefinitionsForVendor('chatgpt').map(f => f.feature);
-        expect(names).toEqual(['composer', 'model-picker', 'upload', 'response-feed', 'copy-fallback', 'streaming-indicator']);
+        expect(names).toEqual(['composer', 'model-picker', 'work-surface', 'upload', 'response-feed', 'copy-fallback', 'streaming-indicator']);
     });
 
     it('diagnoseFeature returns ok when selector is visible', async () => {
@@ -90,7 +90,7 @@ describe('web-ai doctor', () => {
         expect(report.url).toBe('https://chatgpt.com/c/secret-id');
         expect(report.url).not.toContain('token=abc');
         expect(report.capturedAt).toBeTruthy();
-        expect(report.features.length).toBe(6);
+        expect(report.features.length).toBe(7);
         expect(Array.isArray(report.warnings)).toBe(true);
     });
 

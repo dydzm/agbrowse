@@ -5,6 +5,8 @@ import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import { rejectNetworkFixtureHtml, runBounded, runOneFixture, runWebAiEval } from '../../web-ai/eval-runner.mjs';
 
+import { EVAL_TARGET_INTENTS } from '../../web-ai/eval/provider-targets.mjs';
+
 describe('web-ai eval runner', () => {
     it('emits schemaVersion 1 and passes baseline fixture', async () => {
         const result = await runWebAiEval({ vendor: 'chatgpt', fixtures: 'test/fixtures/provider-dom', variants: ['baseline'] });
@@ -104,6 +106,59 @@ describe('web-ai eval runner', () => {
         });
         expect(result.status).toBe('pass');
         expect(result.provider).toBe('gemini');
+    });
+
+    it('runs GPT-5.6 Chat fixture with full default intents and passes', async () => {
+        const result = await runWebAiEval({
+            config: 'test/fixtures/provider-dom/chatgpt-gpt56-eval.json',
+            concurrency: 2,
+        });
+        expect(result.ok).toBe(true);
+        expect(result.results.map(entry => [entry.variant, entry.status])).toEqual([
+            ['gpt56-chat', 'pass'],
+            ['gpt56-work', 'pass'],
+        ]);
+    });
+
+    it('GPT-5.6 Chat fixture resolves all 4 target intents', async () => {
+        const result = await runOneFixture({
+            vendor: 'chatgpt',
+            variant: 'gpt56-chat',
+            fixturePath: path.resolve('test/fixtures/provider-dom/chatgpt-gpt56-chat.html'),
+        });
+        expect(result.status).toBe('pass');
+        expect(result.metrics.targetResolution.value).toBe(1);
+        for (const intent of EVAL_TARGET_INTENTS) {
+            if (intent === 'copy.click') continue;
+            expect(result.probes[intent].status).toBe('resolved');
+        }
+    });
+
+    it('GPT-5.6 Work fixture passes with requiredIntents=[composer.fill] only', async () => {
+        const result = await runOneFixture({
+            vendor: 'chatgpt',
+            variant: 'gpt56-work',
+            fixturePath: path.resolve('test/fixtures/provider-dom/chatgpt-gpt56-work.html'),
+            requiredIntents: ['composer.fill'],
+        });
+        expect(result.status).toBe('pass');
+        expect(result.probes['composer.fill'].status).toBe('resolved');
+        expect(result.probes['send.click'].status).toBe('missing');
+        expect(result.probes['copy.click'].status).toBe('missing');
+        expect(result.metrics.targetResolution.value).toBe(1);
+        expect(result.metrics.uploadOpen.threshold).toBeUndefined();
+        expect(result.metrics.copyExactness.threshold).toBeUndefined();
+        expect(result.errors).toEqual([]);
+    });
+
+    it('GPT-5.6 Work fixture fails with default intents (no send.click)', async () => {
+        const result = await runOneFixture({
+            vendor: 'chatgpt',
+            variant: 'gpt56-work',
+            fixturePath: path.resolve('test/fixtures/provider-dom/chatgpt-gpt56-work.html'),
+        });
+        expect(result.status).toBe('fail');
+        expect(result.errors.some(e => e.errorCode === 'eval.target-resolution-failed')).toBe(true);
     });
 });
 

@@ -16,6 +16,7 @@
  * @property {string|null} lastAssistantSnippet
  * @property {string|null} conversationId
  * @property {string|null} fingerprint
+ * @property {{surface:'chat'|'work'|'ambiguous'|null,familyLabel:string|null,tierLabel:string|null,verified:boolean}|null} modelSelection
  * @property {'running'|'completed'|'detached'|'stalled'} state
  */
 
@@ -29,7 +30,56 @@ const INSPECT_EXPRESSION = `(() => {
     const assistants = document.querySelectorAll('[data-message-author-role="assistant"]');
     const lastAssistant = assistants[assistants.length - 1];
     const lastText = lastAssistant?.innerText?.trim() || null;
-    const modelEl = document.querySelector('[data-testid="model-switcher"] span, button[aria-haspopup="menu"] > div > span');
+    function readChatGptTabModelSelection() {
+        const surfaceRadios = Array.from(document.querySelectorAll('[role="radio"]'))
+            .filter(el => /^(Chat|Work)$/.test((el.textContent || '').trim()));
+        const hasSurfaceToggle = surfaceRadios.length > 0;
+        const activeRadios = surfaceRadios.filter(el =>
+            el.getAttribute('aria-checked') === 'true'
+            && el.getAttribute('data-state') === 'on');
+        const surfaceStateConsistent = surfaceRadios.length === 2
+            && surfaceRadios.every(el => {
+                const aria = el.getAttribute('aria-checked');
+                const state = el.getAttribute('data-state');
+                return (aria === 'true' && state === 'on')
+                    || (aria === 'false' && state === 'off');
+            });
+        const surface = !hasSurfaceToggle
+            ? null
+            : surfaceStateConsistent && activeRadios.length === 1
+                ? (activeRadios[0].textContent || '').trim().toLowerCase()
+                : 'ambiguous';
+        const composerRoot = composer?.closest('form');
+        const pickerTrigger = Array.from(
+            composerRoot?.querySelectorAll('button[aria-haspopup="menu"]') || [])
+            .find(el => /^(Instant|Medium|High|Extra High|Pro)$/i
+                .test((el.textContent || '').trim()));
+        const openPicker = document.querySelector(
+            '[role="menu"][data-state="open"] [data-testid="composer-intelligence-picker-content"]')
+            ?.closest('[role="menu"]');
+        const checkedRows = Array.from(
+            openPicker?.querySelectorAll('[role="menuitemradio"]') || [])
+            .filter(el => {
+                const aria = el.getAttribute('aria-checked');
+                const state = el.getAttribute('data-state');
+                return (aria === 'true' || state === 'checked')
+                    && (aria == null || state == null
+                        || (aria === 'true') === (state === 'checked'));
+            });
+        const familyLabel = (checkedRows.find(el =>
+            /^(GPT-5\.(?:6 Sol|5|4|3)|o3)$/i.test((el.textContent || '').trim()))
+            ?.textContent || '').trim() || null;
+        const legacyModelEl = document.querySelector('[data-testid="model-switcher"] span');
+        const tierLabel = (pickerTrigger?.textContent
+            || legacyModelEl?.textContent || '').trim() || null;
+        return {
+            surface,
+            familyLabel,
+            tierLabel,
+            verified: surface === 'chat' && Boolean(familyLabel && tierLabel),
+        };
+    }
+    const modelSelection = readChatGptTabModelSelection();
     const convMatch = window.location.pathname.match(/\\/c\\/([a-f0-9-]+)/);
     return JSON.stringify({
         stopExists: !!stopBtn,
@@ -39,7 +89,8 @@ const INSPECT_EXPRESSION = `(() => {
         assistantCount: assistants.length,
         lastAssistantText: lastText,
         lastAssistantSnippet: lastText ? lastText.slice(0, 200) : null,
-        modelLabel: modelEl?.textContent?.trim() || null,
+        modelLabel: modelSelection.tierLabel,
+        modelSelection,
         conversationId: convMatch ? convMatch[1] : null,
         fingerprint: lastText ? String(assistants.length) + ':' + String(lastText.length) : null,
     });
@@ -82,6 +133,7 @@ export async function inspectTab(port, targetId, meta = {}) {
             url: meta.url || '',
             vendor: 'chatgpt',
             modelLabel: data.modelLabel || null,
+            modelSelection: data.modelSelection || null,
             stopExists: !!data.stopExists,
             sendExists: !!data.sendExists,
             promptReady: !!data.promptReady,
@@ -144,6 +196,7 @@ export async function collectTabs(port, { activeTargetIds = new Set(), stallWind
                 url: target.url,
                 vendor: 'chatgpt',
                 modelLabel: null,
+                modelSelection: null,
                 stopExists: false,
                 sendExists: false,
                 promptReady: false,

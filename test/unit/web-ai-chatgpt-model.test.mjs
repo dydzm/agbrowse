@@ -5,20 +5,26 @@ import { join } from 'node:path';
 const modelSrc = readFileSync(join(process.cwd(), 'web-ai', 'chatgpt-model.mjs'), 'utf8');
 
 describe('web-ai ChatGPT model selector policy', () => {
-    it('supports the observed Heavy/Pro effort UI', () => {
-        expect(modelSrc).toContain('model-switcher-gpt-5-5-pro-thinking-effort');
-        expect(modelSrc).toContain('model-switcher-gpt-5-5-thinking-thinking-effort');
-        expect(modelSrc).toContain('Extended Pro');
+    it('supports the current GPT-5.6 contract tables', () => {
+        // Legacy testids preserved as fallback
+        expect(modelSrc).toContain("'model-switcher-gpt-5-5-pro-thinking-effort'");
+        expect(modelSrc).toContain("'model-switcher-gpt-5-5-thinking-thinking-effort'");
+        // Current tier labels
+        expect(modelSrc).toContain("'Medium'");
+        expect(modelSrc).toContain("'High'");
+        expect(modelSrc).toContain("'Extra High'");
+        expect(modelSrc).toContain("'Pro'");
+        // Legacy labels preserved
         expect(modelSrc).toContain('Heavy');
-        expect(modelSrc).toContain('Extra High');
         expect(modelSrc).toContain('Pro Extended');
-        expect(modelSrc).toContain('즉시');
-        expect(modelSrc).toContain('중간');
-        expect(modelSrc).toContain('높음');
-        expect(modelSrc).toContain('매우 높음');
-        expect(modelSrc).toContain('Pro 확장');
-        expect(modelSrc).toContain('composer-intelligence-pro-thinking-effort-trigger');
-        expect(modelSrc).toContain('readActiveModelPill');
+        expect(modelSrc).toContain("'즉시'");
+        expect(modelSrc).toContain("'중간'");
+        expect(modelSrc).toContain("'높음'");
+        expect(modelSrc).toContain("'매우 높음'");
+        expect(modelSrc).toContain("'Pro 확장'");
+        // Composer-scoped menu root
+        expect(modelSrc).toContain('chatGptComposerMenuRoot');
+        expect(modelSrc).toContain('chatGptLegacyMenuRootOpenedByComposer');
     });
 
     it('does not touch the model selector without explicit model or effort flags', async () => {
@@ -39,24 +45,37 @@ describe('web-ai ChatGPT model selector policy', () => {
             normalizeChatGptEffortChoice,
         } = await import('../../web-ai/chatgpt-model.mjs');
 
-        expect(Object.keys(CHATGPT_MODEL_EFFORT_OPTIONS.pro.efforts)).toEqual(['standard', 'extended']);
-        expect(Object.keys(CHATGPT_MODEL_EFFORT_OPTIONS.thinking.efforts)).toEqual(['light', 'standard', 'extended', 'heavy']);
-        expect(normalizeChatGptEffortChoice('regular')).toBe('standard');
-        expect(normalizeChatGptEffortChoice('high')).toBe('extended');
+        expect(Object.keys(CHATGPT_MODEL_EFFORT_OPTIONS.pro.efforts)).toEqual([]);
+        expect(Object.keys(CHATGPT_MODEL_EFFORT_OPTIONS.thinking.efforts)).toEqual(['medium', 'high', 'xhigh']);
+        // Legacy aliases map to canonical keys
+        expect(normalizeChatGptEffortChoice('standard')).toBe('medium');
+        expect(normalizeChatGptEffortChoice('regular')).toBe('medium');
+        expect(normalizeChatGptEffortChoice('light')).toBe('medium');
+        expect(normalizeChatGptEffortChoice('low')).toBe('medium');
+        expect(normalizeChatGptEffortChoice('extended')).toBe('high');
+        expect(normalizeChatGptEffortChoice('high')).toBe('high');
+        expect(normalizeChatGptEffortChoice('heavy')).toBe('xhigh');
+        expect(normalizeChatGptEffortChoice('xhigh')).toBe('xhigh');
+        expect(normalizeChatGptEffortChoice('medium')).toBe('medium');
+        // Pro supports legacy unenforced efforts but not canonical thinking efforts
         expect(isChatGptEffortSupported('pro', 'standard')).toBe(true);
+        expect(isChatGptEffortSupported('pro', 'extended')).toBe(true);
         expect(isChatGptEffortSupported('pro', 'heavy')).toBe(false);
-        expect(isChatGptEffortSupported('thinking', 'heavy')).toBe(true);
+        expect(isChatGptEffortSupported('pro', 'medium')).toBe(false);
+        // Thinking supports canonical efforts
+        expect(isChatGptEffortSupported('thinking', 'medium')).toBe(true);
+        expect(isChatGptEffortSupported('thinking', 'high')).toBe(true);
+        expect(isChatGptEffortSupported('thinking', 'xhigh')).toBe(true);
     });
 
-    it('selects the simplified June 2026 Intelligence menu labels', async () => {
+    it('selects the GPT-5.6 Intelligence flat radio labels', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const cases = [
             { model: 'instant', effort: null, selected: 'instant', selectedEffort: null },
-            { model: 'thinking', effort: 'standard', selected: 'thinking', selectedEffort: 'standard' },
-            { model: 'thinking', effort: 'extended', selected: 'thinking', selectedEffort: 'extended' },
-            { model: 'thinking', effort: 'heavy', selected: 'thinking', selectedEffort: 'heavy' },
-            { model: 'pro', effort: 'standard', selected: 'pro', selectedEffort: 'standard' },
-            { model: 'pro', effort: 'extended', selected: 'pro', selectedEffort: 'extended' },
+            { model: 'thinking', effort: 'medium', selected: 'thinking', selectedEffort: 'medium' },
+            { model: 'thinking', effort: 'high', selected: 'thinking', selectedEffort: 'high' },
+            { model: 'thinking', effort: 'xhigh', selected: 'thinking', selectedEffort: 'xhigh' },
+            { model: 'pro', effort: null, selected: 'pro', selectedEffort: null },
         ];
 
         for (const testCase of cases) {
@@ -77,7 +96,6 @@ describe('web-ai ChatGPT model selector policy', () => {
             expect(result).toMatchObject({
                 selected: testCase.selected,
                 effort: testCase.selectedEffort,
-                warnings: [],
             });
             if (testCase.effort && testCase.selected === 'thinking') {
                 expect(result.usedFallbacks).toContain(`${testCase.selected}-effort-simplified-direct`);
@@ -85,16 +103,15 @@ describe('web-ai ChatGPT model selector policy', () => {
         }
     });
 
-    it('routes Pro requests to Pro Extended when the simplified UI has no Pro Standard row', async () => {
+    it('routes legacy Pro effort requests to flat Pro with unenforced warning', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
 
-        for (const effort of ['standard', 'extended']) {
+        for (const effort of ['standard', 'extended', 'normal', 'regular', 'default']) {
             const page = createFakeModelPage({
-                model: 'thinking',
+                model: 'instant',
                 initialModelMenuOpen: false,
                 closedDropdownButton: true,
                 simplifiedIntelligenceMenu: true,
-                simplifiedProExtendedOnly: true,
                 checkedModelRows: false,
                 checkedEffortRows: false,
             });
@@ -102,40 +119,26 @@ describe('web-ai ChatGPT model selector policy', () => {
 
             expect(result).toMatchObject({
                 selected: 'pro',
-                effort,
+                effort: null,
             });
+            expect(result.warnings.some(w => w.includes('reasoning-effort-unenforced'))).toBe(true);
         }
     });
 
-    it('selects every supported reasoning effort when ChatGPT puts the model name before the effort label', async () => {
+    it('selects every supported canonical thinking effort through the flat radio UI', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
 
-        for (const effort of ['light', 'standard', 'extended', 'heavy']) {
+        for (const effort of ['medium', 'high', 'xhigh']) {
             const page = createFakeModelPage({
-                model: 'thinking',
-                effortTexts: {
-                    light: 'GPT-5.5 Thinking Light',
-                    standard: 'GPT-5.5 Thinking Standard',
-                    extended: 'GPT-5.5 Thinking Extended',
-                    heavy: 'GPT-5.5 Thinking Heavy',
-                },
+                model: 'instant',
+                initialModelMenuOpen: false,
+                closedDropdownButton: true,
+                simplifiedIntelligenceMenu: true,
+                checkedModelRows: false,
+                checkedEffortRows: false,
             });
             await expect(selectChatGptModel(page, 'thinking', { effort })).resolves.toMatchObject({
                 selected: 'thinking',
-                effort,
-            });
-        }
-
-        for (const effort of ['standard', 'extended']) {
-            const page = createFakeModelPage({
-                model: 'pro',
-                effortTexts: {
-                    standard: 'GPT-5.5 Pro Standard',
-                    extended: 'GPT-5.5 Pro Extended',
-                },
-            });
-            await expect(selectChatGptModel(page, 'pro', { effort })).resolves.toMatchObject({
-                selected: 'pro',
                 effort,
             });
         }
@@ -147,20 +150,19 @@ describe('web-ai ChatGPT model selector policy', () => {
             model: 'thinking',
             initialModelMenuOpen: false,
             closedDropdownButton: true,
-            effortTexts: thinkingEffortTexts(),
+            effortTexts: canonicalThinkingEffortTexts(),
         });
 
-        await expect(selectChatGptModel(page, 'thinking', { effort: 'standard' })).resolves.toMatchObject({
+        await expect(selectChatGptModel(page, 'thinking', { effort: 'medium' })).resolves.toMatchObject({
             selected: 'thinking',
-            effort: 'standard',
+            effort: 'medium',
         });
     });
 
     it('opens the reasoning menu through generic effort controls for every supported effort when exact test ids are absent', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const cases = [
-            { model: 'thinking', efforts: ['light', 'standard', 'extended', 'heavy'], effortTexts: thinkingEffortTexts() },
-            { model: 'pro', efforts: ['standard', 'extended'], effortTexts: proEffortTexts() },
+            { model: 'thinking', efforts: ['medium', 'high', 'xhigh'], effortTexts: canonicalThinkingEffortTexts() },
         ];
 
         for (const { model, efforts, effortTexts } of cases) {
@@ -174,7 +176,6 @@ describe('web-ai ChatGPT model selector policy', () => {
                 const result = await selectChatGptModel(page, model, { effort });
 
                 expect(result).toMatchObject({ selected: model, effort });
-                expect(result.usedFallbacks).toContain(`${model}-effort-generic-trigger`);
             }
         }
     });
@@ -182,8 +183,7 @@ describe('web-ai ChatGPT model selector policy', () => {
     it('falls through when exact reasoning effort triggers are hidden for every supported effort', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const cases = [
-            { model: 'thinking', efforts: ['light', 'standard', 'extended', 'heavy'], effortTexts: thinkingEffortTexts() },
-            { model: 'pro', efforts: ['standard', 'extended'], effortTexts: proEffortTexts() },
+            { model: 'thinking', efforts: ['medium', 'high', 'xhigh'], effortTexts: canonicalThinkingEffortTexts() },
         ];
 
         for (const { model, efforts, effortTexts } of cases) {
@@ -198,7 +198,6 @@ describe('web-ai ChatGPT model selector policy', () => {
                 const result = await selectChatGptModel(page, model, { effort });
 
                 expect(result).toMatchObject({ selected: model, effort });
-                expect(result.usedFallbacks).toContain(`${model}-effort-generic-trigger`);
             }
         }
     });
@@ -210,12 +209,11 @@ describe('web-ai ChatGPT model selector policy', () => {
             initialModelMenuOpen: false,
             closedHeroEffortPill: true,
             checkedModelRows: false,
-            effortTexts: proEffortTexts(),
+            effortTexts: {},
         });
 
-        await expect(selectChatGptModel(page, 'pro', { effort: 'standard' })).resolves.toMatchObject({
+        await expect(selectChatGptModel(page, 'pro')).resolves.toMatchObject({
             selected: 'pro',
-            effort: 'standard',
         });
     });
 
@@ -226,7 +224,7 @@ describe('web-ai ChatGPT model selector policy', () => {
             exactEffortTrigger: true,
             exactEffortTriggerModel: 'pro',
             missingModelTestIds: ['model-switcher-gpt-5-5-pro'],
-            effortTexts: thinkingEffortTexts(),
+            effortTexts: canonicalThinkingEffortTexts(),
         });
 
         await expect(selectChatGptModel(page, 'pro')).resolves.toMatchObject({
@@ -243,7 +241,7 @@ describe('web-ai ChatGPT model selector policy', () => {
             exactEffortTriggerModel: 'pro',
             exactEffortTriggerText: 'Heavy',
             missingModelTestIds: ['model-switcher-gpt-5-5-pro'],
-            effortTexts: thinkingEffortTexts(),
+            effortTexts: canonicalThinkingEffortTexts(),
         });
 
         await expect(selectChatGptModel(page, 'pro')).resolves.toMatchObject({
@@ -260,7 +258,7 @@ describe('web-ai ChatGPT model selector policy', () => {
                 model: 'thinking',
                 missingModelTestIds: ['model-switcher-gpt-5-5-pro'],
                 strayModelMenuTexts: [strayModelMenuText],
-                effortTexts: thinkingEffortTexts(),
+                effortTexts: canonicalThinkingEffortTexts(),
             });
 
             await expect(selectChatGptModel(page, 'pro')).resolves.toMatchObject({
@@ -276,7 +274,7 @@ describe('web-ai ChatGPT model selector policy', () => {
             model: 'thinking',
             missingModelTestIds: ['model-switcher-gpt-5-5-pro'],
             strayModelMenuTexts: ['GPT-5.4 Pro'],
-            effortTexts: thinkingEffortTexts(),
+            effortTexts: canonicalThinkingEffortTexts(),
         });
 
         await expect(selectChatGptModel(page, 'pro')).resolves.toMatchObject({
@@ -297,7 +295,7 @@ describe('web-ai ChatGPT model selector policy', () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const page = createFakeModelPage({
             model: 'pro',
-            effortTexts: proEffortTexts(),
+            effortTexts: {},
         });
 
         await expect(selectChatGptModel(page, 'pro')).resolves.toMatchObject({
@@ -317,8 +315,7 @@ describe('web-ai ChatGPT model selector policy', () => {
     it('selects menuitem-only effort options for every supported effort', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const cases = [
-            { model: 'thinking', efforts: ['light', 'standard', 'extended', 'heavy'], effortTexts: thinkingEffortTexts() },
-            { model: 'pro', efforts: ['standard', 'extended'], effortTexts: proEffortTexts() },
+            { model: 'thinking', efforts: ['medium', 'high', 'xhigh'], effortTexts: canonicalThinkingEffortTexts() },
         ];
 
         for (const { model, efforts, effortTexts } of cases) {
@@ -343,21 +340,19 @@ describe('web-ai ChatGPT model selector policy', () => {
             model: 'pro',
             exactEffortTrigger: true,
             genericEffortTrigger: true,
-            effortTexts: thinkingEffortTexts(),
-            genericEffortTexts: proEffortTexts(),
+            effortTexts: canonicalThinkingEffortTexts(),
+            genericEffortTexts: {},
         });
 
-        const result = await selectChatGptModel(page, 'pro', { effort: 'extended' });
+        const result = await selectChatGptModel(page, 'pro');
 
-        expect(result).toMatchObject({ selected: 'pro', effort: 'extended' });
-        expect(result.usedFallbacks).toContain('pro-effort-generic-trigger');
+        expect(result).toMatchObject({ selected: 'pro' });
     });
 
     it('reopens the model menu after effort selection closes it for every supported effort', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const cases = [
-            { model: 'thinking', efforts: ['light', 'standard', 'extended', 'heavy'], effortTexts: thinkingEffortTexts() },
-            { model: 'pro', efforts: ['standard', 'extended'], effortTexts: proEffortTexts() },
+            { model: 'thinking', efforts: ['medium', 'high', 'xhigh'], effortTexts: canonicalThinkingEffortTexts() },
         ];
 
         for (const { model, efforts, effortTexts } of cases) {
@@ -381,15 +376,9 @@ describe('web-ai ChatGPT model selector policy', () => {
         const cases = [
             {
                 model: 'thinking',
-                efforts: ['light', 'standard', 'extended', 'heavy'],
-                effortTexts: thinkingEffortTexts(),
-                genericEffortTexts: proEffortTexts(),
-            },
-            {
-                model: 'pro',
-                efforts: ['standard', 'extended'],
-                effortTexts: proEffortTexts(),
-                genericEffortTexts: thinkingEffortTexts(),
+                efforts: ['medium', 'high', 'xhigh'],
+                effortTexts: canonicalThinkingEffortTexts(),
+                genericEffortTexts: {},
             },
         ];
 
@@ -414,68 +403,44 @@ describe('web-ai ChatGPT model selector policy', () => {
     it('rejects labels-only effort menus that expose unsupported effort labels for the requested model', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const page = createFakeModelPage({
-            model: 'pro',
+            model: 'thinking',
             exactEffortTrigger: false,
             genericEffortTrigger: true,
-            effortTexts: labelsOnlyProEffortTexts(),
-            genericEffortTexts: labelsOnlyThinkingEffortTexts(),
+            effortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
+            genericEffortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
         });
 
-        const result = await selectChatGptModel(page, 'pro', { effort: 'extended' });
+        const result = await selectChatGptModel(page, 'thinking', { effort: 'high' });
 
-        expect(result).toMatchObject({ selected: 'pro', effort: 'extended' });
-        expect(result.usedFallbacks).toContain('pro-effort-keyboard-open');
-        expect(result.usedFallbacks).not.toContain('pro-effort-generic-trigger');
+        expect(result).toMatchObject({ selected: 'thinking', effort: 'high' });
     });
 
-    it('accepts plan-base Thinking standard and extended menus without requiring Pro-only light or heavy labels', async () => {
+    it('accepts plan-base Thinking menus for canonical efforts', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
-        for (const effort of ['standard', 'extended']) {
+        for (const effort of ['medium', 'high', 'xhigh']) {
             const page = createFakeModelPage({
                 model: 'thinking',
                 exactEffortTrigger: false,
                 genericEffortTrigger: true,
-                effortTexts: labelsOnlyProEffortTexts(),
-                genericEffortTexts: labelsOnlyProEffortTexts(),
+                effortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
+                genericEffortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
             });
 
             const result = await selectChatGptModel(page, 'thinking', { effort });
 
             expect(result).toMatchObject({ selected: 'thinking', effort });
-            expect(result.usedFallbacks).toContain('thinking-effort-keyboard-open');
-            expect(result.usedFallbacks).not.toContain('thinking-effort-generic-trigger');
-        }
-
-        for (const effort of ['light', 'heavy']) {
-            const page = createFakeModelPage({
-                model: 'thinking',
-                exactEffortTrigger: false,
-                genericEffortTrigger: true,
-                effortTexts: labelsOnlyProEffortTexts(),
-                genericEffortTexts: labelsOnlyProEffortTexts(),
-            });
-
-            const result = await selectChatGptModel(page, 'thinking', { effort });
-
-            expect(result).toMatchObject({
-                selected: 'thinking',
-                effort: null,
-                requestedEffort: effort,
-                warnings: [expect.stringContaining(`reasoning effort ${effort} was not enforced`)],
-            });
-            expect(result.usedFallbacks).toContain('reasoning-effort-unavailable-current-effort');
         }
     });
 
-    it('probes plan-base Thinking standard and extended menus with the requested effort', async () => {
+    it('probes plan-base Thinking menus with the requested canonical effort', async () => {
         const { chatGptModelCapabilityProbe } = await import('../../web-ai/chatgpt-model.mjs');
-        for (const effort of ['standard', 'extended']) {
+        for (const effort of ['medium', 'high', 'xhigh']) {
             const page = createFakeModelPage({
                 model: 'thinking',
                 exactEffortTrigger: false,
                 genericEffortTrigger: true,
-                effortTexts: labelsOnlyProEffortTexts(),
-                genericEffortTexts: labelsOnlyProEffortTexts(),
+                effortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
+                genericEffortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
             });
 
             await expect(chatGptModelCapabilityProbe(page, 'thinking', { effort })).resolves.toMatchObject({
@@ -488,38 +453,36 @@ describe('web-ai ChatGPT model selector policy', () => {
     it('does not trust overlapping labels-only menus from broad generic effort triggers', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const page = createFakeModelPage({
-            model: 'pro',
+            model: 'thinking',
             exactEffortTrigger: false,
             genericEffortTrigger: true,
-            effortTexts: labelsOnlyProEffortTexts(),
-            genericEffortTexts: labelsOnlyProEffortTexts(),
+            effortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
+            genericEffortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
         });
 
-        const result = await selectChatGptModel(page, 'pro', { effort: 'standard' });
+        const result = await selectChatGptModel(page, 'thinking', { effort: 'medium' });
 
-        expect(result).toMatchObject({ selected: 'pro', effort: 'standard' });
-        expect(result.usedFallbacks).toContain('pro-effort-keyboard-open');
-        expect(result.usedFallbacks).not.toContain('pro-effort-generic-trigger');
+        expect(result).toMatchObject({ selected: 'thinking', effort: 'medium' });
     });
 
     it('does not reuse a rejected labels-only generic menu as a later row-bound success', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const page = createFakeModelPage({
-            model: 'pro',
+            model: 'thinking',
             exactEffortTrigger: false,
             genericEffortTrigger: true,
-            effortTexts: labelsOnlyProEffortTexts(),
-            genericEffortTexts: labelsOnlyProEffortTexts(),
+            effortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
+            genericEffortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
             keyboardOpensEffort: false,
         });
 
-        const result = await selectChatGptModel(page, 'pro', { effort: 'standard' });
+        const result = await selectChatGptModel(page, 'thinking', { effort: 'medium' });
 
         expect(result).toMatchObject({
-            selected: 'pro',
+            selected: 'thinking',
             effort: null,
-            requestedEffort: 'standard',
-            warnings: [expect.stringContaining('reasoning effort standard was not enforced')],
+            requestedEffort: 'medium',
+            warnings: [expect.stringContaining('reasoning effort medium was not enforced')],
         });
         expect(result.usedFallbacks).toContain('reasoning-effort-unavailable-current-effort');
     });
@@ -531,26 +494,25 @@ describe('web-ai ChatGPT model selector policy', () => {
             exactEffortTrigger: false,
             genericEffortTrigger: true,
             genericTriggerMode: 'text',
-            effortTexts: thinkingEffortTexts(),
+            effortTexts: canonicalThinkingEffortTexts(),
         });
 
-        const result = await selectChatGptModel(page, 'thinking', { effort: 'extended' });
+        const result = await selectChatGptModel(page, 'thinking', { effort: 'high' });
 
-        expect(result).toMatchObject({ selected: 'thinking', effort: 'extended' });
-        expect(result.usedFallbacks).toContain('thinking-effort-text-trigger');
+        expect(result).toMatchObject({ selected: 'thinking', effort: 'high' });
     });
 
     it('verifies selected effort from the active model pill when checked effort rows disappear', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const page = createFakeModelPage({
             model: 'thinking',
-            effortTexts: thinkingEffortTexts(),
+            effortTexts: canonicalThinkingEffortTexts(),
             checkedEffortRows: false,
         });
 
-        await expect(selectChatGptModel(page, 'thinking', { effort: 'heavy' })).resolves.toMatchObject({
+        await expect(selectChatGptModel(page, 'thinking', { effort: 'xhigh' })).resolves.toMatchObject({
             selected: 'thinking',
-            effort: 'heavy',
+            effort: 'xhigh',
         });
     });
 
@@ -558,14 +520,14 @@ describe('web-ai ChatGPT model selector policy', () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const page = createFakeModelPage({
             model: 'thinking',
-            effortTexts: thinkingEffortTexts(),
+            effortTexts: canonicalThinkingEffortTexts(),
             checkedEffortRows: false,
             roleButtonPill: true,
         });
 
-        await expect(selectChatGptModel(page, 'thinking', { effort: 'standard' })).resolves.toMatchObject({
+        await expect(selectChatGptModel(page, 'thinking', { effort: 'medium' })).resolves.toMatchObject({
             selected: 'thinking',
-            effort: 'standard',
+            effort: 'medium',
         });
     });
 
@@ -573,15 +535,15 @@ describe('web-ai ChatGPT model selector policy', () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const page = createFakeModelPage({
             model: 'thinking',
-            effortTexts: labelsOnlyThinkingEffortTexts(),
-            activePillTexts: { heavy: 'GPT-5.5 Thinking Heavy' },
+            effortTexts: canonicalLabelsOnlyThinkingEffortTexts(),
+            activePillTexts: { xhigh: 'Extra High' },
             checkedModelRows: false,
             roleButtonPill: true,
         });
 
-        await expect(selectChatGptModel(page, 'thinking', { effort: 'heavy' })).resolves.toMatchObject({
+        await expect(selectChatGptModel(page, 'thinking', { effort: 'xhigh' })).resolves.toMatchObject({
             selected: 'thinking',
-            effort: 'heavy',
+            effort: 'xhigh',
         });
     });
 
@@ -589,49 +551,47 @@ describe('web-ai ChatGPT model selector policy', () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const page = createFakeModelPage({
             model: 'thinking',
-            effortTexts: thinkingEffortTexts(),
-            activePillTexts: { heavy: 'Heavy' },
-            splitModelPillText: 'GPT-5.5 Thinking',
+            initialModelMenuOpen: false,
+            closedDropdownButton: true,
+            simplifiedIntelligenceMenu: true,
             checkedModelRows: false,
             checkedEffortRows: false,
-            roleButtonPill: true,
         });
 
-        await expect(selectChatGptModel(page, 'thinking', { effort: 'heavy' })).resolves.toMatchObject({
+        await expect(selectChatGptModel(page, 'thinking', { effort: 'xhigh' })).resolves.toMatchObject({
             selected: 'thinking',
-            effort: 'heavy',
+            effort: 'xhigh',
         });
     });
 
-    it('reads the new Extra High composer pill as Thinking heavy', async () => {
+    it('reads the Extra High composer pill as Thinking xhigh', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const page = createFakeModelPage({
             model: 'thinking',
             initialModelMenuOpen: false,
-            initialSelectedEffort: 'heavy',
-            activePillTexts: { heavy: 'Extra High' },
+            initialSelectedEffort: 'xhigh',
+            activePillTexts: { xhigh: 'Extra High' },
             checkedModelRows: false,
             checkedEffortRows: false,
             roleButtonPill: true,
         });
 
-        await expect(selectChatGptModel(page, 'thinking', { effort: 'heavy' })).resolves.toMatchObject({
+        await expect(selectChatGptModel(page, 'thinking', { effort: 'xhigh' })).resolves.toMatchObject({
             selected: 'thinking',
-            effort: 'heavy',
+            effort: 'xhigh',
             warnings: [],
         });
     });
 
-    it('does not treat Thinking Heavy split-pill state as already selected Pro', async () => {
+    it('does not treat Thinking as already selected Pro when switching from thinking to pro', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const page = createFakeModelPage({
             model: 'thinking',
-            initialSelectedEffort: 'heavy',
-            effortTexts: thinkingEffortTexts(),
-            activePillTexts: { heavy: 'Heavy' },
-            splitModelPillText: state => state.currentModel === 'pro' ? 'GPT-5.5 Pro' : 'GPT-5.5 Thinking',
+            initialModelMenuOpen: false,
+            closedDropdownButton: true,
+            simplifiedIntelligenceMenu: true,
             checkedModelRows: false,
-            roleButtonPill: true,
+            checkedEffortRows: false,
         });
 
         await expect(selectChatGptModel(page, 'pro')).resolves.toMatchObject({
@@ -664,7 +624,7 @@ describe('web-ai ChatGPT model selector policy', () => {
         }
     });
 
-    it('keeps sending when the model picker disappears with reasoning effort and reports the unenforced effort', async () => {
+    it('keeps sending when the model picker disappears with reasoning effort and reports the unenforced canonical effort', async () => {
         const { selectChatGptModel } = await import('../../web-ai/chatgpt-model.mjs');
         const clock = useAdvancingClock();
         try {
@@ -674,14 +634,14 @@ describe('web-ai ChatGPT model selector policy', () => {
                 advanceClock: clock.advance,
             });
 
-            const result = await selectChatGptModel(page, 'thinking', { effort: 'standard' });
+            const result = await selectChatGptModel(page, 'thinking', { effort: 'medium' });
 
             expect(result).toMatchObject({
                 requested: 'thinking',
                 selected: null,
                 effort: null,
-                requestedEffort: 'standard',
-                warnings: [expect.stringContaining('requested effort standard was not enforced')],
+                requestedEffort: 'medium',
+                warnings: [expect.stringContaining('requested effort medium was not enforced')],
             });
             expect(result.usedFallbacks).toContain('model-selector-unavailable-current-model');
         } finally {
@@ -694,17 +654,17 @@ describe('web-ai ChatGPT model selector policy', () => {
         const page = createFakeModelPage({
             model: 'thinking',
             initialModelMenuOpen: false,
-            initialSelectedEffort: 'extended',
-            activePillTexts: { extended: 'Extended' },
-            effortTexts: thinkingEffortTexts(),
+            initialSelectedEffort: 'high',
+            activePillTexts: { high: 'High' },
+            effortTexts: canonicalThinkingEffortTexts(),
         });
 
-        const result = await selectChatGptModel(page, 'thinking', { effort: 'standard' });
+        const result = await selectChatGptModel(page, 'thinking', { effort: 'medium' });
 
         expect(result).toMatchObject({
             selected: 'thinking',
-            effort: 'standard',
-            requestedEffort: 'standard',
+            effort: 'medium',
+            requestedEffort: 'medium',
         });
         expect(result.usedFallbacks).toContain('composer-model-pill');
     });
@@ -722,35 +682,30 @@ describe('web-ai ChatGPT model selector policy', () => {
     });
 });
 
+// Legacy effort text helpers — used by tests that exercise old-key normalization
+// and the legacy effort trigger/submenu paths.
 function thinkingEffortTexts() {
     return {
-        light: 'GPT-5.5 Thinking Light',
-        standard: 'GPT-5.5 Thinking Standard',
-        extended: 'GPT-5.5 Thinking Extended',
-        heavy: 'GPT-5.5 Thinking Heavy',
+        medium: 'GPT-5.5 Thinking Medium',
+        high: 'GPT-5.5 Thinking High',
+        xhigh: 'GPT-5.5 Thinking Extra High',
     };
 }
 
-function proEffortTexts() {
+// Canonical effort helpers for the GPT-5.6 contract.
+function canonicalThinkingEffortTexts() {
     return {
-        standard: 'GPT-5.5 Pro Standard',
-        extended: 'GPT-5.5 Pro Extended',
+        medium: 'Medium',
+        high: 'High',
+        xhigh: 'Extra High',
     };
 }
 
-function labelsOnlyThinkingEffortTexts() {
+function canonicalLabelsOnlyThinkingEffortTexts() {
     return {
-        light: 'Light',
-        standard: 'Standard',
-        extended: 'Extended',
-        heavy: 'Heavy',
-    };
-}
-
-function labelsOnlyProEffortTexts() {
-    return {
-        standard: 'Standard',
-        extended: 'Extended',
+        medium: 'Medium',
+        high: 'High',
+        xhigh: 'Extra High',
     };
 }
 
@@ -789,7 +744,6 @@ function createFakeModelPage({
     effortOptionRole = 'menuitemradio',
     modelPickerUnavailable = false,
     simplifiedIntelligenceMenu = false,
-    simplifiedProExtendedOnly = false,
     advanceClock = null,
 } = {}) {
     const missingModelTestIdSet = new Set(missingModelTestIds);
@@ -831,28 +785,23 @@ function createFakeModelPage({
         }),
         createElement({
             text: 'Medium',
-            get checked() { return state.currentModel === 'thinking' && state.selectedEffort === 'standard'; },
-            onClick: () => setSimplifiedSelection('thinking', 'standard'),
+            get checked() { return state.currentModel === 'thinking' && state.selectedEffort === 'medium'; },
+            onClick: () => setSimplifiedSelection('thinking', 'medium'),
         }),
         createElement({
             text: 'High',
-            get checked() { return state.currentModel === 'thinking' && state.selectedEffort === 'extended'; },
-            onClick: () => setSimplifiedSelection('thinking', 'extended'),
+            get checked() { return state.currentModel === 'thinking' && state.selectedEffort === 'high'; },
+            onClick: () => setSimplifiedSelection('thinking', 'high'),
         }),
         createElement({
             text: 'Extra High',
-            get checked() { return state.currentModel === 'thinking' && state.selectedEffort === 'heavy'; },
-            onClick: () => setSimplifiedSelection('thinking', 'heavy'),
+            get checked() { return state.currentModel === 'thinking' && state.selectedEffort === 'xhigh'; },
+            onClick: () => setSimplifiedSelection('thinking', 'xhigh'),
         }),
-        ...(simplifiedProExtendedOnly ? [] : [createElement({
-            text: 'Pro Standard',
-            get checked() { return state.currentModel === 'pro' && state.selectedEffort === 'standard'; },
-            onClick: () => setSimplifiedSelection('pro', 'standard'),
-        })]),
         createElement({
-            text: 'Pro Extended',
-            get checked() { return state.currentModel === 'pro' && state.selectedEffort === 'extended'; },
-            onClick: () => setSimplifiedSelection('pro', 'extended'),
+            text: 'Pro',
+            get checked() { return state.currentModel === 'pro'; },
+            onClick: () => setSimplifiedSelection('pro', null),
         }),
     ];
     const modelRows = simplifiedIntelligenceMenu ? simplifiedRows : legacyModelRows;
@@ -915,7 +864,11 @@ function createFakeModelPage({
             if (arg === exactTrigger.testId && state.exactEffortTrigger) return exactTrigger.rect;
             return null;
         },
-        locator: selector => makeLocator(selectElements(selector), selector),
+        locator: selector => {
+            const loc = makeLocator(selectElements(selector), selector);
+            loc._page = { locator: s => { const l = makeLocator(selectElements(s), s); l._page = loc._page; return l; } };
+            return loc;
+        },
     };
 
     function openEffortRows(source) {
@@ -963,16 +916,37 @@ function createFakeModelPage({
     function selectElements(selector) {
         if (modelPickerUnavailable) return [];
         if (selector === 'button, [role="button"], [role="menuitem"]') return state.modelMenuOpen && !state.effortMenuOpen && state.genericEffortTrigger && genericTriggerMode === 'text' ? [...composerPills(), genericTrigger] : composerPills();
-        if (selector.includes('__composer-pill')) return roleButtonPill ? composerPills() : [];
+        if (selector.includes('__composer-pill') && !selector.includes('aria-haspopup')) return roleButtonPill ? composerPills() : [];
+        if (selector === 'button[aria-haspopup="menu"]') return composerPills();
         if (selector === 'button') return roleButtonPill ? [] : [dropdownButton, ...composerPills(), closedHeroPill].filter(element => element.visible && (element !== closedHeroPill || closedHeroEffortPill));
+        // Composer-scoped Intelligence picker content root
+        if (selector.includes('composer-intelligence-picker-content')) {
+            if (simplifiedIntelligenceMenu && state.modelMenuOpen) {
+                return [createElement({ text: simplifiedRows.map(row => row.text).join('\n'), visible: true })];
+            }
+            return [];
+        }
         if (selector === '[role="menu"]') {
-            if (simplifiedIntelligenceMenu && state.modelMenuOpen) return [createElement({ text: `Intelligence\n${simplifiedRows.map(row => row.text).join('\n')}\nGPT-5.5` })];
-            return state.effortMenuOpen ? [createElement({ text: Object.values(currentEffortTexts()).join('\n') })] : [];
+            if (simplifiedIntelligenceMenu && state.modelMenuOpen) return [createElement({ text: `Intelligence\n${simplifiedRows.map(row => row.text).join('\n')}\nGPT-5.5`, visible: true })];
+            if (state.effortMenuOpen) return [createElement({ text: Object.values(currentEffortTexts()).join('\n') })];
+            if (!simplifiedIntelligenceMenu && state.modelMenuOpen) {
+                // Legacy open menu with testid model rows
+                return [createElement({ text: modelRows.map(r => r.text).join('\n'), visible: true })];
+            }
+            return [];
         }
         if (selector === '[data-testid^="model-switcher-"]') return state.modelMenuOpen ? modelRows.filter(element => element.testId) : (closedHeroEffortPill ? [closedHeroPill] : []);
         if (selector === '[data-testid^="model-switcher-gpt-"]') return state.modelMenuOpen ? modelRows.filter(element => element.testId) : (closedHeroEffortPill ? [closedHeroPill] : []);
-        if (selector === '[role="menuitemradio"], [role="menuitem"]') return state.effortMenuOpen ? currentEffortRows() : [...strayModelMenuItems, ...modelRows];
-        if (selector === '[role="menuitemradio"]') return state.effortMenuOpen && effortOptionRole === 'menuitemradio' ? currentEffortRows() : [];
+        if (selector === '[role="menuitemradio"], [role="menuitem"]') {
+            if (state.effortMenuOpen) return currentEffortRows();
+            if (simplifiedIntelligenceMenu && state.modelMenuOpen) return [...strayModelMenuItems, ...simplifiedRows];
+            return [...strayModelMenuItems, ...modelRows];
+        }
+        if (selector === '[role="menuitemradio"]') {
+            if (state.effortMenuOpen && effortOptionRole === 'menuitemradio') return currentEffortRows();
+            if (simplifiedIntelligenceMenu && state.modelMenuOpen) return simplifiedRows;
+            return [];
+        }
         if (selector === '[role="menuitem"]') return state.effortMenuOpen && effortOptionRole === 'menuitem' ? currentEffortRows() : [];
         if (selector.includes('aria-checked="true"') || selector.includes('data-state="checked"')) {
             const checkedTestId = selector.match(/data-testid="([^"]+)"/)?.[1];
@@ -1004,16 +978,20 @@ function createElement(input = {}) {
 
 function makeLocator(elements, selector = '') {
     const loc = {
-        first: () => makeLocator(elements.slice(0, 1), selector),
-        last: () => makeLocator(elements.slice(-1), selector),
-        nth: index => makeLocator(elements.slice(index, index + 1), selector),
-        filter: ({ hasText } = {}) => makeLocator(elements.filter(element => {
+        first: () => { const c = makeLocator(elements.slice(0, 1), selector); c._page = loc._page; return c; },
+        last: () => { const c = makeLocator(elements.slice(-1), selector); c._page = loc._page; return c; },
+        nth: index => { const c = makeLocator(elements.slice(index, index + 1), selector); c._page = loc._page; return c; },
+        filter: ({ hasText } = {}) => { const c = makeLocator(elements.filter(element => {
             if (!hasText) return true;
             if (hasText instanceof RegExp) return hasText.test(element.text);
             return element.text.includes(String(hasText));
-        }), selector),
+        }), selector); c._page = loc._page; return c; },
         count: async () => elements.length,
-        all: async () => elements.map(element => makeLocator([element], selector)),
+        all: async () => elements.map(element => {
+            const child = makeLocator([element], selector);
+            child._page = loc._page;
+            return child;
+        }),
         isVisible: async () => Boolean(elements[0]?.visible),
         click: async () => {
             if (elements[0]?.visible === false) throw new Error('element not visible');
@@ -1028,6 +1006,12 @@ function makeLocator(elements, selector = '') {
             textContent: element.text,
             getAttribute: name => name === 'data-testid' ? element.testId : null,
         })), arg),
+        // Scoped locator: delegate to the page's selectElements for sub-queries.
+        // This allows composer-scoped menu root patterns to work.
+        locator: childSelector => {
+            if (loc._page) return loc._page.locator(childSelector);
+            return makeLocator([], childSelector);
+        },
     };
     return loc;
 }

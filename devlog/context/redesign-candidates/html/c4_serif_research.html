@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C4 - AI Serif Research</title>
+<style>
+  :root{
+    --bg:#f6f5f2; --card:#fdfcf9; --ink:#1c1917; --muted:#78716c;
+    --ox:#7f1d1d; --line:#d6d3cd; --mono:"SF Mono",Menlo,monospace;
+    --serif:Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Helvetica Neue",Arial,sans-serif;line-height:1.55}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 36px}
+  nav{border-bottom:1px solid var(--line)}
+  .nav-in{display:flex;justify-content:space-between;align-items:baseline;padding:20px 0}
+  .brand{font-family:var(--serif);font-size:18px;font-weight:400}
+  .brand i{font-style:normal;color:var(--ox)}
+  .links{display:flex;gap:24px;font-size:13px;color:var(--muted)}
+  .links a{color:inherit;text-decoration:none}
+  .hero{padding:80px 0 44px}
+  .kick{font:500 11.5px var(--mono);letter-spacing:.2em;color:var(--ox);margin-bottom:26px}
+  h1{font-family:var(--serif);font-weight:400;font-size:64px;line-height:1.08;max-width:22ch;text-wrap:balance}
+  h1 em{font-style:italic}
+  .sub{margin-top:24px;font-size:16.5px;color:var(--muted);max-width:58ch;text-wrap:balance}
+  .cta-row{margin-top:30px;display:flex;gap:16px;align-items:center}
+  .cta{background:var(--ink);color:var(--bg);font:600 13px var(--mono);padding:13px 22px;border:0;cursor:pointer}
+  .cta-l{font-size:14px;color:var(--ox);text-decoration:underline;text-underline-offset:3px}
+  .evidence{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:18px;margin-top:56px}
+  .ev{background:var(--card);border:1px solid var(--line);padding:18px 18px 14px}
+  .ev .fig{font:11px var(--mono);color:var(--ox);letter-spacing:.08em;margin-bottom:12px}
+  .shot{background:#e9e6df;border:1px solid var(--line);height:120px;display:grid;place-items:center;font:11px var(--mono);color:var(--muted)}
+  .ev pre{font:11.5px/1.75 var(--mono);color:#44403c;white-space:pre-wrap;overflow:hidden}
+  .ev .cap{font-size:12px;color:var(--muted);margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+  .sess{margin-top:64px;border-top:1px solid var(--ink);padding:30px 0 54px}
+  .sess h2{font-family:var(--serif);font-weight:400;font-size:30px;margin-bottom:20px}
+  .sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .sp{background:#e8e5de;border:1px solid var(--line);padding:18px}
+  .sp h3{font-size:15px;font-weight:700;margin-bottom:12px}
+  .sp h3 sup{color:var(--ox);font:11px var(--mono);margin-left:6px}
+  .sp dl{font:12px/1.9 var(--mono);color:#57534e}
+  .sp dt{float:left;clear:left;width:88px;color:var(--muted)}
+</style>
+</head>
+<body>
+<nav><div class="wrap nav-in">
+  <div class="brand">agbrowse<i>.</i></div>
+  <div class="links"><a href="#">Web AI</a><a href="#">Evidence</a><a href="#">Docs</a><a href="#">GitHub</a></div>
+</div></nav>
+<div class="wrap">
+  <header class="hero">
+    <p class="kick">CHROME/CDP INSTRUMENT FOR AI AGENTS</p>
+    <h1>Evidence-first <em>web AI</em> for agents that must show their work.</h1>
+    <p class="sub">Every ChatGPT, Gemini, or Grok session runs in a real observable browser tab. Every claim is tied to a screenshot, console log, or network trace.</p>
+    <div class="cta-row">
+      <button class="cta">npm install -g agbrowse</button>
+      <a class="cta-l" href="#">Read the methodology</a>
+    </div>
+    <div class="evidence">
+      <div class="ev">
+        <div class="fig">FIG. 1 — OBSERVED TAB</div>
+        <div class="shot">screenshot · chatgpt.com · tab #3</div>
+        <div class="cap">Snapshot returns 118 stable refs before any action is taken.</div>
+      </div>
+      <div class="ev">
+        <div class="fig">FIG. 2 — CONSOLE EXCERPT</div>
+        <pre>[log] composer ready
+[log] stream started
+[log] 0 errors, 0 warnings
+state: streaming → done</pre>
+        <div class="cap">Console evidence collected per session.</div>
+      </div>
+      <div class="ev">
+        <div class="fig">FIG. 3 — SESSION RECORD</div>
+        <pre>id      s_9f2e41
+vendor  chatgpt
+model   pro
+output  result.md · 2,914w</pre>
+        <div class="cap">Durable id — poll again from any later shell.</div>
+      </div>
+    </div>
+  </header>
+  <section class="sess">
+    <h2>Three providers, one instrument.</h2>
+    <div class="sgrid">
+      <div class="sp"><h3>ChatGPT<sup>a</sup></h3><dl><dt>modes</dt><dd>pro · thinking · code</dd><dt>artifacts</dt><dd>zip + re-extract</dd><dt>upload</dt><dd>files, context pkg</dd></dl></div>
+      <div class="sp"><h3>Gemini<sup>b</sup></h3><dl><dt>modes</dt><dd>deep-think</dd><dt>artifacts</dt><dd>inline markdown</dd><dt>upload</dt><dd>files</dd></dl></div>
+      <div class="sp"><h3>Grok<sup>c</sup></h3><dl><dt>modes</dt><dd>expert</dd><dt>artifacts</dt><dd>copy-markdown</dd><dt>upload</dt><dd>—</dd></dl></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

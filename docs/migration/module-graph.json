@@ -1,28 +1,39 @@
 {
-  "generated_at": "2026-05-27T06:31:56.487Z",
-  "total_mjs": 248,
+  "generated_at": "2026-07-10T12:17:31.972Z",
+  "total_mjs": 354,
   "fan_in": {
-    "web-ai/session.mjs": 23,
-    "web-ai/errors.mjs": 20,
+    "web-ai/errors.mjs": 33,
+    "web-ai/session.mjs": 27,
+    "skills/browser/adaptive-fetch/safety.mjs": 11,
+    "test/helpers/exec-browser.mjs": 10,
     "web-ai/active-command-store.mjs": 10,
-    "web-ai/session-store.mjs": 9,
-    "web-ai/cli.mjs": 8,
+    "web-ai/session-artifacts.mjs": 10,
+    "web-ai/session-store.mjs": 10,
+    "web-ai/tab-recovery.mjs": 10,
+    "web-ai/chatgpt-model.mjs": 9,
+    "web-ai/cli.mjs": 9,
+    "web-ai/vendor-editor-contract.mjs": 9,
+    "test/helpers/temp-env.mjs": 8,
+    "web-ai/chatgpt.mjs": 8,
     "web-ai/constants.mjs": 8,
-    "web-ai/vendor-editor-contract.mjs": 8,
-    "skills/browser/adaptive-fetch/safety.mjs": 7,
-    "test/helpers/exec-browser.mjs": 7,
-    "test/helpers/temp-env.mjs": 7,
+    "skills/browser/runway-selectors.mjs": 7,
+    "web-ai/chatgpt-composer.mjs": 7,
     "web-ai/copy-markdown.mjs": 7,
-    "web-ai/session-artifacts.mjs": 7,
     "web-ai/tab-lease-store.mjs": 7,
-    "web-ai/tab-recovery.mjs": 7,
+    "skills/browser/adaptive-fetch/index.mjs": 6,
+    "skills/browser/search-research/search-strategy.mjs": 6,
     "skills/browser/tab-manager.mjs": 6,
     "web-ai/browser-tool-schema.mjs": 6,
-    "web-ai/chatgpt.mjs": 6,
+    "web-ai/chatgpt-attachments.mjs": 6,
+    "skills/browser/adaptive-fetch/fetcher.mjs": 5,
+    "skills/browser/adaptive-fetch/transforms.mjs": 5,
+    "skills/browser/runway-download.mjs": 5,
+    "skills/browser/runway-generate.mjs": 5,
+    "skills/browser/runway-monitor.mjs": 5,
     "web-ai/capability.mjs": 5,
-    "web-ai/chatgpt-attachments.mjs": 5,
-    "web-ai/chatgpt-model.mjs": 5,
     "web-ai/context-pack/index.mjs": 5,
+    "web-ai/doctor.mjs": 5,
+    "web-ai/eval-runner.mjs": 5,
     "web-ai/eval/types.mjs": 5,
     "web-ai/gemini-live.mjs": 5,
     "web-ai/grok-live.mjs": 5,
@@ -31,44 +42,66 @@
     "web-ai/self-heal.mjs": 5,
     "web-ai/tab-finalizer.mjs": 5,
     "skills/browser/adaptive-fetch/browser-runtime.mjs": 4,
-    "skills/browser/adaptive-fetch/fetcher.mjs": 4,
-    "skills/browser/adaptive-fetch/index.mjs": 4,
-    "skills/browser/adaptive-fetch/transforms.mjs": 4,
+    "skills/browser/adaptive-fetch/structured-extractor.mjs": 4,
     "skills/browser/adaptive-fetch/validators.mjs": 4,
+    "skills/browser/profile-lock.mjs": 4,
+    "skills/browser/search-research/fetch-enrichment.mjs": 4,
+    "skills/browser/search-research/normalizer.mjs": 4,
     "web-ai/answer-artifact.mjs": 4,
     "web-ai/ax-snapshot.mjs": 4,
-    "web-ai/chatgpt-composer.mjs": 4,
+    "web-ai/capability-observation-presets.mjs": 4,
+    "web-ai/capability-types.mjs": 4,
+    "web-ai/chatgpt-deep-research.mjs": 4,
+    "web-ai/chatgpt-response-dom.mjs": 4,
+    "web-ai/code-artifact.mjs": 4,
     "web-ai/context-pack/constants.mjs": 4,
-    "web-ai/doctor.mjs": 4,
     "web-ai/dom-hash.mjs": 4,
-    "web-ai/eval-runner.mjs": 4,
+    "web-ai/failure-diagnostics.mjs": 4,
+    "web-ai/gemini-model.mjs": 4,
     "web-ai/mcp-server.mjs": 4,
+    "web-ai/navigation-ready.mjs": 4,
     "web-ai/tab-pool.mjs": 4,
     "skills/browser/adaptive-fetch/browser-session.mjs": 3,
     "skills/browser/adaptive-fetch/challenge-detector.mjs": 3,
-    "skills/browser/profile-lock.mjs": 3,
+    "skills/browser/adaptive-fetch/tls-fetch.mjs": 3,
+    "skills/browser/runway-sequence.mjs": 3,
+    "skills/browser/runway-url.mjs": 3,
+    "skills/browser/runway.mjs": 3,
+    "skills/browser/search-research/browse-escalation.mjs": 3,
+    "skills/browser/search-research/constraint-ledger.mjs": 3,
     "skills/browser/tab-lifecycle.mjs": 3,
     "test/helpers/fixture-server.mjs": 3,
     "web-ai/action-cache.mjs": 3,
     "web-ai/action-memory.mjs": 3,
     "web-ai/chatgpt-archive.mjs": 3,
+    "web-ai/chatgpt-work-picker.mjs": 3,
     "web-ai/claim-audit.mjs": 3,
     "web-ai/context-pack/renderer.mjs": 3,
     "web-ai/context-pack/token-estimator.mjs": 3,
-    "web-ai/gemini-model.mjs": 3,
+    "web-ai/eval/scrub-dom.mjs": 3,
+    "web-ai/extract-schema.mjs": 3,
+    "web-ai/grok-model.mjs": 3,
     "web-ai/observation-bundle.mjs": 3,
     "web-ai/observe-actions.mjs": 3,
     "web-ai/planner-contract.mjs": 3,
     "web-ai/policy/default-policy.mjs": 3,
     "web-ai/policy/schema.mjs": 3,
     "web-ai/post-action-assert.mjs": 3,
+    "web-ai/product-surfaces.mjs": 3,
     "web-ai/session-target-guard.mjs": 3,
     "web-ai/tool-schema.mjs": 3,
     "web-ai/trace/redact.mjs": 3,
     "web-ai/trace/types.mjs": 3,
+    "web-ai/watcher.mjs": 3,
     "benchmarks/agbrowse/trajectory.mjs": 2,
+    "skills/browser/adaptive-fetch/bm25-filter.mjs": 2,
+    "skills/browser/adaptive-fetch/browser-escalation.mjs": 2,
+    "skills/browser/adaptive-fetch/camoufox-session.mjs": 2,
+    "skills/browser/adaptive-fetch/candidate-discovery.mjs": 2,
     "skills/browser/adaptive-fetch/content-scorer.mjs": 2,
+    "skills/browser/adaptive-fetch/defuddle-extractor.mjs": 2,
     "skills/browser/adaptive-fetch/endpoint-resolvers.mjs": 2,
+    "skills/browser/adaptive-fetch/feed-parser.mjs": 2,
     "skills/browser/adaptive-fetch/human-loop.mjs": 2,
     "skills/browser/adaptive-fetch/metadata.mjs": 2,
     "skills/browser/adaptive-fetch/output.mjs": 2,
@@ -76,58 +109,75 @@
     "skills/browser/adaptive-fetch/third-party-readers.mjs": 2,
     "skills/browser/adaptive-fetch/trace.mjs": 2,
     "skills/browser/adaptive-fetch/waf-profiles.mjs": 2,
+    "skills/browser/adaptive-fetch/ytdlp-reader.mjs": 2,
     "skills/browser/browser-core.mjs": 2,
     "skills/browser/keyed-mutex.mjs": 2,
-    "skills/browser/runway-monitor.mjs": 2,
-    "skills/browser/runway.mjs": 2,
+    "skills/browser/search-research/korean-routes.mjs": 2,
+    "skills/browser/search.mjs": 2,
     "skills/browser/skill-install.mjs": 2,
+    "skills/browser/update-check.mjs": 2,
     "skills/vision-click/vision-core.mjs": 2,
     "test/helpers/exec-script.mjs": 2,
     "test/helpers/snapshot-utils.mjs": 2,
+    "test/integration/playwright-launch.mjs": 2,
     "test/integration/smoke-server.mjs": 2,
     "web-ai/action-breadth.mjs": 2,
     "web-ai/action-intent.mjs": 2,
     "web-ai/action-trace.mjs": 2,
+    "web-ai/annotated-screenshot.mjs": 2,
     "web-ai/browser-primitives.mjs": 2,
     "web-ai/cache-metrics.mjs": 2,
+    "web-ai/candidate-reconcile.mjs": 2,
+    "web-ai/capability-registry.mjs": 2,
+    "web-ai/chatgpt-deep-research-report.mjs": 2,
+    "web-ai/chatgpt-files.mjs": 2,
     "web-ai/chatgpt-images.mjs": 2,
     "web-ai/chatgpt-project-sources.mjs": 2,
+    "web-ai/chatgpt-response-observer.mjs": 2,
+    "web-ai/chatgpt-tools.mjs": 2,
     "web-ai/churn-log.mjs": 2,
+    "web-ai/code-dev-context.mjs": 2,
+    "web-ai/code-mode-prompt.mjs": 2,
+    "web-ai/code-mode.mjs": 2,
     "web-ai/context-pack/file-selector.mjs": 2,
     "web-ai/eval-adapters/webvoyager.mjs": 2,
     "web-ai/eval/fixtures.mjs": 2,
     "web-ai/eval/metrics.mjs": 2,
-    "web-ai/eval/scrub-dom.mjs": 2,
-    "web-ai/extract-schema.mjs": 2,
-    "web-ai/grok-model.mjs": 2,
-    "web-ai/navigation-ready.mjs": 2,
+    "web-ai/eval/provider-targets.mjs": 2,
     "web-ai/observe-targets.mjs": 2,
     "web-ai/planner-loop.mjs": 2,
     "web-ai/policy/content-boundary.mjs": 2,
     "web-ai/source-audit.mjs": 2,
+    "web-ai/tab-inspect.mjs": 2,
     "web-ai/target-resolver.mjs": 2,
     "web-ai/trace-persistence.mjs": 2,
     "web-ai/trace/action-timeline.mjs": 2,
     "web-ai/trace/report.mjs": 2,
     "web-ai/trace/writer.mjs": 2,
     "web-ai/types.mjs": 2,
-    "skills/browser/adaptive-fetch/browser-escalation.mjs": 1,
     "skills/browser/browser.mjs": 1,
+    "skills/browser/extract.mjs": 1,
+    "skills/browser/runway-multishot.mjs": 1,
+    "skills/browser/runway-product-ad.mjs": 1,
+    "skills/vision-click/vision-candidate.mjs": 1,
     "skills/vision-click/vision-click.mjs": 1,
     "test/helpers/exec-vision-click.mjs": 1,
-    "web-ai/chatgpt-deep-research.mjs": 1,
+    "test/helpers/provider-dom-contract.mjs": 1,
+    "web-ai/capability-freshness.mjs": 1,
+    "web-ai/capability-observed-tool-entries.mjs": 1,
     "web-ai/chatgpt-multi-turn.mjs": 1,
+    "web-ai/chatgpt-upload-surface.mjs": 1,
     "web-ai/cli-sessions.mjs": 1,
     "web-ai/context-pack/builder.mjs": 1,
     "web-ai/context-pack/report.mjs": 1,
     "web-ai/contract-audit.mjs": 1,
     "web-ai/control-summary.mjs": 1,
-    "web-ai/eval/provider-targets.mjs": 1,
+    "web-ai/interstitial.mjs": 1,
+    "web-ai/live-status-report.mjs": 1,
     "web-ai/mcp-state.mjs": 1,
+    "web-ai/provider-adapter.mjs": 1,
     "web-ai/ref-registry.mjs": 1,
-    "web-ai/session-doctor.mjs": 1,
-    "web-ai/tab-inspect.mjs": 1,
-    "web-ai/watcher.mjs": 1
+    "web-ai/session-doctor.mjs": 1
   },
   "fan_out": {
     "vitest.config.mjs": 0,
@@ -137,39 +187,60 @@
     "web-ai/action-memory.mjs": 0,
     "web-ai/action-trace.mjs": 0,
     "web-ai/active-command-store.mjs": 1,
+    "web-ai/annotated-screenshot.mjs": 1,
     "web-ai/answer-artifact.mjs": 0,
     "web-ai/ax-snapshot.mjs": 2,
     "web-ai/browser-primitives.mjs": 1,
     "web-ai/browser-tool-schema.mjs": 0,
     "web-ai/cache-metrics.mjs": 0,
+    "web-ai/candidate-reconcile.mjs": 0,
+    "web-ai/capability-freshness.mjs": 0,
+    "web-ai/capability-observation-presets.mjs": 1,
+    "web-ai/capability-observed-tool-entries.mjs": 2,
+    "web-ai/capability-registry.mjs": 4,
+    "web-ai/capability-types.mjs": 1,
     "web-ai/capability.mjs": 0,
     "web-ai/chatgpt-archive.mjs": 0,
-    "web-ai/chatgpt-attachments.mjs": 0,
+    "web-ai/chatgpt-attachments.mjs": 1,
     "web-ai/chatgpt-composer.mjs": 2,
-    "web-ai/chatgpt-deep-research.mjs": 3,
+    "web-ai/chatgpt-deep-research-report.mjs": 0,
+    "web-ai/chatgpt-deep-research.mjs": 4,
+    "web-ai/chatgpt-files.mjs": 1,
     "web-ai/chatgpt-images.mjs": 1,
-    "web-ai/chatgpt-model.mjs": 1,
+    "web-ai/chatgpt-model.mjs": 2,
     "web-ai/chatgpt-multi-turn.mjs": 3,
     "web-ai/chatgpt-project-sources.mjs": 0,
-    "web-ai/chatgpt.mjs": 22,
+    "web-ai/chatgpt-response-dom.mjs": 0,
+    "web-ai/chatgpt-response-observer.mjs": 1,
+    "web-ai/chatgpt-tools.mjs": 0,
+    "web-ai/chatgpt-upload-surface.mjs": 0,
+    "web-ai/chatgpt-work-picker.mjs": 3,
+    "web-ai/chatgpt.mjs": 27,
     "web-ai/churn-log.mjs": 0,
     "web-ai/claim-audit.mjs": 0,
-    "web-ai/cli-sessions.mjs": 8,
-    "web-ai/cli.mjs": 32,
+    "web-ai/cli-sessions.mjs": 9,
+    "web-ai/cli.mjs": 37,
+    "web-ai/code-artifact.mjs": 0,
+    "web-ai/code-dev-context.mjs": 1,
+    "web-ai/code-mode-prompt.mjs": 0,
+    "web-ai/code-mode.mjs": 4,
     "web-ai/constants.mjs": 0,
     "web-ai/contract-audit.mjs": 2,
     "web-ai/control-summary.mjs": 0,
     "web-ai/copy-markdown.mjs": 0,
-    "web-ai/doctor.mjs": 8,
+    "web-ai/doctor.mjs": 9,
     "web-ai/dom-hash.mjs": 0,
     "web-ai/errors.mjs": 0,
     "web-ai/eval-runner.mjs": 5,
     "web-ai/extract-schema.mjs": 0,
+    "web-ai/failure-diagnostics.mjs": 1,
     "web-ai/gemini-live.mjs": 12,
     "web-ai/gemini-model.mjs": 1,
     "web-ai/grok-live.mjs": 12,
     "web-ai/grok-model.mjs": 1,
-    "web-ai/mcp-server.mjs": 14,
+    "web-ai/interstitial.mjs": 0,
+    "web-ai/live-status-report.mjs": 0,
+    "web-ai/mcp-server.mjs": 18,
     "web-ai/mcp-state.mjs": 0,
     "web-ai/navigation-ready.mjs": 0,
     "web-ai/observation-bundle.mjs": 0,
@@ -178,6 +249,8 @@
     "web-ai/planner-contract.mjs": 0,
     "web-ai/planner-loop.mjs": 2,
     "web-ai/post-action-assert.mjs": 0,
+    "web-ai/product-surfaces.mjs": 2,
+    "web-ai/provider-adapter.mjs": 1,
     "web-ai/question.mjs": 3,
     "web-ai/ref-registry.mjs": 1,
     "web-ai/self-heal.mjs": 5,
@@ -185,11 +258,11 @@
     "web-ai/session-doctor.mjs": 4,
     "web-ai/session-store.mjs": 0,
     "web-ai/session-target-guard.mjs": 2,
-    "web-ai/session.mjs": 1,
+    "web-ai/session.mjs": 4,
     "web-ai/source-audit.mjs": 0,
     "web-ai/tab-finalizer.mjs": 4,
     "web-ai/tab-inspect.mjs": 0,
-    "web-ai/tab-lease-store.mjs": 2,
+    "web-ai/tab-lease-store.mjs": 3,
     "web-ai/tab-pool.mjs": 1,
     "web-ai/tab-recovery.mjs": 4,
     "web-ai/target-resolver.mjs": 2,
@@ -225,22 +298,35 @@
     "test/unit/active-command-store.test.mjs": 2,
     "test/unit/benchmark-trajectory.test.mjs": 1,
     "test/unit/browser-active-tab.test.mjs": 2,
+    "test/unit/browser-adaptive-fetch-bm25.test.mjs": 1,
+    "test/unit/browser-adaptive-fetch-camoufox.test.mjs": 1,
+    "test/unit/browser-adaptive-fetch-candidate-discovery.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-challenge.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-content-scorer.test.mjs": 1,
+    "test/unit/browser-adaptive-fetch-defuddle.test.mjs": 2,
     "test/unit/browser-adaptive-fetch-endpoints.test.mjs": 1,
+    "test/unit/browser-adaptive-fetch-feed-parser.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-human-loop.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-output.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-reader-adapters.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-session.test.mjs": 1,
+    "test/unit/browser-adaptive-fetch-structured-extractor.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-third-party-readers.test.mjs": 2,
+    "test/unit/browser-adaptive-fetch-tls.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-trace.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-transforms.test.mjs": 4,
     "test/unit/browser-adaptive-fetch-validators.test.mjs": 2,
     "test/unit/browser-adaptive-fetch-waf-profiles.test.mjs": 1,
+    "test/unit/browser-adaptive-fetch-ytdlp.test.mjs": 1,
     "test/unit/browser-core.test.mjs": 1,
+    "test/unit/browser-extract-mapping.test.mjs": 2,
     "test/unit/browser-primitives.test.mjs": 1,
+    "test/unit/browser-search.test.mjs": 1,
     "test/unit/browser-tool-schema.test.mjs": 1,
+    "test/unit/browser-update-check.test.mjs": 1,
+    "test/unit/candidate-reconcile.test.mjs": 1,
     "test/unit/chatgpt-attachments.test.mjs": 1,
+    "test/unit/chatgpt-files.test.mjs": 2,
     "test/unit/chatgpt-images.test.mjs": 1,
     "test/unit/console-evaluate-policy.test.mjs": 0,
     "test/unit/content-boundary.test.mjs": 2,
@@ -254,46 +340,80 @@
     "test/unit/g08-eval-adapters.test.mjs": 1,
     "test/unit/g09-model-adapter-frozen.test.mjs": 1,
     "test/unit/g11-action-timeline.test.mjs": 1,
+    "test/unit/kbrowsecomp-search-research.test.mjs": 6,
     "test/unit/keyed-mutex.test.mjs": 1,
     "test/unit/phase22-mcp-freeze.test.mjs": 1,
     "test/unit/profile-lock.test.mjs": 1,
-    "test/unit/runway-cli.test.mjs": 2,
+    "test/unit/runway-cli.test.mjs": 5,
+    "test/unit/runway-download.test.mjs": 1,
+    "test/unit/runway-generate.test.mjs": 1,
+    "test/unit/runway-sequence.test.mjs": 1,
+    "test/unit/search-research-constraint-ledger.test.mjs": 1,
+    "test/unit/search-research-era-sweep.test.mjs": 1,
     "test/unit/skill-install.test.mjs": 1,
+    "test/unit/stability-benchmarks.test.mjs": 3,
     "test/unit/tab-lifecycle.test.mjs": 4,
     "test/unit/target-resolver.test.mjs": 1,
     "test/unit/vision-core.test.mjs": 1,
     "test/unit/web-ai-action-cache.test.mjs": 1,
     "test/unit/web-ai-action-trace.test.mjs": 1,
+    "test/unit/web-ai-annotated-screenshot-stub.test.mjs": 1,
+    "test/unit/web-ai-annotated-screenshot.test.mjs": 2,
     "test/unit/web-ai-answer-artifact.test.mjs": 1,
     "test/unit/web-ai-auto-start.test.mjs": 1,
     "test/unit/web-ai-cache-metrics.test.mjs": 1,
     "test/unit/web-ai-cache-schema.test.mjs": 2,
+    "test/unit/web-ai-capability-freshness.test.mjs": 1,
+    "test/unit/web-ai-capability-registry.test.mjs": 2,
     "test/unit/web-ai-capability.test.mjs": 7,
     "test/unit/web-ai-chatgpt-archive.test.mjs": 1,
+    "test/unit/web-ai-chatgpt-deep-research.test.mjs": 1,
     "test/unit/web-ai-chatgpt-model.test.mjs": 1,
+    "test/unit/web-ai-chatgpt-response-fragments.test.mjs": 1,
+    "test/unit/web-ai-chatgpt-response-observer.test.mjs": 2,
+    "test/unit/web-ai-chatgpt-tools.test.mjs": 1,
+    "test/unit/web-ai-chatgpt-work-picker.test.mjs": 1,
     "test/unit/web-ai-churn-log.test.mjs": 1,
     "test/unit/web-ai-claim-audit.test.mjs": 1,
+    "test/unit/web-ai-code-artifact.test.mjs": 1,
+    "test/unit/web-ai-code-dev-context.test.mjs": 2,
+    "test/unit/web-ai-code-mode-prompt.test.mjs": 1,
+    "test/unit/web-ai-code-mode.test.mjs": 1,
     "test/unit/web-ai-composer.test.mjs": 1,
     "test/unit/web-ai-context-pack.test.mjs": 1,
     "test/unit/web-ai-contract-audit.test.mjs": 1,
     "test/unit/web-ai-copy-markdown.test.mjs": 1,
+    "test/unit/web-ai-deep-research-report-selection.test.mjs": 1,
+    "test/unit/web-ai-deep-research-resume.test.mjs": 2,
     "test/unit/web-ai-doctor.test.mjs": 1,
     "test/unit/web-ai-dom-hash.test.mjs": 1,
     "test/unit/web-ai-dom-scrubber.test.mjs": 1,
+    "test/unit/web-ai-envelope-shape.test.mjs": 2,
     "test/unit/web-ai-errors.test.mjs": 1,
     "test/unit/web-ai-eval-cli.test.mjs": 1,
     "test/unit/web-ai-eval-fixtures.test.mjs": 1,
     "test/unit/web-ai-eval-metrics.test.mjs": 1,
     "test/unit/web-ai-eval-parallel-fixtures.test.mjs": 1,
-    "test/unit/web-ai-eval-runner.test.mjs": 1,
+    "test/unit/web-ai-eval-runner.test.mjs": 2,
     "test/unit/web-ai-eval-types.test.mjs": 1,
+    "test/unit/web-ai-failure-diagnostics-taxonomy.test.mjs": 2,
+    "test/unit/web-ai-failure-diagnostics.test.mjs": 3,
     "test/unit/web-ai-gemini-contract.test.mjs": 3,
     "test/unit/web-ai-grok-live-policy.test.mjs": 0,
+    "test/unit/web-ai-interstitial.test.mjs": 1,
+    "test/unit/web-ai-live-status-report.test.mjs": 1,
+    "test/unit/web-ai-navigation-ready.test.mjs": 1,
+    "test/unit/web-ai-observation-presets.test.mjs": 4,
+    "test/unit/web-ai-open-conversation-newtab.test.mjs": 1,
     "test/unit/web-ai-policy.test.mjs": 2,
     "test/unit/web-ai-post-action-assert.test.mjs": 1,
+    "test/unit/web-ai-product-surfaces.test.mjs": 1,
     "test/unit/web-ai-project-sources.test.mjs": 1,
-    "test/unit/web-ai-provider-session.test.mjs": 1,
+    "test/unit/web-ai-provider-adapter.test.mjs": 2,
+    "test/unit/web-ai-provider-dom-contract.test.mjs": 3,
+    "test/unit/web-ai-provider-session.test.mjs": 2,
     "test/unit/web-ai-question.test.mjs": 2,
+    "test/unit/web-ai-safe-conversation-url.test.mjs": 1,
     "test/unit/web-ai-self-heal-validation.test.mjs": 1,
     "test/unit/web-ai-self-heal.test.mjs": 1,
     "test/unit/web-ai-session-artifacts.test.mjs": 2,
@@ -305,27 +425,35 @@
     "test/unit/web-ai-source-audit-enforcement.test.mjs": 1,
     "test/unit/web-ai-source-audit.test.mjs": 1,
     "test/unit/web-ai-tab-finalizer.test.mjs": 3,
+    "test/unit/web-ai-tab-inspect.test.mjs": 1,
     "test/unit/web-ai-tab-recovery.test.mjs": 0,
+    "test/unit/web-ai-timeout-default.test.mjs": 2,
+    "test/unit/web-ai-tls-redirect.test.mjs": 2,
     "test/unit/web-ai-tool-schema.test.mjs": 1,
     "test/unit/web-ai-tool-validation.test.mjs": 1,
     "test/unit/web-ai-trace-persistence.test.mjs": 1,
     "test/unit/web-ai-trace-redact.test.mjs": 1,
     "test/unit/web-ai-trace.test.mjs": 3,
-    "test/unit/web-ai-watcher.test.mjs": 0,
+    "test/unit/web-ai-watcher.test.mjs": 1,
     "test/spec/antigravity-gap-tracking.test.mjs": 0,
     "test/spec/antigravity-security-contracts.test.mjs": 0,
     "test/integration/bin-shim-contract.test.mjs": 0,
     "test/integration/browser-fetch-command.test.mjs": 3,
     "test/integration/cli-dom-commands.test.mjs": 4,
-    "test/integration/cli-help.test.mjs": 2,
+    "test/integration/cli-help.test.mjs": 3,
     "test/integration/cli-install-skills.test.mjs": 1,
     "test/integration/cli-lifecycle.test.mjs": 2,
     "test/integration/cli-network-console.test.mjs": 3,
-    "test/integration/post-action-smoke.test.mjs": 2,
-    "test/integration/self-heal-smoke.test.mjs": 3,
+    "test/integration/extract-cli.test.mjs": 1,
+    "test/integration/playwright-launch.mjs": 0,
+    "test/integration/post-action-smoke.test.mjs": 3,
+    "test/integration/research-cli.test.mjs": 1,
+    "test/integration/search-cli.test.mjs": 1,
+    "test/integration/self-heal-smoke.test.mjs": 4,
     "test/integration/smoke-server.mjs": 0,
     "test/integration/web-ai-cli-contract.test.mjs": 1,
     "test/integration/web-ai-fake-chatgpt.test.mjs": 2,
+    "test/integration/web-ai-golden-scenario.test.mjs": 3,
     "test/integration/web-ai-mcp-server.test.mjs": 1,
     "test/integration/web-ai-policy-cli.test.mjs": 1,
     "test/integration/web-ai-policy-mcp.test.mjs": 3,
@@ -334,46 +462,74 @@
     "test/helpers/exec-script.mjs": 0,
     "test/helpers/exec-vision-click.mjs": 1,
     "test/helpers/fixture-server.mjs": 0,
+    "test/helpers/provider-dom-contract.mjs": 0,
     "test/helpers/snapshot-utils.mjs": 0,
     "test/helpers/temp-env.mjs": 0,
     "test/e2e/smoke.test.mjs": 4,
-    "skills/vision-click/vision-click.mjs": 1,
-    "skills/vision-click/vision-core.mjs": 0,
+    "skills/vision-click/vision-candidate.mjs": 0,
+    "skills/vision-click/vision-click.mjs": 2,
+    "skills/vision-click/vision-core.mjs": 1,
     "skills/browser/browser-core.mjs": 0,
-    "skills/browser/browser.mjs": 15,
+    "skills/browser/browser.mjs": 21,
+    "skills/browser/extract.mjs": 3,
     "skills/browser/keyed-mutex.mjs": 0,
     "skills/browser/profile-lock.mjs": 0,
+    "skills/browser/runway-download.mjs": 0,
+    "skills/browser/runway-generate.mjs": 5,
     "skills/browser/runway-monitor.mjs": 0,
-    "skills/browser/runway.mjs": 1,
+    "skills/browser/runway-multishot.mjs": 4,
+    "skills/browser/runway-product-ad.mjs": 4,
+    "skills/browser/runway-selectors.mjs": 0,
+    "skills/browser/runway-sequence.mjs": 2,
+    "skills/browser/runway-url.mjs": 1,
+    "skills/browser/runway.mjs": 8,
+    "skills/browser/search.mjs": 5,
     "skills/browser/skill-install.mjs": 0,
     "skills/browser/tab-lifecycle.mjs": 4,
     "skills/browser/tab-manager.mjs": 0,
     "skills/browser/tab-monitor.mjs": 1,
-    "skills/browser/adaptive-fetch/browser-escalation.mjs": 4,
+    "skills/browser/update-check.mjs": 0,
+    "skills/browser/search-research/browse-escalation.mjs": 2,
+    "skills/browser/search-research/constraint-ledger.mjs": 0,
+    "skills/browser/search-research/fetch-enrichment.mjs": 4,
+    "skills/browser/search-research/korean-routes.mjs": 0,
+    "skills/browser/search-research/normalizer.mjs": 0,
+    "skills/browser/search-research/search-strategy.mjs": 1,
+    "skills/browser/adaptive-fetch/bm25-filter.mjs": 0,
+    "skills/browser/adaptive-fetch/browser-escalation.mjs": 5,
     "skills/browser/adaptive-fetch/browser-runtime.mjs": 0,
     "skills/browser/adaptive-fetch/browser-session.mjs": 2,
+    "skills/browser/adaptive-fetch/camoufox-session.mjs": 0,
+    "skills/browser/adaptive-fetch/candidate-discovery.mjs": 1,
     "skills/browser/adaptive-fetch/challenge-detector.mjs": 2,
     "skills/browser/adaptive-fetch/content-scorer.mjs": 1,
+    "skills/browser/adaptive-fetch/defuddle-extractor.mjs": 0,
     "skills/browser/adaptive-fetch/endpoint-resolvers.mjs": 0,
+    "skills/browser/adaptive-fetch/feed-parser.mjs": 1,
     "skills/browser/adaptive-fetch/fetcher.mjs": 2,
     "skills/browser/adaptive-fetch/human-loop.mjs": 1,
-    "skills/browser/adaptive-fetch/index.mjs": 13,
+    "skills/browser/adaptive-fetch/index.mjs": 20,
     "skills/browser/adaptive-fetch/metadata.mjs": 1,
     "skills/browser/adaptive-fetch/output.mjs": 0,
     "skills/browser/adaptive-fetch/reader-adapters.mjs": 2,
     "skills/browser/adaptive-fetch/safety.mjs": 0,
+    "skills/browser/adaptive-fetch/structured-extractor.mjs": 0,
     "skills/browser/adaptive-fetch/third-party-readers.mjs": 2,
+    "skills/browser/adaptive-fetch/tls-fetch.mjs": 1,
     "skills/browser/adaptive-fetch/trace.mjs": 1,
     "skills/browser/adaptive-fetch/transforms.mjs": 0,
     "skills/browser/adaptive-fetch/validators.mjs": 0,
     "skills/browser/adaptive-fetch/waf-profiles.mjs": 0,
+    "skills/browser/adaptive-fetch/ytdlp-reader.mjs": 1,
     "scripts/check-module-graph.mjs": 0,
     "scripts/check-strict-baseline.mjs": 0,
     "scripts/fix-counts.mjs": 0,
+    "scripts/postinstall.mjs": 0,
     "scripts/release-gates.mjs": 12,
     "scripts/render-trace-report.mjs": 1,
     "scripts/run-web-ai-eval.mjs": 1,
     "scripts/smoke-bins.mjs": 0,
+    "devlog/context/redesign-candidates/verify/capture.mjs": 0,
     "bin/agbrowse-vision-click.mjs": 1,
     "bin/agbrowse.mjs": 1,
     "benchmarks/agbrowse/run-task.mjs": 1,
@@ -381,29 +537,43 @@
   },
   "leaves": [
     "benchmarks/agbrowse/trajectory.mjs",
+    "devlog/context/redesign-candidates/verify/capture.mjs",
     "scripts/check-module-graph.mjs",
     "scripts/check-strict-baseline.mjs",
     "scripts/fix-counts.mjs",
+    "scripts/postinstall.mjs",
     "scripts/smoke-bins.mjs",
+    "skills/browser/adaptive-fetch/bm25-filter.mjs",
     "skills/browser/adaptive-fetch/browser-runtime.mjs",
+    "skills/browser/adaptive-fetch/camoufox-session.mjs",
+    "skills/browser/adaptive-fetch/defuddle-extractor.mjs",
     "skills/browser/adaptive-fetch/endpoint-resolvers.mjs",
     "skills/browser/adaptive-fetch/output.mjs",
     "skills/browser/adaptive-fetch/safety.mjs",
+    "skills/browser/adaptive-fetch/structured-extractor.mjs",
     "skills/browser/adaptive-fetch/transforms.mjs",
     "skills/browser/adaptive-fetch/validators.mjs",
     "skills/browser/adaptive-fetch/waf-profiles.mjs",
     "skills/browser/browser-core.mjs",
     "skills/browser/keyed-mutex.mjs",
     "skills/browser/profile-lock.mjs",
+    "skills/browser/runway-download.mjs",
     "skills/browser/runway-monitor.mjs",
+    "skills/browser/runway-selectors.mjs",
+    "skills/browser/search-research/constraint-ledger.mjs",
+    "skills/browser/search-research/korean-routes.mjs",
+    "skills/browser/search-research/normalizer.mjs",
     "skills/browser/skill-install.mjs",
     "skills/browser/tab-manager.mjs",
-    "skills/vision-click/vision-core.mjs",
+    "skills/browser/update-check.mjs",
+    "skills/vision-click/vision-candidate.mjs",
     "test/helpers/exec-script.mjs",
     "test/helpers/fixture-server.mjs",
+    "test/helpers/provider-dom-contract.mjs",
     "test/helpers/snapshot-utils.mjs",
     "test/helpers/temp-env.mjs",
     "test/integration/bin-shim-contract.test.mjs",
+    "test/integration/playwright-launch.mjs",
     "test/integration/smoke-server.mjs",
     "test/spec/antigravity-gap-tracking.test.mjs",
     "test/spec/antigravity-security-contracts.test.mjs",
@@ -413,7 +583,6 @@
     "test/unit/web-ai-session-doctor.test.mjs",
     "test/unit/web-ai-session-store.test.mjs",
     "test/unit/web-ai-tab-recovery.test.mjs",
-    "test/unit/web-ai-watcher.test.mjs",
     "vitest.config.mjs",
     "web-ai/action-breadth.mjs",
     "web-ai/action-memory.mjs",
@@ -421,12 +590,19 @@
     "web-ai/answer-artifact.mjs",
     "web-ai/browser-tool-schema.mjs",
     "web-ai/cache-metrics.mjs",
+    "web-ai/candidate-reconcile.mjs",
+    "web-ai/capability-freshness.mjs",
     "web-ai/capability.mjs",
     "web-ai/chatgpt-archive.mjs",
-    "web-ai/chatgpt-attachments.mjs",
+    "web-ai/chatgpt-deep-research-report.mjs",
     "web-ai/chatgpt-project-sources.mjs",
+    "web-ai/chatgpt-response-dom.mjs",
+    "web-ai/chatgpt-tools.mjs",
+    "web-ai/chatgpt-upload-surface.mjs",
     "web-ai/churn-log.mjs",
     "web-ai/claim-audit.mjs",
+    "web-ai/code-artifact.mjs",
+    "web-ai/code-mode-prompt.mjs",
     "web-ai/constants.mjs",
     "web-ai/context-pack/constants.mjs",
     "web-ai/context-pack/report.mjs",
@@ -439,6 +615,8 @@
     "web-ai/eval/provider-targets.mjs",
     "web-ai/eval/types.mjs",
     "web-ai/extract-schema.mjs",
+    "web-ai/interstitial.mjs",
+    "web-ai/live-status-report.mjs",
     "web-ai/mcp-state.mjs",
     "web-ai/navigation-ready.mjs",
     "web-ai/observation-bundle.mjs",
@@ -459,21 +637,28 @@
   "tiers": {
     "benchmarks/agbrowse/run-task.mjs": 1,
     "benchmarks/agbrowse/trajectory.mjs": 0,
-    "bin/agbrowse-vision-click.mjs": 2,
+    "bin/agbrowse-vision-click.mjs": 3,
     "bin/agbrowse.mjs": 11,
+    "devlog/context/redesign-candidates/verify/capture.mjs": 0,
     "scripts/check-module-graph.mjs": 0,
     "scripts/check-strict-baseline.mjs": 0,
     "scripts/fix-counts.mjs": 0,
+    "scripts/postinstall.mjs": 0,
     "scripts/release-gates.mjs": 2,
     "scripts/render-trace-report.mjs": 2,
     "scripts/run-web-ai-eval.mjs": 3,
     "scripts/smoke-bins.mjs": 0,
+    "skills/browser/adaptive-fetch/bm25-filter.mjs": 0,
     "skills/browser/adaptive-fetch/browser-escalation.mjs": 2,
     "skills/browser/adaptive-fetch/browser-runtime.mjs": 0,
     "skills/browser/adaptive-fetch/browser-session.mjs": 1,
+    "skills/browser/adaptive-fetch/camoufox-session.mjs": 0,
+    "skills/browser/adaptive-fetch/candidate-discovery.mjs": 1,
     "skills/browser/adaptive-fetch/challenge-detector.mjs": 1,
     "skills/browser/adaptive-fetch/content-scorer.mjs": 1,
+    "skills/browser/adaptive-fetch/defuddle-extractor.mjs": 0,
     "skills/browser/adaptive-fetch/endpoint-resolvers.mjs": 0,
+    "skills/browser/adaptive-fetch/feed-parser.mjs": 1,
     "skills/browser/adaptive-fetch/fetcher.mjs": 1,
     "skills/browser/adaptive-fetch/human-loop.mjs": 2,
     "skills/browser/adaptive-fetch/index.mjs": 3,
@@ -481,28 +666,49 @@
     "skills/browser/adaptive-fetch/output.mjs": 0,
     "skills/browser/adaptive-fetch/reader-adapters.mjs": 2,
     "skills/browser/adaptive-fetch/safety.mjs": 0,
+    "skills/browser/adaptive-fetch/structured-extractor.mjs": 0,
     "skills/browser/adaptive-fetch/third-party-readers.mjs": 2,
+    "skills/browser/adaptive-fetch/tls-fetch.mjs": 1,
     "skills/browser/adaptive-fetch/trace.mjs": 1,
     "skills/browser/adaptive-fetch/transforms.mjs": 0,
     "skills/browser/adaptive-fetch/validators.mjs": 0,
     "skills/browser/adaptive-fetch/waf-profiles.mjs": 0,
+    "skills/browser/adaptive-fetch/ytdlp-reader.mjs": 1,
     "skills/browser/browser-core.mjs": 0,
     "skills/browser/browser.mjs": 10,
+    "skills/browser/extract.mjs": 2,
     "skills/browser/keyed-mutex.mjs": 0,
     "skills/browser/profile-lock.mjs": 0,
+    "skills/browser/runway-download.mjs": 0,
+    "skills/browser/runway-generate.mjs": 2,
     "skills/browser/runway-monitor.mjs": 0,
-    "skills/browser/runway.mjs": 1,
+    "skills/browser/runway-multishot.mjs": 3,
+    "skills/browser/runway-product-ad.mjs": 3,
+    "skills/browser/runway-selectors.mjs": 0,
+    "skills/browser/runway-sequence.mjs": 3,
+    "skills/browser/runway-url.mjs": 1,
+    "skills/browser/runway.mjs": 4,
+    "skills/browser/search-research/browse-escalation.mjs": 5,
+    "skills/browser/search-research/constraint-ledger.mjs": 0,
+    "skills/browser/search-research/fetch-enrichment.mjs": 4,
+    "skills/browser/search-research/korean-routes.mjs": 0,
+    "skills/browser/search-research/normalizer.mjs": 0,
+    "skills/browser/search-research/search-strategy.mjs": 1,
+    "skills/browser/search.mjs": 6,
     "skills/browser/skill-install.mjs": 0,
-    "skills/browser/tab-lifecycle.mjs": 3,
+    "skills/browser/tab-lifecycle.mjs": 4,
     "skills/browser/tab-manager.mjs": 0,
     "skills/browser/tab-monitor.mjs": 1,
-    "skills/vision-click/vision-click.mjs": 1,
-    "skills/vision-click/vision-core.mjs": 0,
+    "skills/browser/update-check.mjs": 0,
+    "skills/vision-click/vision-candidate.mjs": 0,
+    "skills/vision-click/vision-click.mjs": 2,
+    "skills/vision-click/vision-core.mjs": 1,
     "test/e2e/smoke.test.mjs": 2,
     "test/helpers/exec-browser.mjs": 1,
     "test/helpers/exec-script.mjs": 0,
     "test/helpers/exec-vision-click.mjs": 1,
     "test/helpers/fixture-server.mjs": 0,
+    "test/helpers/provider-dom-contract.mjs": 0,
     "test/helpers/snapshot-utils.mjs": 0,
     "test/helpers/temp-env.mjs": 0,
     "test/integration/bin-shim-contract.test.mjs": 0,
@@ -512,11 +718,16 @@
     "test/integration/cli-install-skills.test.mjs": 2,
     "test/integration/cli-lifecycle.test.mjs": 2,
     "test/integration/cli-network-console.test.mjs": 2,
+    "test/integration/extract-cli.test.mjs": 2,
+    "test/integration/playwright-launch.mjs": 0,
     "test/integration/post-action-smoke.test.mjs": 1,
+    "test/integration/research-cli.test.mjs": 2,
+    "test/integration/search-cli.test.mjs": 2,
     "test/integration/self-heal-smoke.test.mjs": 5,
     "test/integration/smoke-server.mjs": 0,
     "test/integration/web-ai-cli-contract.test.mjs": 2,
     "test/integration/web-ai-fake-chatgpt.test.mjs": 8,
+    "test/integration/web-ai-golden-scenario.test.mjs": 10,
     "test/integration/web-ai-mcp-server.test.mjs": 9,
     "test/integration/web-ai-policy-cli.test.mjs": 10,
     "test/integration/web-ai-policy-mcp.test.mjs": 9,
@@ -527,23 +738,36 @@
     "test/unit/active-command-store.test.mjs": 2,
     "test/unit/benchmark-trajectory.test.mjs": 1,
     "test/unit/browser-active-tab.test.mjs": 3,
+    "test/unit/browser-adaptive-fetch-bm25.test.mjs": 1,
+    "test/unit/browser-adaptive-fetch-camoufox.test.mjs": 1,
+    "test/unit/browser-adaptive-fetch-candidate-discovery.test.mjs": 2,
     "test/unit/browser-adaptive-fetch-challenge.test.mjs": 2,
     "test/unit/browser-adaptive-fetch-content-scorer.test.mjs": 2,
+    "test/unit/browser-adaptive-fetch-defuddle.test.mjs": 3,
     "test/unit/browser-adaptive-fetch-endpoints.test.mjs": 1,
+    "test/unit/browser-adaptive-fetch-feed-parser.test.mjs": 2,
     "test/unit/browser-adaptive-fetch-human-loop.test.mjs": 3,
     "test/unit/browser-adaptive-fetch-output.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-reader-adapters.test.mjs": 3,
     "test/unit/browser-adaptive-fetch-session.test.mjs": 2,
+    "test/unit/browser-adaptive-fetch-structured-extractor.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-third-party-readers.test.mjs": 4,
+    "test/unit/browser-adaptive-fetch-tls.test.mjs": 2,
     "test/unit/browser-adaptive-fetch-trace.test.mjs": 2,
     "test/unit/browser-adaptive-fetch-transforms.test.mjs": 4,
     "test/unit/browser-adaptive-fetch-validators.test.mjs": 1,
     "test/unit/browser-adaptive-fetch-waf-profiles.test.mjs": 1,
+    "test/unit/browser-adaptive-fetch-ytdlp.test.mjs": 2,
     "test/unit/browser-core.test.mjs": 1,
+    "test/unit/browser-extract-mapping.test.mjs": 3,
     "test/unit/browser-primitives.test.mjs": 2,
+    "test/unit/browser-search.test.mjs": 7,
     "test/unit/browser-tool-schema.test.mjs": 1,
-    "test/unit/chatgpt-attachments.test.mjs": 1,
-    "test/unit/chatgpt-images.test.mjs": 4,
+    "test/unit/browser-update-check.test.mjs": 1,
+    "test/unit/candidate-reconcile.test.mjs": 1,
+    "test/unit/chatgpt-attachments.test.mjs": 2,
+    "test/unit/chatgpt-files.test.mjs": 6,
+    "test/unit/chatgpt-images.test.mjs": 6,
     "test/unit/console-evaluate-policy.test.mjs": 0,
     "test/unit/content-boundary.test.mjs": 2,
     "test/unit/g01-planner-loop.test.mjs": 2,
@@ -556,32 +780,55 @@
     "test/unit/g08-eval-adapters.test.mjs": 1,
     "test/unit/g09-model-adapter-frozen.test.mjs": 1,
     "test/unit/g11-action-timeline.test.mjs": 1,
+    "test/unit/kbrowsecomp-search-research.test.mjs": 6,
     "test/unit/keyed-mutex.test.mjs": 1,
     "test/unit/phase22-mcp-freeze.test.mjs": 1,
     "test/unit/profile-lock.test.mjs": 1,
-    "test/unit/runway-cli.test.mjs": 2,
+    "test/unit/runway-cli.test.mjs": 5,
+    "test/unit/runway-download.test.mjs": 1,
+    "test/unit/runway-generate.test.mjs": 3,
+    "test/unit/runway-sequence.test.mjs": 4,
+    "test/unit/search-research-constraint-ledger.test.mjs": 1,
+    "test/unit/search-research-era-sweep.test.mjs": 2,
     "test/unit/skill-install.test.mjs": 1,
-    "test/unit/tab-lifecycle.test.mjs": 4,
+    "test/unit/stability-benchmarks.test.mjs": 3,
+    "test/unit/tab-lifecycle.test.mjs": 5,
     "test/unit/target-resolver.test.mjs": 7,
-    "test/unit/vision-core.test.mjs": 1,
+    "test/unit/vision-core.test.mjs": 2,
     "test/unit/web-ai-action-cache.test.mjs": 2,
     "test/unit/web-ai-action-trace.test.mjs": 1,
+    "test/unit/web-ai-annotated-screenshot-stub.test.mjs": 2,
+    "test/unit/web-ai-annotated-screenshot.test.mjs": 2,
     "test/unit/web-ai-answer-artifact.test.mjs": 1,
     "test/unit/web-ai-auto-start.test.mjs": 10,
     "test/unit/web-ai-cache-metrics.test.mjs": 1,
     "test/unit/web-ai-cache-schema.test.mjs": 2,
+    "test/unit/web-ai-capability-freshness.test.mjs": 1,
+    "test/unit/web-ai-capability-registry.test.mjs": 5,
     "test/unit/web-ai-capability.test.mjs": 8,
     "test/unit/web-ai-chatgpt-archive.test.mjs": 1,
-    "test/unit/web-ai-chatgpt-model.test.mjs": 2,
+    "test/unit/web-ai-chatgpt-deep-research.test.mjs": 6,
+    "test/unit/web-ai-chatgpt-model.test.mjs": 3,
+    "test/unit/web-ai-chatgpt-response-fragments.test.mjs": 1,
+    "test/unit/web-ai-chatgpt-response-observer.test.mjs": 2,
+    "test/unit/web-ai-chatgpt-tools.test.mjs": 1,
+    "test/unit/web-ai-chatgpt-work-picker.test.mjs": 4,
     "test/unit/web-ai-churn-log.test.mjs": 1,
     "test/unit/web-ai-claim-audit.test.mjs": 1,
+    "test/unit/web-ai-code-artifact.test.mjs": 1,
+    "test/unit/web-ai-code-dev-context.test.mjs": 2,
+    "test/unit/web-ai-code-mode-prompt.test.mjs": 1,
+    "test/unit/web-ai-code-mode.test.mjs": 3,
     "test/unit/web-ai-composer.test.mjs": 3,
     "test/unit/web-ai-context-pack.test.mjs": 6,
     "test/unit/web-ai-contract-audit.test.mjs": 5,
     "test/unit/web-ai-copy-markdown.test.mjs": 1,
+    "test/unit/web-ai-deep-research-report-selection.test.mjs": 1,
+    "test/unit/web-ai-deep-research-resume.test.mjs": 6,
     "test/unit/web-ai-doctor.test.mjs": 5,
     "test/unit/web-ai-dom-hash.test.mjs": 1,
     "test/unit/web-ai-dom-scrubber.test.mjs": 2,
+    "test/unit/web-ai-envelope-shape.test.mjs": 6,
     "test/unit/web-ai-errors.test.mjs": 1,
     "test/unit/web-ai-eval-cli.test.mjs": 10,
     "test/unit/web-ai-eval-fixtures.test.mjs": 2,
@@ -589,16 +836,27 @@
     "test/unit/web-ai-eval-parallel-fixtures.test.mjs": 3,
     "test/unit/web-ai-eval-runner.test.mjs": 3,
     "test/unit/web-ai-eval-types.test.mjs": 1,
+    "test/unit/web-ai-failure-diagnostics-taxonomy.test.mjs": 6,
+    "test/unit/web-ai-failure-diagnostics.test.mjs": 6,
     "test/unit/web-ai-gemini-contract.test.mjs": 4,
     "test/unit/web-ai-grok-live-policy.test.mjs": 0,
+    "test/unit/web-ai-interstitial.test.mjs": 1,
+    "test/unit/web-ai-live-status-report.test.mjs": 1,
+    "test/unit/web-ai-navigation-ready.test.mjs": 1,
+    "test/unit/web-ai-observation-presets.test.mjs": 5,
+    "test/unit/web-ai-open-conversation-newtab.test.mjs": 5,
     "test/unit/web-ai-policy.test.mjs": 3,
     "test/unit/web-ai-post-action-assert.test.mjs": 1,
+    "test/unit/web-ai-product-surfaces.test.mjs": 2,
     "test/unit/web-ai-project-sources.test.mjs": 1,
-    "test/unit/web-ai-provider-session.test.mjs": 2,
+    "test/unit/web-ai-provider-adapter.test.mjs": 2,
+    "test/unit/web-ai-provider-dom-contract.test.mjs": 3,
+    "test/unit/web-ai-provider-session.test.mjs": 8,
     "test/unit/web-ai-question.test.mjs": 2,
+    "test/unit/web-ai-safe-conversation-url.test.mjs": 5,
     "test/unit/web-ai-self-heal-validation.test.mjs": 5,
     "test/unit/web-ai-self-heal.test.mjs": 5,
-    "test/unit/web-ai-session-artifacts.test.mjs": 3,
+    "test/unit/web-ai-session-artifacts.test.mjs": 5,
     "test/unit/web-ai-session-baseline.test.mjs": 0,
     "test/unit/web-ai-session-doctor.test.mjs": 0,
     "test/unit/web-ai-session-store.test.mjs": 0,
@@ -606,14 +864,17 @@
     "test/unit/web-ai-shared-target-lock.test.mjs": 10,
     "test/unit/web-ai-source-audit-enforcement.test.mjs": 10,
     "test/unit/web-ai-source-audit.test.mjs": 1,
-    "test/unit/web-ai-tab-finalizer.test.mjs": 5,
+    "test/unit/web-ai-tab-finalizer.test.mjs": 6,
+    "test/unit/web-ai-tab-inspect.test.mjs": 1,
     "test/unit/web-ai-tab-recovery.test.mjs": 0,
+    "test/unit/web-ai-timeout-default.test.mjs": 9,
+    "test/unit/web-ai-tls-redirect.test.mjs": 2,
     "test/unit/web-ai-tool-schema.test.mjs": 2,
     "test/unit/web-ai-tool-validation.test.mjs": 2,
-    "test/unit/web-ai-trace-persistence.test.mjs": 3,
+    "test/unit/web-ai-trace-persistence.test.mjs": 5,
     "test/unit/web-ai-trace-redact.test.mjs": 1,
     "test/unit/web-ai-trace.test.mjs": 2,
-    "test/unit/web-ai-watcher.test.mjs": 0,
+    "test/unit/web-ai-watcher.test.mjs": 9,
     "vitest.config.mjs": 0,
     "web-ai/action-breadth.mjs": 0,
     "web-ai/action-cache.mjs": 1,
@@ -621,25 +882,43 @@
     "web-ai/action-memory.mjs": 0,
     "web-ai/action-trace.mjs": 0,
     "web-ai/active-command-store.mjs": 1,
+    "web-ai/annotated-screenshot.mjs": 1,
     "web-ai/answer-artifact.mjs": 0,
     "web-ai/ax-snapshot.mjs": 1,
     "web-ai/browser-primitives.mjs": 1,
     "web-ai/browser-tool-schema.mjs": 0,
     "web-ai/cache-metrics.mjs": 0,
+    "web-ai/candidate-reconcile.mjs": 0,
+    "web-ai/capability-freshness.mjs": 0,
+    "web-ai/capability-observation-presets.mjs": 2,
+    "web-ai/capability-observed-tool-entries.mjs": 3,
+    "web-ai/capability-registry.mjs": 4,
+    "web-ai/capability-types.mjs": 1,
     "web-ai/capability.mjs": 0,
     "web-ai/chatgpt-archive.mjs": 0,
-    "web-ai/chatgpt-attachments.mjs": 0,
+    "web-ai/chatgpt-attachments.mjs": 1,
     "web-ai/chatgpt-composer.mjs": 2,
-    "web-ai/chatgpt-deep-research.mjs": 4,
-    "web-ai/chatgpt-images.mjs": 3,
-    "web-ai/chatgpt-model.mjs": 1,
-    "web-ai/chatgpt-multi-turn.mjs": 4,
+    "web-ai/chatgpt-deep-research-report.mjs": 0,
+    "web-ai/chatgpt-deep-research.mjs": 5,
+    "web-ai/chatgpt-files.mjs": 5,
+    "web-ai/chatgpt-images.mjs": 5,
+    "web-ai/chatgpt-model.mjs": 2,
+    "web-ai/chatgpt-multi-turn.mjs": 5,
     "web-ai/chatgpt-project-sources.mjs": 0,
+    "web-ai/chatgpt-response-dom.mjs": 0,
+    "web-ai/chatgpt-response-observer.mjs": 1,
+    "web-ai/chatgpt-tools.mjs": 0,
+    "web-ai/chatgpt-upload-surface.mjs": 0,
+    "web-ai/chatgpt-work-picker.mjs": 3,
     "web-ai/chatgpt.mjs": 7,
     "web-ai/churn-log.mjs": 0,
     "web-ai/claim-audit.mjs": 0,
     "web-ai/cli-sessions.mjs": 8,
     "web-ai/cli.mjs": 9,
+    "web-ai/code-artifact.mjs": 0,
+    "web-ai/code-dev-context.mjs": 1,
+    "web-ai/code-mode-prompt.mjs": 0,
+    "web-ai/code-mode.mjs": 2,
     "web-ai/constants.mjs": 0,
     "web-ai/context-pack/builder.mjs": 4,
     "web-ai/context-pack/constants.mjs": 0,
@@ -663,10 +942,13 @@
     "web-ai/eval/scrub-dom.mjs": 1,
     "web-ai/eval/types.mjs": 0,
     "web-ai/extract-schema.mjs": 0,
+    "web-ai/failure-diagnostics.mjs": 5,
     "web-ai/gemini-live.mjs": 6,
     "web-ai/gemini-model.mjs": 1,
     "web-ai/grok-live.mjs": 6,
     "web-ai/grok-model.mjs": 1,
+    "web-ai/interstitial.mjs": 0,
+    "web-ai/live-status-report.mjs": 0,
     "web-ai/mcp-server.mjs": 8,
     "web-ai/mcp-state.mjs": 0,
     "web-ai/navigation-ready.mjs": 0,
@@ -680,23 +962,25 @@
     "web-ai/policy/enforce.mjs": 2,
     "web-ai/policy/schema.mjs": 1,
     "web-ai/post-action-assert.mjs": 0,
+    "web-ai/product-surfaces.mjs": 1,
+    "web-ai/provider-adapter.mjs": 1,
     "web-ai/question.mjs": 1,
     "web-ai/ref-registry.mjs": 1,
     "web-ai/self-heal.mjs": 4,
-    "web-ai/session-artifacts.mjs": 2,
-    "web-ai/session-doctor.mjs": 3,
+    "web-ai/session-artifacts.mjs": 4,
+    "web-ai/session-doctor.mjs": 5,
     "web-ai/session-store.mjs": 0,
-    "web-ai/session-target-guard.mjs": 2,
-    "web-ai/session.mjs": 1,
+    "web-ai/session-target-guard.mjs": 4,
+    "web-ai/session.mjs": 3,
     "web-ai/source-audit.mjs": 0,
-    "web-ai/tab-finalizer.mjs": 4,
+    "web-ai/tab-finalizer.mjs": 5,
     "web-ai/tab-inspect.mjs": 0,
     "web-ai/tab-lease-store.mjs": 2,
     "web-ai/tab-pool.mjs": 3,
-    "web-ai/tab-recovery.mjs": 2,
+    "web-ai/tab-recovery.mjs": 4,
     "web-ai/target-resolver.mjs": 6,
     "web-ai/tool-schema.mjs": 1,
-    "web-ai/trace-persistence.mjs": 2,
+    "web-ai/trace-persistence.mjs": 4,
     "web-ai/trace/action-timeline.mjs": 0,
     "web-ai/trace/redact.mjs": 0,
     "web-ai/trace/report.mjs": 1,
@@ -722,6 +1006,9 @@
     "web-ai/active-command-store.mjs": [
       "web-ai/session-store.mjs"
     ],
+    "web-ai/annotated-screenshot.mjs": [
+      "web-ai/errors.mjs"
+    ],
     "web-ai/answer-artifact.mjs": [],
     "web-ai/ax-snapshot.mjs": [
       "web-ai/dom-hash.mjs",
@@ -732,23 +1019,49 @@
     ],
     "web-ai/browser-tool-schema.mjs": [],
     "web-ai/cache-metrics.mjs": [],
+    "web-ai/candidate-reconcile.mjs": [],
+    "web-ai/capability-freshness.mjs": [],
+    "web-ai/capability-observation-presets.mjs": [
+      "web-ai/capability-types.mjs"
+    ],
+    "web-ai/capability-observed-tool-entries.mjs": [
+      "web-ai/capability-observation-presets.mjs",
+      "web-ai/capability-types.mjs"
+    ],
+    "web-ai/capability-registry.mjs": [
+      "web-ai/capability-observation-presets.mjs",
+      "web-ai/capability-observed-tool-entries.mjs",
+      "web-ai/capability-types.mjs",
+      "web-ai/errors.mjs"
+    ],
+    "web-ai/capability-types.mjs": [
+      "web-ai/capability-types.mjs"
+    ],
     "web-ai/capability.mjs": [],
     "web-ai/chatgpt-archive.mjs": [],
-    "web-ai/chatgpt-attachments.mjs": [],
+    "web-ai/chatgpt-attachments.mjs": [
+      "web-ai/chatgpt-upload-surface.mjs"
+    ],
     "web-ai/chatgpt-composer.mjs": [
       "web-ai/browser-primitives.mjs",
       "web-ai/errors.mjs"
     ],
+    "web-ai/chatgpt-deep-research-report.mjs": [],
     "web-ai/chatgpt-deep-research.mjs": [
+      "web-ai/chatgpt-deep-research-report.mjs",
       "web-ai/session-artifacts.mjs",
       "web-ai/session.mjs",
       "web-ai/vendor-editor-contract.mjs"
+    ],
+    "web-ai/chatgpt-files.mjs": [
+      "web-ai/session-artifacts.mjs"
     ],
     "web-ai/chatgpt-images.mjs": [
       "web-ai/session-artifacts.mjs"
     ],
     "web-ai/chatgpt-model.mjs": [
-      "web-ai/errors.mjs"
+      "web-ai/errors.mjs",
+      "web-ai/product-surfaces.mjs"
     ],
     "web-ai/chatgpt-multi-turn.mjs": [
       "web-ai/session-artifacts.mjs",
@@ -756,6 +1069,17 @@
       "web-ai/vendor-editor-contract.mjs"
     ],
     "web-ai/chatgpt-project-sources.mjs": [],
+    "web-ai/chatgpt-response-dom.mjs": [],
+    "web-ai/chatgpt-response-observer.mjs": [
+      "web-ai/chatgpt-response-dom.mjs"
+    ],
+    "web-ai/chatgpt-tools.mjs": [],
+    "web-ai/chatgpt-upload-surface.mjs": [],
+    "web-ai/chatgpt-work-picker.mjs": [
+      "web-ai/chatgpt-model.mjs",
+      "web-ai/errors.mjs",
+      "web-ai/product-surfaces.mjs"
+    ],
     "web-ai/chatgpt.mjs": [
       "web-ai/action-trace.mjs",
       "web-ai/answer-artifact.mjs",
@@ -763,11 +1087,16 @@
       "web-ai/chatgpt-attachments.mjs",
       "web-ai/chatgpt-composer.mjs",
       "web-ai/chatgpt-deep-research.mjs",
+      "web-ai/chatgpt-files.mjs",
       "web-ai/chatgpt-images.mjs",
       "web-ai/chatgpt-model.mjs",
+      "web-ai/chatgpt-response-dom.mjs",
+      "web-ai/chatgpt-response-observer.mjs",
+      "web-ai/chatgpt-tools.mjs",
       "web-ai/context-pack/index.mjs",
       "web-ai/copy-markdown.mjs",
       "web-ai/errors.mjs",
+      "web-ai/failure-diagnostics.mjs",
       "web-ai/navigation-ready.mjs",
       "web-ai/question.mjs",
       "web-ai/session-artifacts.mjs",
@@ -783,6 +1112,7 @@
     "web-ai/churn-log.mjs": [],
     "web-ai/claim-audit.mjs": [],
     "web-ai/cli-sessions.mjs": [
+      "web-ai/chatgpt-deep-research.mjs",
       "web-ai/chatgpt.mjs",
       "web-ai/errors.mjs",
       "web-ai/gemini-live.mjs",
@@ -797,12 +1127,16 @@
       "skills/browser/tab-manager.mjs",
       "web-ai/active-command-store.mjs",
       "web-ai/ax-snapshot.mjs",
+      "web-ai/chatgpt-composer.mjs",
+      "web-ai/chatgpt-model.mjs",
       "web-ai/chatgpt-multi-turn.mjs",
       "web-ai/chatgpt-project-sources.mjs",
+      "web-ai/chatgpt-work-picker.mjs",
       "web-ai/chatgpt.mjs",
       "web-ai/churn-log.mjs",
       "web-ai/claim-audit.mjs",
       "web-ai/cli-sessions.mjs",
+      "web-ai/code-mode.mjs",
       "web-ai/context-pack/index.mjs",
       "web-ai/control-summary.mjs",
       "web-ai/doctor.mjs",
@@ -811,6 +1145,7 @@
       "web-ai/gemini-live.mjs",
       "web-ai/grok-live.mjs",
       "web-ai/mcp-server.mjs",
+      "web-ai/navigation-ready.mjs",
       "web-ai/policy/default-policy.mjs",
       "web-ai/policy/enforce.mjs",
       "web-ai/policy/schema.mjs",
@@ -826,6 +1161,17 @@
       "web-ai/trace/writer.mjs",
       "web-ai/watcher.mjs"
     ],
+    "web-ai/code-artifact.mjs": [],
+    "web-ai/code-dev-context.mjs": [
+      "web-ai/code-artifact.mjs"
+    ],
+    "web-ai/code-mode-prompt.mjs": [],
+    "web-ai/code-mode.mjs": [
+      "web-ai/code-artifact.mjs",
+      "web-ai/code-dev-context.mjs",
+      "web-ai/code-mode-prompt.mjs",
+      "web-ai/errors.mjs"
+    ],
     "web-ai/constants.mjs": [],
     "web-ai/contract-audit.mjs": [
       "web-ai/ax-snapshot.mjs",
@@ -836,6 +1182,7 @@
     "web-ai/doctor.mjs": [
       "web-ai/ax-snapshot.mjs",
       "web-ai/cache-metrics.mjs",
+      "web-ai/capability-observation-presets.mjs",
       "web-ai/chatgpt-model.mjs",
       "web-ai/copy-markdown.mjs",
       "web-ai/dom-hash.mjs",
@@ -853,6 +1200,9 @@
       "web-ai/eval/types.mjs"
     ],
     "web-ai/extract-schema.mjs": [],
+    "web-ai/failure-diagnostics.mjs": [
+      "web-ai/session-artifacts.mjs"
+    ],
     "web-ai/gemini-live.mjs": [
       "web-ai/answer-artifact.mjs",
       "web-ai/capability.mjs",
@@ -887,11 +1237,15 @@
     "web-ai/grok-model.mjs": [
       "web-ai/errors.mjs"
     ],
+    "web-ai/interstitial.mjs": [],
+    "web-ai/live-status-report.mjs": [],
     "web-ai/mcp-server.mjs": [
       "skills/browser/keyed-mutex.mjs",
       "web-ai/active-command-store.mjs",
       "web-ai/ax-snapshot.mjs",
       "web-ai/browser-tool-schema.mjs",
+      "web-ai/chatgpt-composer.mjs",
+      "web-ai/chatgpt-work-picker.mjs",
       "web-ai/chatgpt.mjs",
       "web-ai/copy-markdown.mjs",
       "web-ai/doctor.mjs",
@@ -900,7 +1254,9 @@
       "web-ai/mcp-state.mjs",
       "web-ai/policy/default-policy.mjs",
       "web-ai/policy/enforce.mjs",
+      "web-ai/session-store.mjs",
       "web-ai/session.mjs",
+      "web-ai/tab-recovery.mjs",
       "web-ai/tool-schema.mjs"
     ],
     "web-ai/mcp-state.mjs": [],
@@ -914,6 +1270,13 @@
       "web-ai/planner-contract.mjs"
     ],
     "web-ai/post-action-assert.mjs": [],
+    "web-ai/product-surfaces.mjs": [
+      "web-ai/chatgpt-model.mjs",
+      "web-ai/errors.mjs"
+    ],
+    "web-ai/provider-adapter.mjs": [
+      "web-ai/errors.mjs"
+    ],
     "web-ai/question.mjs": [
       "web-ai/errors.mjs",
       "web-ai/policy/content-boundary.mjs",
@@ -945,6 +1308,9 @@
       "web-ai/session.mjs"
     ],
     "web-ai/session.mjs": [
+      "web-ai/chatgpt-model.mjs",
+      "web-ai/gemini-model.mjs",
+      "web-ai/grok-model.mjs",
       "web-ai/session-store.mjs"
     ],
     "web-ai/source-audit.mjs": [],
@@ -956,6 +1322,7 @@
     ],
     "web-ai/tab-inspect.mjs": [],
     "web-ai/tab-lease-store.mjs": [
+      "skills/browser/profile-lock.mjs",
       "skills/browser/tab-manager.mjs",
       "web-ai/active-command-store.mjs"
     ],
@@ -1074,14 +1441,30 @@
       "web-ai/active-command-store.mjs",
       "web-ai/policy/enforce.mjs"
     ],
+    "test/unit/browser-adaptive-fetch-bm25.test.mjs": [
+      "skills/browser/adaptive-fetch/bm25-filter.mjs"
+    ],
+    "test/unit/browser-adaptive-fetch-camoufox.test.mjs": [
+      "skills/browser/adaptive-fetch/camoufox-session.mjs"
+    ],
+    "test/unit/browser-adaptive-fetch-candidate-discovery.test.mjs": [
+      "skills/browser/adaptive-fetch/candidate-discovery.mjs"
+    ],
     "test/unit/browser-adaptive-fetch-challenge.test.mjs": [
       "skills/browser/adaptive-fetch/challenge-detector.mjs"
     ],
     "test/unit/browser-adaptive-fetch-content-scorer.test.mjs": [
       "skills/browser/adaptive-fetch/content-scorer.mjs"
     ],
+    "test/unit/browser-adaptive-fetch-defuddle.test.mjs": [
+      "skills/browser/adaptive-fetch/browser-escalation.mjs",
+      "skills/browser/adaptive-fetch/defuddle-extractor.mjs"
+    ],
     "test/unit/browser-adaptive-fetch-endpoints.test.mjs": [
       "skills/browser/adaptive-fetch/endpoint-resolvers.mjs"
+    ],
+    "test/unit/browser-adaptive-fetch-feed-parser.test.mjs": [
+      "skills/browser/adaptive-fetch/feed-parser.mjs"
     ],
     "test/unit/browser-adaptive-fetch-human-loop.test.mjs": [
       "skills/browser/adaptive-fetch/human-loop.mjs"
@@ -1095,9 +1478,15 @@
     "test/unit/browser-adaptive-fetch-session.test.mjs": [
       "skills/browser/adaptive-fetch/browser-session.mjs"
     ],
+    "test/unit/browser-adaptive-fetch-structured-extractor.test.mjs": [
+      "skills/browser/adaptive-fetch/structured-extractor.mjs"
+    ],
     "test/unit/browser-adaptive-fetch-third-party-readers.test.mjs": [
       "skills/browser/adaptive-fetch/index.mjs",
       "skills/browser/adaptive-fetch/third-party-readers.mjs"
+    ],
+    "test/unit/browser-adaptive-fetch-tls.test.mjs": [
+      "skills/browser/adaptive-fetch/tls-fetch.mjs"
     ],
     "test/unit/browser-adaptive-fetch-trace.test.mjs": [
       "skills/browser/adaptive-fetch/trace.mjs"
@@ -1115,17 +1504,37 @@
     "test/unit/browser-adaptive-fetch-waf-profiles.test.mjs": [
       "skills/browser/adaptive-fetch/waf-profiles.mjs"
     ],
+    "test/unit/browser-adaptive-fetch-ytdlp.test.mjs": [
+      "skills/browser/adaptive-fetch/ytdlp-reader.mjs"
+    ],
     "test/unit/browser-core.test.mjs": [
       "skills/browser/browser-core.mjs"
+    ],
+    "test/unit/browser-extract-mapping.test.mjs": [
+      "skills/browser/adaptive-fetch/structured-extractor.mjs",
+      "skills/browser/extract.mjs"
     ],
     "test/unit/browser-primitives.test.mjs": [
       "web-ai/browser-primitives.mjs"
     ],
+    "test/unit/browser-search.test.mjs": [
+      "skills/browser/search.mjs"
+    ],
     "test/unit/browser-tool-schema.test.mjs": [
       "web-ai/browser-tool-schema.mjs"
     ],
+    "test/unit/browser-update-check.test.mjs": [
+      "skills/browser/update-check.mjs"
+    ],
+    "test/unit/candidate-reconcile.test.mjs": [
+      "web-ai/candidate-reconcile.mjs"
+    ],
     "test/unit/chatgpt-attachments.test.mjs": [
       "web-ai/chatgpt-attachments.mjs"
+    ],
+    "test/unit/chatgpt-files.test.mjs": [
+      "web-ai/chatgpt-files.mjs",
+      "web-ai/session.mjs"
     ],
     "test/unit/chatgpt-images.test.mjs": [
       "web-ai/chatgpt-images.mjs"
@@ -1167,6 +1576,14 @@
     "test/unit/g11-action-timeline.test.mjs": [
       "web-ai/trace/action-timeline.mjs"
     ],
+    "test/unit/kbrowsecomp-search-research.test.mjs": [
+      "skills/browser/search-research/browse-escalation.mjs",
+      "skills/browser/search-research/constraint-ledger.mjs",
+      "skills/browser/search-research/fetch-enrichment.mjs",
+      "skills/browser/search-research/korean-routes.mjs",
+      "skills/browser/search-research/normalizer.mjs",
+      "skills/browser/search-research/search-strategy.mjs"
+    ],
     "test/unit/keyed-mutex.test.mjs": [
       "skills/browser/keyed-mutex.mjs"
     ],
@@ -1178,10 +1595,33 @@
     ],
     "test/unit/runway-cli.test.mjs": [
       "skills/browser/runway-monitor.mjs",
+      "skills/browser/runway-selectors.mjs",
+      "skills/browser/runway-sequence.mjs",
+      "skills/browser/runway-url.mjs",
       "skills/browser/runway.mjs"
+    ],
+    "test/unit/runway-download.test.mjs": [
+      "skills/browser/runway-download.mjs"
+    ],
+    "test/unit/runway-generate.test.mjs": [
+      "skills/browser/runway-generate.mjs"
+    ],
+    "test/unit/runway-sequence.test.mjs": [
+      "skills/browser/runway-sequence.mjs"
+    ],
+    "test/unit/search-research-constraint-ledger.test.mjs": [
+      "skills/browser/search-research/constraint-ledger.mjs"
+    ],
+    "test/unit/search-research-era-sweep.test.mjs": [
+      "skills/browser/search-research/search-strategy.mjs"
     ],
     "test/unit/skill-install.test.mjs": [
       "skills/browser/skill-install.mjs"
+    ],
+    "test/unit/stability-benchmarks.test.mjs": [
+      "web-ai/chatgpt-attachments.mjs",
+      "web-ai/chatgpt-composer.mjs",
+      "web-ai/errors.mjs"
     ],
     "test/unit/tab-lifecycle.test.mjs": [
       "skills/browser/tab-lifecycle.mjs",
@@ -1201,6 +1641,13 @@
     "test/unit/web-ai-action-trace.test.mjs": [
       "web-ai/action-trace.mjs"
     ],
+    "test/unit/web-ai-annotated-screenshot-stub.test.mjs": [
+      "web-ai/annotated-screenshot.mjs"
+    ],
+    "test/unit/web-ai-annotated-screenshot.test.mjs": [
+      "web-ai/annotated-screenshot.mjs",
+      "web-ai/errors.mjs"
+    ],
     "test/unit/web-ai-answer-artifact.test.mjs": [
       "web-ai/answer-artifact.mjs"
     ],
@@ -1214,6 +1661,13 @@
       "web-ai/action-cache.mjs",
       "web-ai/constants.mjs"
     ],
+    "test/unit/web-ai-capability-freshness.test.mjs": [
+      "web-ai/capability-freshness.mjs"
+    ],
+    "test/unit/web-ai-capability-registry.test.mjs": [
+      "web-ai/capability-registry.mjs",
+      "web-ai/errors.mjs"
+    ],
     "test/unit/web-ai-capability.test.mjs": [
       "web-ai/capability.mjs",
       "web-ai/chatgpt-model.mjs",
@@ -1226,14 +1680,43 @@
     "test/unit/web-ai-chatgpt-archive.test.mjs": [
       "web-ai/chatgpt-archive.mjs"
     ],
+    "test/unit/web-ai-chatgpt-deep-research.test.mjs": [
+      "web-ai/chatgpt-deep-research.mjs"
+    ],
     "test/unit/web-ai-chatgpt-model.test.mjs": [
       "web-ai/chatgpt-model.mjs"
+    ],
+    "test/unit/web-ai-chatgpt-response-fragments.test.mjs": [
+      "web-ai/chatgpt-response-dom.mjs"
+    ],
+    "test/unit/web-ai-chatgpt-response-observer.test.mjs": [
+      "web-ai/chatgpt-response-dom.mjs",
+      "web-ai/chatgpt-response-observer.mjs"
+    ],
+    "test/unit/web-ai-chatgpt-tools.test.mjs": [
+      "web-ai/chatgpt-tools.mjs"
+    ],
+    "test/unit/web-ai-chatgpt-work-picker.test.mjs": [
+      "web-ai/chatgpt-work-picker.mjs"
     ],
     "test/unit/web-ai-churn-log.test.mjs": [
       "web-ai/churn-log.mjs"
     ],
     "test/unit/web-ai-claim-audit.test.mjs": [
       "web-ai/claim-audit.mjs"
+    ],
+    "test/unit/web-ai-code-artifact.test.mjs": [
+      "web-ai/code-artifact.mjs"
+    ],
+    "test/unit/web-ai-code-dev-context.test.mjs": [
+      "web-ai/code-artifact.mjs",
+      "web-ai/code-dev-context.mjs"
+    ],
+    "test/unit/web-ai-code-mode-prompt.test.mjs": [
+      "web-ai/code-mode-prompt.mjs"
+    ],
+    "test/unit/web-ai-code-mode.test.mjs": [
+      "web-ai/code-mode.mjs"
     ],
     "test/unit/web-ai-composer.test.mjs": [
       "web-ai/chatgpt-composer.mjs"
@@ -1247,6 +1730,13 @@
     "test/unit/web-ai-copy-markdown.test.mjs": [
       "web-ai/copy-markdown.mjs"
     ],
+    "test/unit/web-ai-deep-research-report-selection.test.mjs": [
+      "web-ai/chatgpt-deep-research-report.mjs"
+    ],
+    "test/unit/web-ai-deep-research-resume.test.mjs": [
+      "web-ai/chatgpt-deep-research.mjs",
+      "web-ai/session.mjs"
+    ],
     "test/unit/web-ai-doctor.test.mjs": [
       "web-ai/doctor.mjs"
     ],
@@ -1255,6 +1745,10 @@
     ],
     "test/unit/web-ai-dom-scrubber.test.mjs": [
       "web-ai/eval/scrub-dom.mjs"
+    ],
+    "test/unit/web-ai-envelope-shape.test.mjs": [
+      "web-ai/errors.mjs",
+      "web-ai/failure-diagnostics.mjs"
     ],
     "test/unit/web-ai-errors.test.mjs": [
       "web-ai/errors.mjs"
@@ -1272,10 +1766,20 @@
       "web-ai/eval-runner.mjs"
     ],
     "test/unit/web-ai-eval-runner.test.mjs": [
-      "web-ai/eval-runner.mjs"
+      "web-ai/eval-runner.mjs",
+      "web-ai/eval/provider-targets.mjs"
     ],
     "test/unit/web-ai-eval-types.test.mjs": [
       "web-ai/eval/types.mjs"
+    ],
+    "test/unit/web-ai-failure-diagnostics-taxonomy.test.mjs": [
+      "web-ai/errors.mjs",
+      "web-ai/failure-diagnostics.mjs"
+    ],
+    "test/unit/web-ai-failure-diagnostics.test.mjs": [
+      "web-ai/failure-diagnostics.mjs",
+      "web-ai/session-artifacts.mjs",
+      "web-ai/session.mjs"
     ],
     "test/unit/web-ai-gemini-contract.test.mjs": [
       "web-ai/chatgpt-composer.mjs",
@@ -1283,6 +1787,24 @@
       "web-ai/vendor-editor-contract.mjs"
     ],
     "test/unit/web-ai-grok-live-policy.test.mjs": [],
+    "test/unit/web-ai-interstitial.test.mjs": [
+      "web-ai/interstitial.mjs"
+    ],
+    "test/unit/web-ai-live-status-report.test.mjs": [
+      "web-ai/live-status-report.mjs"
+    ],
+    "test/unit/web-ai-navigation-ready.test.mjs": [
+      "web-ai/navigation-ready.mjs"
+    ],
+    "test/unit/web-ai-observation-presets.test.mjs": [
+      "web-ai/capability-observation-presets.mjs",
+      "web-ai/capability-registry.mjs",
+      "web-ai/doctor.mjs",
+      "web-ai/vendor-editor-contract.mjs"
+    ],
+    "test/unit/web-ai-open-conversation-newtab.test.mjs": [
+      "web-ai/tab-recovery.mjs"
+    ],
     "test/unit/web-ai-policy.test.mjs": [
       "web-ai/policy/enforce.mjs",
       "web-ai/policy/schema.mjs"
@@ -1290,15 +1812,31 @@
     "test/unit/web-ai-post-action-assert.test.mjs": [
       "web-ai/post-action-assert.mjs"
     ],
+    "test/unit/web-ai-product-surfaces.test.mjs": [
+      "web-ai/product-surfaces.mjs"
+    ],
     "test/unit/web-ai-project-sources.test.mjs": [
       "web-ai/chatgpt-project-sources.mjs"
     ],
+    "test/unit/web-ai-provider-adapter.test.mjs": [
+      "web-ai/errors.mjs",
+      "web-ai/provider-adapter.mjs"
+    ],
+    "test/unit/web-ai-provider-dom-contract.test.mjs": [
+      "test/helpers/provider-dom-contract.mjs",
+      "web-ai/eval-runner.mjs",
+      "web-ai/eval/scrub-dom.mjs"
+    ],
     "test/unit/web-ai-provider-session.test.mjs": [
+      "web-ai/chatgpt.mjs",
       "web-ai/session.mjs"
     ],
     "test/unit/web-ai-question.test.mjs": [
       "web-ai/question.mjs",
       "web-ai/types.mjs"
+    ],
+    "test/unit/web-ai-safe-conversation-url.test.mjs": [
+      "web-ai/tab-recovery.mjs"
     ],
     "test/unit/web-ai-self-heal-validation.test.mjs": [
       "web-ai/self-heal.mjs"
@@ -1336,7 +1874,18 @@
       "web-ai/session.mjs",
       "web-ai/tab-finalizer.mjs"
     ],
+    "test/unit/web-ai-tab-inspect.test.mjs": [
+      "web-ai/tab-inspect.mjs"
+    ],
     "test/unit/web-ai-tab-recovery.test.mjs": [],
+    "test/unit/web-ai-timeout-default.test.mjs": [
+      "web-ai/session.mjs",
+      "web-ai/watcher.mjs"
+    ],
+    "test/unit/web-ai-tls-redirect.test.mjs": [
+      "skills/browser/adaptive-fetch/safety.mjs",
+      "skills/browser/adaptive-fetch/tls-fetch.mjs"
+    ],
     "test/unit/web-ai-tool-schema.test.mjs": [
       "web-ai/tool-schema.mjs"
     ],
@@ -1354,7 +1903,9 @@
       "web-ai/trace/types.mjs",
       "web-ai/trace/writer.mjs"
     ],
-    "test/unit/web-ai-watcher.test.mjs": [],
+    "test/unit/web-ai-watcher.test.mjs": [
+      "web-ai/watcher.mjs"
+    ],
     "test/spec/antigravity-gap-tracking.test.mjs": [],
     "test/spec/antigravity-security-contracts.test.mjs": [],
     "test/integration/bin-shim-contract.test.mjs": [],
@@ -1371,7 +1922,8 @@
     ],
     "test/integration/cli-help.test.mjs": [
       "test/helpers/exec-browser.mjs",
-      "test/helpers/exec-vision-click.mjs"
+      "test/helpers/exec-vision-click.mjs",
+      "test/helpers/temp-env.mjs"
     ],
     "test/integration/cli-install-skills.test.mjs": [
       "test/helpers/exec-browser.mjs"
@@ -1385,11 +1937,23 @@
       "test/helpers/fixture-server.mjs",
       "test/helpers/temp-env.mjs"
     ],
+    "test/integration/extract-cli.test.mjs": [
+      "test/helpers/exec-browser.mjs"
+    ],
+    "test/integration/playwright-launch.mjs": [],
     "test/integration/post-action-smoke.test.mjs": [
+      "test/integration/playwright-launch.mjs",
       "test/integration/smoke-server.mjs",
       "web-ai/post-action-assert.mjs"
     ],
+    "test/integration/research-cli.test.mjs": [
+      "test/helpers/exec-browser.mjs"
+    ],
+    "test/integration/search-cli.test.mjs": [
+      "test/helpers/exec-browser.mjs"
+    ],
     "test/integration/self-heal-smoke.test.mjs": [
+      "test/integration/playwright-launch.mjs",
       "test/integration/smoke-server.mjs",
       "web-ai/action-cache.mjs",
       "web-ai/self-heal.mjs"
@@ -1401,6 +1965,11 @@
     "test/integration/web-ai-fake-chatgpt.test.mjs": [
       "web-ai/chatgpt.mjs",
       "web-ai/session.mjs"
+    ],
+    "test/integration/web-ai-golden-scenario.test.mjs": [
+      "web-ai/chatgpt.mjs",
+      "web-ai/cli.mjs",
+      "web-ai/errors.mjs"
     ],
     "test/integration/web-ai-mcp-server.test.mjs": [
       "web-ai/mcp-server.mjs"
@@ -1424,6 +1993,7 @@
       "test/helpers/exec-script.mjs"
     ],
     "test/helpers/fixture-server.mjs": [],
+    "test/helpers/provider-dom-contract.mjs": [],
     "test/helpers/snapshot-utils.mjs": [],
     "test/helpers/temp-env.mjs": [],
     "test/e2e/smoke.test.mjs": [
@@ -1432,19 +2002,29 @@
       "test/helpers/snapshot-utils.mjs",
       "test/helpers/temp-env.mjs"
     ],
+    "skills/vision-click/vision-candidate.mjs": [],
     "skills/vision-click/vision-click.mjs": [
-      "skills/vision-click/vision-core.mjs"
+      "skills/vision-click/vision-core.mjs",
+      "web-ai/candidate-reconcile.mjs"
     ],
-    "skills/vision-click/vision-core.mjs": [],
+    "skills/vision-click/vision-core.mjs": [
+      "skills/vision-click/vision-candidate.mjs"
+    ],
     "skills/browser/browser-core.mjs": [],
     "skills/browser/browser.mjs": [
       "skills/browser/adaptive-fetch/index.mjs",
       "skills/browser/browser-core.mjs",
       "skills/browser/profile-lock.mjs",
       "skills/browser/runway.mjs",
+      "skills/browser/search-research/browse-escalation.mjs",
+      "skills/browser/search-research/fetch-enrichment.mjs",
+      "skills/browser/search-research/normalizer.mjs",
+      "skills/browser/search-research/search-strategy.mjs",
+      "skills/browser/search.mjs",
       "skills/browser/skill-install.mjs",
       "skills/browser/tab-lifecycle.mjs",
       "skills/browser/tab-manager.mjs",
+      "skills/browser/update-check.mjs",
       "web-ai/action-memory.mjs",
       "web-ai/active-command-store.mjs",
       "web-ai/cli.mjs",
@@ -1454,11 +2034,58 @@
       "web-ai/tab-inspect.mjs",
       "web-ai/tab-pool.mjs"
     ],
+    "skills/browser/extract.mjs": [
+      "skills/browser/adaptive-fetch/fetcher.mjs",
+      "skills/browser/adaptive-fetch/structured-extractor.mjs",
+      "web-ai/extract-schema.mjs"
+    ],
     "skills/browser/keyed-mutex.mjs": [],
     "skills/browser/profile-lock.mjs": [],
+    "skills/browser/runway-download.mjs": [],
+    "skills/browser/runway-generate.mjs": [
+      "skills/browser/runway-download.mjs",
+      "skills/browser/runway-monitor.mjs",
+      "skills/browser/runway-selectors.mjs",
+      "skills/browser/runway-url.mjs",
+      "skills/browser/runway.mjs"
+    ],
     "skills/browser/runway-monitor.mjs": [],
+    "skills/browser/runway-multishot.mjs": [
+      "skills/browser/runway-download.mjs",
+      "skills/browser/runway-generate.mjs",
+      "skills/browser/runway-monitor.mjs",
+      "skills/browser/runway-selectors.mjs"
+    ],
+    "skills/browser/runway-product-ad.mjs": [
+      "skills/browser/runway-download.mjs",
+      "skills/browser/runway-generate.mjs",
+      "skills/browser/runway-monitor.mjs",
+      "skills/browser/runway-selectors.mjs"
+    ],
+    "skills/browser/runway-selectors.mjs": [],
+    "skills/browser/runway-sequence.mjs": [
+      "skills/browser/runway-generate.mjs",
+      "skills/browser/runway-selectors.mjs"
+    ],
+    "skills/browser/runway-url.mjs": [
+      "skills/browser/runway-selectors.mjs"
+    ],
     "skills/browser/runway.mjs": [
-      "skills/browser/runway-monitor.mjs"
+      "skills/browser/runway-download.mjs",
+      "skills/browser/runway-generate.mjs",
+      "skills/browser/runway-monitor.mjs",
+      "skills/browser/runway-multishot.mjs",
+      "skills/browser/runway-product-ad.mjs",
+      "skills/browser/runway-selectors.mjs",
+      "skills/browser/runway-sequence.mjs",
+      "skills/browser/runway-url.mjs"
+    ],
+    "skills/browser/search.mjs": [
+      "skills/browser/adaptive-fetch/index.mjs",
+      "skills/browser/search-research/browse-escalation.mjs",
+      "skills/browser/search-research/fetch-enrichment.mjs",
+      "skills/browser/search-research/normalizer.mjs",
+      "skills/browser/search-research/search-strategy.mjs"
     ],
     "skills/browser/skill-install.mjs": [],
     "skills/browser/tab-lifecycle.mjs": [
@@ -1471,15 +2098,38 @@
     "skills/browser/tab-monitor.mjs": [
       "skills/browser/tab-manager.mjs"
     ],
+    "skills/browser/update-check.mjs": [],
+    "skills/browser/search-research/browse-escalation.mjs": [
+      "skills/browser/search-research/fetch-enrichment.mjs",
+      "skills/browser/search-research/search-strategy.mjs"
+    ],
+    "skills/browser/search-research/constraint-ledger.mjs": [],
+    "skills/browser/search-research/fetch-enrichment.mjs": [
+      "skills/browser/adaptive-fetch/index.mjs",
+      "skills/browser/search-research/constraint-ledger.mjs",
+      "skills/browser/search-research/normalizer.mjs",
+      "skills/browser/search-research/search-strategy.mjs"
+    ],
+    "skills/browser/search-research/korean-routes.mjs": [],
+    "skills/browser/search-research/normalizer.mjs": [],
+    "skills/browser/search-research/search-strategy.mjs": [
+      "skills/browser/search-research/korean-routes.mjs"
+    ],
+    "skills/browser/adaptive-fetch/bm25-filter.mjs": [],
     "skills/browser/adaptive-fetch/browser-escalation.mjs": [
       "skills/browser/adaptive-fetch/browser-runtime.mjs",
       "skills/browser/adaptive-fetch/challenge-detector.mjs",
+      "skills/browser/adaptive-fetch/defuddle-extractor.mjs",
       "skills/browser/adaptive-fetch/safety.mjs",
       "skills/browser/adaptive-fetch/validators.mjs"
     ],
     "skills/browser/adaptive-fetch/browser-runtime.mjs": [],
     "skills/browser/adaptive-fetch/browser-session.mjs": [
       "skills/browser/adaptive-fetch/browser-runtime.mjs",
+      "skills/browser/adaptive-fetch/safety.mjs"
+    ],
+    "skills/browser/adaptive-fetch/camoufox-session.mjs": [],
+    "skills/browser/adaptive-fetch/candidate-discovery.mjs": [
       "skills/browser/adaptive-fetch/safety.mjs"
     ],
     "skills/browser/adaptive-fetch/challenge-detector.mjs": [
@@ -1489,7 +2139,11 @@
     "skills/browser/adaptive-fetch/content-scorer.mjs": [
       "skills/browser/adaptive-fetch/validators.mjs"
     ],
+    "skills/browser/adaptive-fetch/defuddle-extractor.mjs": [],
     "skills/browser/adaptive-fetch/endpoint-resolvers.mjs": [],
+    "skills/browser/adaptive-fetch/feed-parser.mjs": [
+      "skills/browser/adaptive-fetch/transforms.mjs"
+    ],
     "skills/browser/adaptive-fetch/fetcher.mjs": [
       "skills/browser/adaptive-fetch/safety.mjs",
       "skills/browser/adaptive-fetch/transforms.mjs"
@@ -1498,19 +2152,26 @@
       "skills/browser/adaptive-fetch/browser-session.mjs"
     ],
     "skills/browser/adaptive-fetch/index.mjs": [
+      "skills/browser/adaptive-fetch/bm25-filter.mjs",
       "skills/browser/adaptive-fetch/browser-escalation.mjs",
       "skills/browser/adaptive-fetch/browser-runtime.mjs",
       "skills/browser/adaptive-fetch/browser-session.mjs",
+      "skills/browser/adaptive-fetch/camoufox-session.mjs",
+      "skills/browser/adaptive-fetch/candidate-discovery.mjs",
       "skills/browser/adaptive-fetch/challenge-detector.mjs",
       "skills/browser/adaptive-fetch/content-scorer.mjs",
       "skills/browser/adaptive-fetch/endpoint-resolvers.mjs",
+      "skills/browser/adaptive-fetch/feed-parser.mjs",
       "skills/browser/adaptive-fetch/fetcher.mjs",
       "skills/browser/adaptive-fetch/human-loop.mjs",
       "skills/browser/adaptive-fetch/output.mjs",
       "skills/browser/adaptive-fetch/reader-adapters.mjs",
       "skills/browser/adaptive-fetch/safety.mjs",
+      "skills/browser/adaptive-fetch/structured-extractor.mjs",
       "skills/browser/adaptive-fetch/third-party-readers.mjs",
-      "skills/browser/adaptive-fetch/trace.mjs"
+      "skills/browser/adaptive-fetch/tls-fetch.mjs",
+      "skills/browser/adaptive-fetch/trace.mjs",
+      "skills/browser/adaptive-fetch/ytdlp-reader.mjs"
     ],
     "skills/browser/adaptive-fetch/metadata.mjs": [
       "skills/browser/adaptive-fetch/transforms.mjs"
@@ -1521,8 +2182,12 @@
       "skills/browser/adaptive-fetch/transforms.mjs"
     ],
     "skills/browser/adaptive-fetch/safety.mjs": [],
+    "skills/browser/adaptive-fetch/structured-extractor.mjs": [],
     "skills/browser/adaptive-fetch/third-party-readers.mjs": [
       "skills/browser/adaptive-fetch/fetcher.mjs",
+      "skills/browser/adaptive-fetch/safety.mjs"
+    ],
+    "skills/browser/adaptive-fetch/tls-fetch.mjs": [
       "skills/browser/adaptive-fetch/safety.mjs"
     ],
     "skills/browser/adaptive-fetch/trace.mjs": [
@@ -1531,9 +2196,13 @@
     "skills/browser/adaptive-fetch/transforms.mjs": [],
     "skills/browser/adaptive-fetch/validators.mjs": [],
     "skills/browser/adaptive-fetch/waf-profiles.mjs": [],
+    "skills/browser/adaptive-fetch/ytdlp-reader.mjs": [
+      "skills/browser/adaptive-fetch/safety.mjs"
+    ],
     "scripts/check-module-graph.mjs": [],
     "scripts/check-strict-baseline.mjs": [],
     "scripts/fix-counts.mjs": [],
+    "scripts/postinstall.mjs": [],
     "scripts/release-gates.mjs": [
       "web-ai/action-breadth.mjs",
       "web-ai/action-memory.mjs",
@@ -1555,6 +2224,7 @@
       "web-ai/eval-runner.mjs"
     ],
     "scripts/smoke-bins.mjs": [],
+    "devlog/context/redesign-candidates/verify/capture.mjs": [],
     "bin/agbrowse-vision-click.mjs": [
       "skills/vision-click/vision-click.mjs"
     ],

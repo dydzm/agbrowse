@@ -16,6 +16,7 @@ import {
     getSession,
     markSessionTimeout,
     resolveDeadlineAt,
+    resolveTimeoutBudgetSec,
     saveBaseline,
     sessionToBaseline,
     summarizeEnvelope,
@@ -326,7 +327,13 @@ export async function sendWebAi(deps, input = {}) {
  */
 export async function pollWebAi(deps, input = {}) {
     const vendor = input.vendor || 'chatgpt';
-    const timeout = Math.max(1, Number(input.timeout || 1200));
+    const timeout = Math.max(1, Number(input.timeout) > 0
+        ? Number(input.timeout)
+        : (() => {
+            const session = input.session ? getSession(input.session) : null;
+            return resolveTimeoutBudgetSec(input, session, vendor);
+        })(),
+    );
     const page = await requireChatGptPage(deps);
     const url = page.url();
     const session = input.session

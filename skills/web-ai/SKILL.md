@@ -1,15 +1,15 @@
 ---
 name: web-ai
 description: >-
-  Ask AI web UIs (ChatGPT, Gemini, Grok) via standalone agbrowse browser automation.
-  Model selection, effort control, session resume, file/context upload, polling, copy-markdown fallback, and response extraction.
+  Ask AI web UIs (ChatGPT Chat and Work, Gemini, Grok) via standalone agbrowse browser automation.
+  Chat model-family/tier selection, Work Power submission, reasoning-effort control, session resume, file/context upload, polling, copy-markdown fallback, and response extraction.
   NOT for: generic page navigation or screenshots (use browser skill).
-  Triggers: web-ai, agbrowse, ChatGPT, GPT, GPT Pro, GPT Thinking, GPT Instant, GPT Heavy,
+  Triggers: web-ai, agbrowse, ChatGPT, ChatGPT Work, work send, GPT, GPT-5.6, GPT-5.6 Sol, GPT Pro, GPT Thinking, GPT Instant, Extra High, GPT Heavy,
   Gemini, Gemini Pro, Gemini Thinking, Gemini DeepThink, deep think, deepthink,
   Grok, Grok Heavy, Grok Expert, Grok Fast, grok-4.3,
-  챗지피티, 제미나이, 그록, 딥씽크, GPT한테, AI한테, AI 물어봐, AI한테 물어봐,
-  heavy 모드, thinking 모드, pro 모드, expert 모드, extended effort, reasoning effort,
-  ask chatgpt, ask gemini, ask grok, query AI, AI 리뷰, AI 검증, AI 조사,
+  챗지피티, 제미나이, 그록, 딥씽크, GPT한테, AI한테, AI 물어봐, AI한테 물어봐, work 보내,
+  xhigh 모드, thinking 모드, pro 모드, expert 모드, reasoning effort,
+  ask chatgpt, ask gemini, ask grok, query AI, AI 리뷰, AI 검증, AI 조사, work send,
   GPT한테 리뷰, GPT로 검증, 그록한테 물어봐, 제미나이로 분석,
   ~한테 물어봐, ~한테 질문, ~에게 요청, ~로 물어봐, ~로 검증, ~로 분석,
   web-ai query, web-ai send, web-ai poll, --vendor, --model, --effort
@@ -106,27 +106,50 @@ used.
 
 ## Polling Timeouts
 
-`web-ai poll` and `web-ai query` accept `--timeout <seconds>`. When omitted,
-the runtime uses these defaults so heavy reasoning models (ChatGPT Pro/Heavy,
-Gemini Deep Think, Grok Expert/Heavy) have room to finish:
+`web-ai poll`, `web-ai query`, and `web-ai watch` accept `--timeout <seconds>`.
+Timeout resolution is `explicit timeout → stored session deadline remainder → tier
+default → vendor fallback`. A resumed poll therefore keeps the deadline created by
+the original submit unless the caller explicitly overrides it.
 
-| Vendor | Default `--timeout` | Roughly |
+| Long-running tier | Default `--timeout` | Roughly |
+| --- | ---: | --- |
+| `chatgpt-pro` | 5400 | 90 minutes |
+| `grok-heavy` | 3600 | 60 minutes |
+| `deep-research` | 3600 | 60 minutes |
+
+| Vendor fallback when the tier is unknown | Default `--timeout` | Roughly |
 | --- | ---: | --- |
 | ChatGPT | 1200 | 20 minutes |
 | Gemini | 1200 | 20 minutes |
 | Grok | 600 | 10 minutes |
 
-Pass `--timeout 1800` (30 min) or higher for unusually long Pro/Deep Think
-runs. The provider tab and the agbrowse Chrome process stay open across a
-poll timeout — only the polling loop gives up.
+Do not equate ChatGPT's UI-side reasoning budget with the agbrowse poll deadline.
+The roughly 40-minute Pro budget is a user report and was not present in the
+2026-07-10 DOM. The 5400-second (90-minute) `chatgpt-pro` default is agbrowse
+polling headroom; `grok-heavy` and `deep-research` remain independent 3600-second tiers.
+The provider tab and agbrowse Chrome process remain open when polling times out.
 
-MCP clients should preserve the `sessionId` returned by `web_ai_submit_prompt`.
-`web_ai_wait_response` and `web_ai_session_resume` use the stored-session
+MCP clients should preserve the `sessionId` returned by `web_ai_submit_prompt` or `web_ai_work_send`.
+`web_ai_wait_response` and `web_ai_session_resume` use the same stored deadline and
 recovery path and may return a recoverable timeout with `retryHint:
 poll-or-resume`. A host-level MCP request timeout, such as `-32001 Request
 timed out`, is a client/runtime boundary; after it, retry with the same
 `sessionId` or use CLI `web-ai poll --session <SID>` instead of sending a new
 prompt immediately.
+
+## ChatGPT Work
+
+Use the dedicated Work entrypoint; Chat `send/query/poll/watch` and
+`web_ai_submit_prompt` reject an active Work surface.
+
+```bash
+agbrowse web-ai work send --prompt "Analyze this repository" --power 4
+```
+
+`--power` is an integer from 1 through 6. The runtime follows the WP1-probed
+Power-to-Model/Effort mapping; do not infer Terra/Luna or Chat family aliases.
+For MCP clients, use `web_ai_work_send` with `prompt` and `power`. Do not add a
+`surface` field to `web_ai_submit_prompt`.
 
 ## Long-Running / Background Sessions
 
@@ -322,7 +345,7 @@ Common mistake: putting instructions in `--context` and finding they are "ignore
 move them to `--system`. Example of the working combo:
 
 ```bash
-agbrowse web-ai query --vendor chatgpt --model thinking \
+agbrowse web-ai query --vendor chatgpt --model thinking --effort high --family gpt-5.6-sol \
   --system "Extract every breaking change from the attached PDF and group by module." \
   --file ./spec.pdf \
   --prompt "Summarize the breaking changes."
@@ -384,7 +407,7 @@ Single zip:
 agbrowse web-ai code \
   --vendor chatgpt \
   --model thinking \
-  --effort standard \
+  --effort medium \
   --prompt "Create a Flask hello-world MVP." \
   --output-zip ./result.zip
 ```
@@ -398,7 +421,7 @@ Multiple named zips:
 agbrowse web-ai code \
   --vendor chatgpt \
   --model thinking \
-  --effort standard \
+  --effort medium \
   --multi-zip \
   --output-dir ./artifacts \
   --prompt "Create backend.zip and frontend.zip as separate deliverables."
@@ -654,47 +677,46 @@ agbrowse web-ai context-dry-run \
 
 ## Model Aliases
 
-ChatGPT:
+ChatGPT current contract (2026-07-10):
 
-- `instant`, `fast`, `gpt-5.3`
-- `thinking`, `think`, `gpt-5.5-thinking`
-- `pro`, `gpt-5.5-pro`
-- `--effort` / `--reasoning-effort` for ChatGPT:
-  - Pro: `standard`, `extended`
-  - Thinking: `light`, `standard`, `extended`, `heavy`
+| Input | Current resolution |
+| --- | --- |
+| `instant`, `fast` | GPT-5.5 `Instant`; no reasoning effort |
+| `thinking`, `think` | selected family + thinking tier; defaults to `medium` |
+| `pro` | selected family + flat `Pro` row; omit effort |
+| `--effort medium` | `Medium` |
+| `--effort high` | `High` |
+| `--effort xhigh` | `Extra High` |
+| `--family gpt-5.6-sol` | select the GPT-5.6 Sol family |
+| `--family gpt-5.5` | select GPT-5.5 |
+| `--family gpt-5.4` | select GPT-5.4 |
+| `--family gpt-5.3` | select GPT-5.3 |
+| `--family o3` | select o3 |
+| (omit `--family`) | preserve current UI family selection (zero submenu mutation) |
 
-2026-05-03 ChatGPT UI note:
+Legacy effort normalization: `light`, `low`, `standard`, `normal`, `regular`,
+`default` remap to `medium`. `extended` remaps to `high` and emits exactly one
+stderr warning. `heavy`, `extra-high`, `extra_high`, `extra high` remap to
+`xhigh`. Legacy Pro effort (`standard`, `extended`) resolves to the flat `Pro`
+row and emits exactly one no-selection stderr warning.
 
-- The visible model opener can be a bottom composer pill such as `Pro`
-  without the older top `model-switcher-dropdown-button`.
-- Pro effort trigger: `[data-testid="model-switcher-gpt-5-5-pro-thinking-effort"]`
-  with `Standard` and `Extended`.
-- Thinking effort trigger:
-  `[data-testid="model-switcher-gpt-5-5-thinking-thinking-effort"]`
-  with `Light`, `Standard`, `Extended`, and `Heavy`.
-- In the simplified Intelligence UI, Pro currently routes through `Pro Extended`
-  because the plain `Pro` / `Pro Standard` row may be absent.
+`gpt-5.3` is no longer a synonym for `instant`. It is an independent family;
+use `--family gpt-5.3` rather than `--model gpt-5.3`.
 
-2026-06-11 ChatGPT Intelligence UI note:
+### Legacy UI (before 2026-07-10)
 
-- The visible picker may be the simplified `Intelligence` menu instead of the
-  older model row plus separate effort submenu.
-- `instant` and `thinking --effort light` select `Instant`.
-- `thinking --effort standard` selects `Medium`.
-- `thinking --effort extended` selects `High`.
-- `thinking --effort heavy` selects `Extra High`.
-- `pro --effort standard` selects `Pro Extended` when the simplified UI only exposes Pro Extended; if ChatGPT exposes a `Pro Standard` hover submenu, treat it as an optional refinement rather than a required selector.
-- `pro --effort extended` selects `Pro Extended`.
+2026-05-03: The visible model opener could be a bottom composer pill such as
+`Pro` without the older top `model-switcher-dropdown-button`. Pro effort trigger:
+`[data-testid="model-switcher-gpt-5-5-pro-thinking-effort"]` with `Standard` and
+`Extended`. Thinking effort trigger:
+`[data-testid="model-switcher-gpt-5-5-thinking-thinking-effort"]` with `Light`,
+`Standard`, `Extended`, and `Heavy`. Pro could route through `Pro Extended`.
 
-2026-06-15 Korean ChatGPT Intelligence UI note:
+2026-06-11: The simplified Intelligence picker exposed `Instant`, `Medium`,
+`High`, `Extra High`, and `Pro Extended`. `model-switcher-*` rows and
+composer-pill fallbacks remained supported.
 
-- The composer model pill may show `중간` and open a `지능` menu.
-- `instant` / `thinking --effort light` select `즉시`.
-- `thinking --effort standard` selects `중간`.
-- `thinking --effort extended` selects `높음`.
-- `thinking --effort heavy` selects `매우 높음`.
-- `pro --effort extended` selects `Pro 확장`.
-- Pro effort trigger observed as `data-testid="composer-intelligence-pro-thinking-effort-trigger"`.
+2026-06-15 Korean: `즉시`, `중간`, `높음`, `매우 높음`, `Pro 확장`.
 
 Gemini:
 

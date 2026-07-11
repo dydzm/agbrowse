@@ -36,6 +36,7 @@ aliases: [agbrowse release gates, agbrowse 릴리즈 게이트, production readi
 
 - [ ] `git diff --check`
 - [ ] `bash structure/check-doc-drift.sh`
+- [ ] `check-doc-drift.sh` semantic doc-contract result: no unallowlisted stale ChatGPT model/effort/timeout token; only the explicit legacy UI and Deep Research exceptions remain
 - [ ] `bash structure/verify-counts.sh`
 - [ ] GitHub Pages validation (`.github/workflows/pages.yml`) for `docs/dev/` EN/KO entrypoints, local links, language pairs, and landing quickstart order
 - [ ] `npm run test:unit`
@@ -67,7 +68,7 @@ aliases: [agbrowse release gates, agbrowse 릴리즈 게이트, production readi
 | `npm run test:trace-policy` | trace와 policy tests | evidence와 mutation guard 확인 |
 | `npm run test:mcp` | MCP protocol/schema/policy tests | Phase 18 ready claim이 실제 tool surface와 일치하는지 확인 |
 | `npm run test:source-audit` | answer artifact + source audit tests | Phase 17 research/source claim 차단 |
-| `npm run test:release-gates` | structure drift + count checks | Phase status, command, release claim drift 차단 |
+| `npm run test:release-gates` | structure drift + ChatGPT semantic doc-contract stale-token + count checks | Phase status, command, model/effort/timeout, release claim drift 차단 |
 | `.github/workflows/pages.yml` validate job | static Pages docs validation | `docs/index.html`, `docs/dev/`, `docs/dev/ko/`, local links, language pairs, quickstart ordering 검증 |
 | `npm run gate:all` | Phase 22 named release gates (`gate:typecheck`, `gate:tests`, `gate:truth-table-fresh`, `gate:mcp-scope-frozen`, `gate:no-experimental-in-readme-ready-section`) | capability table freshness, frozen MCP scope, README 라벨 일치를 단일 명령으로 검증 |
 | `npm run gate:typecheck` | `node --check` + `check-doc-drift.sh` | 공개 .mjs 진입점 syntax + 구조 문서 일치 |

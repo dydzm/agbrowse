@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "taskId": "gpt56-fixture-eval",
+  "maxFixtureConcurrency": 2,
+  "fixtures": [
+    {
+      "id": "chatgpt-gpt56-chat",
+      "vendor": "chatgpt",
+      "variant": "gpt56-chat",
+      "htmlPath": "chatgpt-gpt56-chat.html",
+      "mustContain": [
+        "composer-intelligence-picker-content",
+        "GPT-5.6 Sol"
+      ],
+      "mustNotContain": [
+        "Pro Standard",
+        "Pro Extended",
+        "model-switcher-"
+      ]
+    },
+    {
+      "id": "chatgpt-gpt56-work",
+      "vendor": "chatgpt",
+      "variant": "gpt56-work",
+      "htmlPath": "chatgpt-gpt56-work.html",
+      "requiredIntents": ["composer.fill"],
+      "mustContain": [
+        "composer-model-picker-slider-simple-view",
+        "Work on anything"
+      ],
+      "mustNotContain": ["Pro Standard", "Pro Extended", "model-switcher-"]
+    }
+  ]
+}

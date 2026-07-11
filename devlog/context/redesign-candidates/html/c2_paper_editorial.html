@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C2 - Paper Editorial Light</title>
+<style>
+  :root{
+    --paper:#faf8f4; --ink:#141414; --muted:#6d6a63; --teal:#0f766e;
+    --rule:#d8d4cb; --mono:"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:"Helvetica Neue",Arial,sans-serif;line-height:1.55}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 36px}
+  nav{border-bottom:1px solid var(--ink)}
+  .nav-in{display:flex;justify-content:space-between;align-items:baseline;padding:20px 0}
+  .brand{font-weight:800;font-size:16px;letter-spacing:.02em}
+  .links{display:flex;gap:24px;font-size:13px}
+  .links a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--teal)}
+  .hero{display:grid;grid-template-columns:1.6fr 1fr;gap:56px;padding:76px 0 48px;align-items:start}
+  .no{font:500 12px var(--mono);color:var(--teal);letter-spacing:.18em;margin-bottom:22px}
+  h1{font-size:74px;line-height:.98;font-weight:800;letter-spacing:0}
+  h1 em{font-style:normal;color:var(--teal)}
+  .sub{margin-top:26px;font-size:17px;color:var(--muted);max-width:44ch;text-wrap:balance}
+  .cta-row{margin-top:30px;display:flex;gap:18px;align-items:center}
+  .cta{background:var(--ink);color:var(--paper);font:600 13.5px var(--mono);padding:14px 22px;border:0;cursor:pointer}
+  .cta-link{font-size:14px;color:var(--teal);text-decoration:underline;text-underline-offset:3px}
+  .slab{background:var(--ink);color:#efeadf;padding:24px;font:13px/1.9 var(--mono)}
+  .slab .cm{color:#8a877e}
+  .slab .t{color:#5eead4}
+  aside .cap{font:11px var(--mono);color:var(--muted);margin-top:10px;letter-spacing:.06em}
+  .rule{border:0;border-top:1px solid var(--rule);margin:8px 0 0}
+  .vendors{padding:44px 0 60px}
+  .vh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:22px}
+  .vh h2{font-size:24px;font-weight:800}
+  .vh span{font:11px var(--mono);color:var(--muted);letter-spacing:.14em}
+  .vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .vt{background:var(--ink);color:var(--paper);padding:22px 22px 18px;display:flex;flex-direction:column;gap:26px}
+  .vt h3{font-size:19px;font-weight:700}
+  .vt.hl h3{color:#5eead4}
+  .vt ul{list-style:none;font:12px/2 var(--mono);color:#b9b5ab}
+  .vt li b{color:var(--paper);font-weight:500}
+</style>
+</head>
+<body>
+<nav><div class="wrap nav-in">
+  <div class="brand">agbrowse</div>
+  <div class="links"><a href="#">Web AI</a><a href="#">Workflow</a><a href="#">Docs</a><a href="#">GitHub</a></div>
+</div></nav>
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <p class="no">№ 01 — WEB-AI SESSIONS</p>
+      <h1>Web AI sessions.<br>Real browser.<br><em>One CLI.</em></h1>
+      <p class="sub">agbrowse runs ChatGPT, Gemini, and Grok web sessions through real Chrome tabs — every answer backed by an observable page, not a hidden API.</p>
+      <div class="cta-row">
+        <button class="cta">npm install -g agbrowse</button>
+        <a class="cta-link" href="#">Developer docs →</a>
+      </div>
+    </div>
+    <aside>
+      <div class="slab">
+        <div class="cm"># send once, poll from any shell</div>
+        <div>$ agbrowse web-ai send \</div>
+        <div>&nbsp;&nbsp;--vendor chatgpt \</div>
+        <div>&nbsp;&nbsp;--model pro \</div>
+        <div>&nbsp;&nbsp;--prompt "Cite sources."</div>
+        <div class="t">session s_9f2e41 created</div>
+        <div>$ agbrowse web-ai poll \</div>
+        <div>&nbsp;&nbsp;--session s_9f2e41</div>
+        <div class="t">→ result.md (2,914 words)</div>
+      </div>
+      <p class="cap">FIG. 1 — DURABLE SESSION, TWO SHELLS</p>
+      <hr class="rule">
+    </aside>
+  </header>
+  <section class="vendors">
+    <div class="vh"><h2>Three vendors, one command surface.</h2><span>02 / PROVIDERS</span></div>
+    <div class="vgrid">
+      <div class="vt hl"><h3>ChatGPT</h3><ul><li><b>pro · thinking · code-mode</b></li><li>zip artifacts + re-extract</li><li>file &amp; context upload</li></ul></div>
+      <div class="vt"><h3>Gemini</h3><ul><li><b>deep-think sessions</b></li><li>inline uploads</li><li>durable polling</li></ul></div>
+      <div class="vt"><h3>Grok</h3><ul><li><b>expert mode</b></li><li>web UI execution</li><li>copy-markdown capture</li></ul></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

@@ -381,25 +381,29 @@ export function resolveDeadlineAt(input = {}, vendor = 'chatgpt') {
     if (input.deadline) return new Date(input.deadline).toISOString();
     const seconds = Number(input.timeout) > 0
         ? Number(input.timeout)
-        : VENDOR_DEFAULT_TIMEOUT_SEC[vendor] || 1200;
+        : resolveTimeoutDefaultSec(input, vendor);
     return new Date(Date.now() + seconds * 1000).toISOString();
 }
 
 /**
  * Hardcoded default poll timeout (seconds) per normalized model tier.
- * Long-reasoning tiers (pro / deep-research) get an hour; shorter tiers scale down.
+ * Provider-specific long-reasoning tiers stay independent so one budget change
+ * cannot silently change another provider's behavior.
  * An explicit --timeout / --deadline always overrides these defaults.
  * @type {Readonly<Record<string, number>>}
  */
 export const TIER_DEFAULT_TIMEOUT_SEC = Object.freeze({
     instant: 120,
     thinking: 600,
-    pro: 3600,
+    'chatgpt-pro': 5400,
+    'grok-heavy': 3600,
     'deep-research': 3600,
 });
 
-/** Long-reasoning ceiling (seconds), exported for cross-module reuse (e.g. lease TTLs). */
-export const PRO_TIMEOUT_SEC = TIER_DEFAULT_TIMEOUT_SEC.pro;
+/** ChatGPT Pro ceiling (seconds), exported for cross-module reuse (e.g. lease TTLs). */
+export const CHATGPT_PRO_TIMEOUT_SEC = TIER_DEFAULT_TIMEOUT_SEC['chatgpt-pro'];
+/** Backward-compatible alias; new consumers use CHATGPT_PRO_TIMEOUT_SEC. */
+export const PRO_TIMEOUT_SEC = CHATGPT_PRO_TIMEOUT_SEC;
 
 /**
  * Resolve a tier name to a default timeout (seconds), falling back to the vendor
@@ -432,13 +436,14 @@ export function deriveTimeoutTier(vendor, model, research) {
     }
     if (vendor === 'grok') {
         const m = normalizeGrokModelChoice(model);
-        if (m === 'heavy') return 'pro';
+        if (m === 'heavy') return 'grok-heavy';
         if (m === 'fast') return 'instant';
         return m ? 'thinking' : null;
     }
     // chatgpt (default vendor)
     if (String(research || '').trim().toLowerCase() === 'deep') return 'deep-research';
-    return normalizeChatGptModelChoice(model);
+    const m = normalizeChatGptModelChoice(model);
+    return m === 'pro' ? 'chatgpt-pro' : m;
 }
 
 /**
@@ -450,6 +455,38 @@ export function deriveTimeoutTier(vendor, model, research) {
 export function resolveTimeoutDefaultSec(input = {}, vendor = 'chatgpt') {
     const tier = deriveTimeoutTier(vendor, input.model, input.research);
     return tierDefaultTimeoutSec(tier, vendor);
+}
+
+/**
+ * Resolve one polling budget in seconds.
+ * Priority: explicit timeout -> stored deadline remainder -> tier/vendor default.
+ * @param {WebAiEnvelope} [input]
+ * @param {WebAiSession|null} [session]
+ * @param {string} [vendor]
+ * @param {number} [nowMs]
+ * @returns {number}
+ */
+export function resolveTimeoutBudgetSec(
+    input = {},
+    session = null,
+    vendor = 'chatgpt',
+    nowMs = Date.now(),
+) {
+    const explicitTimeoutSec = Number(input.timeout);
+    if (Number.isFinite(explicitTimeoutSec) && explicitTimeoutSec > 0) {
+        return explicitTimeoutSec;
+    }
+
+    const storedDeadlineMs = Date.parse(String(session?.deadlineAt || ''));
+    if (Number.isFinite(storedDeadlineMs)) {
+        return Math.max(1, (storedDeadlineMs - nowMs) / 1000);
+    }
+
+    const summary = session?.envelopeSummary || {};
+    return resolveTimeoutDefaultSec({
+        model: input.model ?? summary.model,
+        research: input.research ?? session?.researchMode ?? summary.research,
+    }, session?.vendor || vendor);
 }
 
 /**

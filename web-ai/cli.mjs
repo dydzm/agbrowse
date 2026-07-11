@@ -9,6 +9,7 @@ import { renderWebAi, statusWebAi, sendWebAi, pollWebAi, queryWebAi, stopWebAi, 
 import { codeWebAi, extractCodeArtifacts } from './code-mode.mjs';
 import { geminiStatusWebAi, geminiSendWebAi, geminiPollWebAi, geminiQueryWebAi, geminiStopWebAi } from './gemini-live.mjs';
 import { grokStatusWebAi, grokSendWebAi, grokPollWebAi, grokQueryWebAi, grokStopWebAi } from './grok-live.mjs';
+import { isWorkSession, pollWorkSession, submitWorkPrompt } from './chatgpt-work-picker.mjs';
 import { buildContextPackageResult, prepareContextForBrowser, renderContextDryRunReport } from './context-pack/index.mjs';
 import { WebAiError, wrapError } from './errors.mjs';
 import { runDoctor } from './doctor.mjs';
@@ -16,6 +17,7 @@ import { maybeRecordChurn } from './churn-log.mjs';
 import { watchSession } from './watcher.mjs';
 import { buildWebAiSnapshot } from './ax-snapshot.mjs';
 import { runSessionsCommand, printSessionsHuman, parseDurationToMs } from './cli-sessions.mjs';
+import { isChatGptEffortSupported, normalizeChatGptFamilyChoice } from './chatgpt-model.mjs';
 import { createTab, listManagedTabs, waitForPageByTargetId } from '../skills/browser/tab-manager.mjs';
 import { cleanupIdleTabs, isPinned, DEFAULT_MAX_TABS } from '../skills/browser/tab-lifecycle.mjs';
 import { resolveSessionPage, withSessionPage } from './tab-recovery.mjs';
@@ -49,7 +51,8 @@ const COMMANDS = new Set([
     'sessions', 'doctor',
     'context-dry-run', 'context-render',
     'mcp-server', 'eval', 'claim-audit',
-    'project-sources', 'code', 'code-extract',
+   'project-sources', 'code', 'code-extract',
+    'work',
 ]);
 
 const BROWSER_REQUIRED_COMMANDS = new Set(['status', 'send', 'poll', 'query', 'stop', 'watch', 'snapshot', 'doctor', 'project-sources', 'code', 'code-extract']);
@@ -532,8 +535,11 @@ async function runWebAiCliInner(argv = [], deps) {
         else console.log(formatClaimAuditReport(report));
         return { ok: report.ok, status: report.ok ? 'claim-audit-pass' : 'claim-audit-fail', report };
     }
-    if (command === 'project-sources') {
-        return runProjectSourcesCommand(argv.slice(1), deps);
+   if (command === 'project-sources') {
+       return runProjectSourcesCommand(argv.slice(1), deps);
+   }
+    if (command === 'work') {
+        return runWorkCommand(argv.slice(1), deps);
     }
 
     const { values } = parseArgs({
@@ -647,13 +653,16 @@ async function runWebAiCliInner(argv = [], deps) {
         context: values.context,
         question: values.question,
         output: values.output,
-        constraints: values.constraints,
-        // When --timeout is omitted, default scales by model tier (instant 120s,
-        // thinking 600s, pro/deep-research 3600s) so a long pro run is not capped
-        // at the legacy 1200s. An explicit --timeout still wins.
+       constraints: values.constraints,
+        // When --timeout is omitted on send/query, default scales by model tier
+        // (instant 120s, thinking 600s, chatgpt-pro 5400s, grok-heavy 3600s,
+        // deep-research 3600s). For poll/watch/resume, timeout stays undefined
+        // so the budget resolver inherits stored session deadline remainder.
         timeout: values.timeout != null
             ? values.timeout
-            : resolveTimeoutDefaultSec({ model: values.model, research: values.research }, values.vendor || 'chatgpt'),
+            : (command === 'send' || command === 'query')
+                ? resolveTimeoutDefaultSec({ model: values.model, research: values.research }, values.vendor || 'chatgpt')
+                : undefined,
         deadline: values.deadline,
         session: values.session,
         navigate: values.navigate === true,
@@ -1138,6 +1147,7 @@ async function runBoundCommand(command, deps, input, pollFn, stopFn) {
     if (command === 'poll' && input.session) {
         return withSessionCommandLock(input.session, async () => {
             return withCommandSessionPage(command, deps, input, async ({ page, targetId, session }) => {
+                const effectivePollFn = isWorkSession(session) ? pollWorkSession : pollFn;
                 const sessionDeps = {
                     ...deps,
                     getPage: async () => page,
@@ -1145,7 +1155,7 @@ async function runBoundCommand(command, deps, input, pollFn, stopFn) {
                     getCdpSession: async () => (/** @type {any} */ (page)).context().newCDPSession(page),
                 };
                 return withWebAiActiveCommand(command, sessionDeps, { ...input, vendor: session.vendor, session: session.sessionId }, async () => {
-                    const result = await pollFn(sessionDeps, { ...input, vendor: session.vendor, session: session.sessionId });
+                    const result = await effectivePollFn(sessionDeps, { ...input, vendor: session.vendor, session: session.sessionId });
                     if (isRecoverableTabCrash(result)) {
                         throw new Error(result.error || 'target closed during session-bound web-ai command');
                     }
@@ -1646,32 +1656,7 @@ function isSupportedWebAiModel(vendor, model) {
  */
 function isSupportedWebAiEffort(vendor, model, effort) {
     if (String(vendor || 'chatgpt') !== 'chatgpt') return false;
-    const effortKey = String(effort || '').trim().toLowerCase();
-    const normalizedEffort = ({
-        light: 'light',
-        low: 'light',
-        standard: 'standard',
-        normal: 'standard',
-        regular: 'standard',
-        default: 'standard',
-        extended: 'extended',
-        high: 'extended',
-        heavy: 'heavy',
-    })[effortKey];
-    if (!normalizedEffort) return false;
-    const modelKey = String(model || '').trim().toLowerCase();
-    const normalizedModel = ({
-        thinking: 'thinking',
-        think: 'thinking',
-        'gpt-5-5-thinking': 'thinking',
-        'gpt-5.5-thinking': 'thinking',
-        pro: 'pro',
-        'gpt-5-5-pro': 'pro',
-        'gpt-5.5-pro': 'pro',
-    })[modelKey];
-    if (normalizedModel === 'thinking') return ['light', 'standard', 'extended', 'heavy'].includes(normalizedEffort);
-    if (normalizedModel === 'pro') return ['standard', 'extended'].includes(normalizedEffort);
-    return false;
+    return isChatGptEffortSupported(model, effort);
 }
 
 /**
@@ -1804,6 +1789,122 @@ function printHuman(command, result) {
         return;
     }
     console.log(`${result.status}: ${result.url || result.vendor}`);
+}
+
+/**
+* @param {string[]} args
+* @param {any} deps
+*/
+async function runWorkCommand(args, deps) {
+    const sub = args[0];
+    if (sub !== 'send') {
+        throw new WebAiError({
+            errorCode: 'internal.unhandled',
+            stage: 'work',
+            message: `Unknown work subcommand: ${sub}. Available: send`,
+        });
+    }
+    const { values } = parseArgs({
+        args: args.slice(1),
+        options: {
+            prompt: { type: 'string' },
+            power: { type: 'string' },
+            speed: { type: 'string' },
+            timeout: { type: 'string' },
+            json: { type: 'boolean', default: false },
+        },
+        strict: true,
+    });
+    if (!values.prompt) {
+        throw new WebAiError({
+            errorCode: 'internal.unhandled',
+            stage: 'work',
+            message: '--prompt is required for work send',
+        });
+    }
+    if (values.power == null) {
+        throw new WebAiError({
+            errorCode: 'internal.unhandled',
+            stage: 'work',
+            message: '--power is required for work send (integer 1..6)',
+        });
+    }
+    const { normalizeWorkPower, normalizeWorkSpeed } = await import('./chatgpt-work-picker.mjs');
+    const powerMapping = normalizeWorkPower(Number(values.power));
+    const speed = normalizeWorkSpeed(values.speed || null);
+    const timeoutSec = values.timeout ? Number(values.timeout) : undefined;
+    if (values.timeout && (!Number.isFinite(timeoutSec) || /** @type {number} */ (timeoutSec) <= 0)) {
+        throw new WebAiError({
+            errorCode: 'internal.unhandled',
+            stage: 'work',
+            message: '--timeout must be a positive number (seconds)',
+        });
+    }
+
+    await ensureHeadedBrowserForWebAi(deps, 'work', ['work', ...args]);
+    const page = await deps.getPage();
+
+    const { configureWorkSurface, readWorkTaskState, submitWorkPrompt: submitWork } = await import('./chatgpt-work-picker.mjs');
+    const { insertPromptIntoComposer } = await import('./chatgpt-composer.mjs');
+    const { createSession } = await import('./session.mjs');
+
+    // Configure surface + picker
+    const config = await configureWorkSurface(page, { power: powerMapping.power, speed });
+
+    // Write prompt into Work composer
+    await insertPromptIntoComposer(page, values.prompt, { vendor: 'chatgpt' });
+
+    // Submit via scoped send button + commit verification (04 §4, WP1 R03)
+    // NO keyboard Enter fallback — ProseMirror + IME can leak characters.
+    // Session is NOT created until commit evidence is observed.
+    const commitResult = await submitWork(page, values.prompt);
+
+    // Create session record only after verified commit
+    const session = createSession(
+        { vendor: 'chatgpt', prompt: values.prompt },
+        {
+            vendor: 'chatgpt',
+            originalUrl: commitResult.taskUrl,
+            conversationUrl: commitResult.taskUrl,
+            deadlineAt: timeoutSec
+                ? new Date(Date.now() + timeoutSec * 1000).toISOString()
+                : null,
+            envelopeSummary: {
+                surface: 'work',
+                power: powerMapping.power,
+                speed,
+                model: powerMapping.model,
+                effort: powerMapping.effort,
+                taskId: commitResult.taskId,
+                taskUrl: commitResult.taskUrl,
+            },
+            responseContract: 'work',
+        },
+    );
+
+    const result = {
+        ok: true,
+        status: 'work-sent',
+        surface: 'work',
+        sessionId: session.sessionId,
+        taskId: commitResult.taskId,
+        taskUrl: commitResult.taskUrl,
+        power: powerMapping.power,
+        speed,
+        model: powerMapping.model,
+        effort: powerMapping.effort,
+        responseContract: 'work',
+        evidence: config.evidence,
+        warnings: commitResult.warnings || [],
+    };
+
+    if (values.json) {
+        console.log(JSON.stringify(result, null, 2));
+    } else {
+        console.log(`Work sent (power ${powerMapping.power}, ${powerMapping.compactLabel}${speed ? ', ' + speed : ''})`);
+        console.log(`Session: ${session.sessionId}`);
+    }
+    return result;
 }
 
 /**

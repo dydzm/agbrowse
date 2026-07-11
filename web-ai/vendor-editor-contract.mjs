@@ -113,7 +113,14 @@ export const CHATGPT_EDITOR_CONTRACT = Object.freeze({
     semanticTargets: {
         composer: { roles: ['textbox'], names: [/message/i, /prompt/i, /chatgpt/i], excludeNames: [/search/i], cssFallbacks: CHATGPT_COMPOSER_SELECTORS, required: true },
         sendButton: { roles: ['button'], names: [/send/i, /submit/i], cssFallbacks: CHATGPT_SEND_SELECTORS },
-        modelPicker: { roles: ['button', 'combobox'], names: [/model/i, /gpt/i], cssFallbacks: CHATGPT_MODEL_SELECTOR_BUTTONS },
+        modelPicker: {
+            roles: ['button', 'combobox'],
+            names: [/^(Instant|Medium|High|Extra High|Pro)$/i,
+                /^(GPT-5\.6 Sol|GPT-5\.5|GPT-5\.4|GPT-5\.3|o3)$/i,
+                /intelligence/i, /model/i, /gpt/i],
+            excludeNames: [/search/i, /attach/i, /upload/i],
+            cssFallbacks: CHATGPT_MODEL_SELECTOR_BUTTONS,
+        },
         uploadSurface: { roles: ['button'], names: [/attach/i, /upload/i, /file/i, /add/i], cssFallbacks: CHATGPT_UPLOAD_SELECTORS },
         responseFeed: { roles: ['article', 'region', 'group'], names: [/assistant/i, /response/i], cssFallbacks: CHATGPT_RESPONSE_SELECTORS },
         copyButton: { roles: ['button'], names: [/copy/i], cssFallbacks: CHATGPT_COPY_SELECTORS.copyButtonSelectors },

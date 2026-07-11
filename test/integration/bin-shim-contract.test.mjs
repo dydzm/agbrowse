@@ -71,6 +71,7 @@ describe('P02 — bin shim contract', () => {
         // Frozen at substrate PR (#1). Any change here must be approved at
         // P14 (runtime/publish layout) and cited in the PR body.
         expect(pkg.files.sort()).toEqual([
+            '!devlog/context/redesign-candidates/**',
             'README.md',
             'benchmarks/',
             'bin/',

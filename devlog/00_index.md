@@ -95,6 +95,12 @@ devlog root instead of `_fin/mvp/`:
 | --- | --- | --- |
 |  remote CDP adapters | `20_phase19_remote_cdp_adapters.md` | Deferred (`docs/EXTERNAL_CDP.md`); no production runtime. |19 
 
+## Post-MVP root devlogs
+
+| # | File | Status |
+| --- | --- | --- |
+| 21 | `21_gpt56_ui_update.md` | ✅ Done — GPT-5.6 UI 전면 개편 대응. 계약 재설계·Work send v1·timeout 3분리·141/1261 green. Plan: `_plan/260710_gpt56_update/`. |
+
 ## Forbidden
 
 - Editing files under `_fin/mvp/` after MVP  they are evidence ofmerge 

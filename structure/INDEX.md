@@ -70,6 +70,7 @@ graph LR
 - [ ] `skills/browser/browser.mjs`의 command help 또는 parser가 바뀌면 [commands.md](commands.md)를 갱신한다.
 - [ ] `agbrowse runway` selector/status/preflight/poll 계약이 바뀌면 [commands.md](commands.md), [runtime_contracts.md](runtime_contracts.md), `skills/browser/SKILL.md`를 같이 갱신한다.
 - [ ] `web-ai/cli.mjs`의 command, provider flag, session behavior가 바뀌면 [commands.md](commands.md)와 [str_func.md](str_func.md)를 갱신한다.
+- [ ] ChatGPT surface/family/tier/effort/timeout, Work CLI `web-ai work send`, MCP `web_ai_work_send`, 또는 provider DOM fixture 계약이 바뀌면 [CAPABILITY_TRUTH_TABLE.md](CAPABILITY_TRUTH_TABLE.md), [phase_status.md](phase_status.md), [commands.md](commands.md), [runtime_contracts.md](runtime_contracts.md), `skills/browser/browser.mjs` root help, `skills/web-ai/SKILL.md`, `README.md`, `docs/dev/` EN/KO 쌍을 같이 갱신하고 [check-doc-drift.sh](check-doc-drift.sh)의 stale-token/예외 목록을 재검토한다.
 - [ ] MCP tool schema가 바뀌면 [str_func.md](str_func.md)와 [release_gates.md](release_gates.md)를 갱신한다.
 - [ ] live smoke, provider DOM drift, session recovery, model evidence 같은 실제 작동 취약점이 발견되면 [stability-upgrade/](stability-upgrade/00_index.md)에 상태와 검증 방법을 남긴다.
 - [ ] release script, workflow, package `files` 목록이 바뀌면 [release_gates.md](release_gates.md)를 갱신한다.
