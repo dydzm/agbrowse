@@ -25,14 +25,14 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 | `skills/search/` | 5 | 896 | standalone search skill doc (any CLI agent) |
 | `skills/vision-click/` | 4 | 1215 | screenshot to coordinate click helper |
 | `skills/web-ai/` | 3 | 872 | bundled agent workflow skill |
-| `web-ai/` | 113 | 27441 | provider automation, sessions, MCP, eval, policy, trace |
+| `web-ai/` | 113 | 27479 | provider automation, sessions, MCP, eval, policy, trace |
 | `web-ai/context-pack/` | 8 | 858 | file selection, token budget, context rendering |
 | `web-ai/eval/` | 5 | 553 | offline provider DOM fixture harness |
 | `web-ai/policy/` | 4 | 238 | mutation and content-boundary guardrails |
 | `web-ai/trace/` | 5 | 444 | trace ID, redaction, report, writer helpers |
 | `scripts/` | 10 | 1621 | eval runner, release scripts, named release gates, strict-baseline / module-graph / bin smoke checks |
-| `test/unit/` | 141 | 17628 | deterministic module tests |
-| `test/integration/` | 21 | 3165 | CLI, MCP, policy, provider fixture tests |
+| `test/unit/` | 141 | 17677 | deterministic module tests |
+| `test/integration/` | 21 | 3167 | CLI, MCP, policy, provider fixture tests |
 | `test/e2e/` | 1 | 50 | browser smoke coverage |
 | `test/spec/` | 2 | 35 | high-level contract specs |
 | `docs/` | 41 | 3540 | adoption, trace, production-readiness, comparison, benchmark, EXTERNAL_CDP, migration docs, GitHub Pages developer docs |
@@ -80,15 +80,15 @@ aliases: [agbrowse source map, agbrowse str_func, agbrowse 파일 구조]
 | `skills/browser/adaptive-fetch/transforms.mjs` | 86 | URL transforms, HTML-to-text, content-type checks |
 | `skills/browser/adaptive-fetch/third-party-readers.mjs` | 46 | Jina Reader integration |
 | `skills/browser/adaptive-fetch/browser-runtime.mjs` | 38 | browser page acquisition and cleanup |
-| `web-ai/cli.mjs` | 2004 | `web-ai` subcommand parser and command orchestration |
+| `web-ai/cli.mjs` | 2010 | `web-ai` subcommand parser and command orchestration |
 | `web-ai/session-target-guard.mjs` | 151 | shared CDP session candidate selection, ambiguity errors, and target-mismatch recovery envelopes |
-| `web-ai/chatgpt.mjs` | 1109 | ChatGPT provider send/poll/query/status with streaming-safe recovery gates |
+| `web-ai/chatgpt.mjs` | 1110 | ChatGPT provider send/poll/query/status with streaming-safe recovery gates |
 | `web-ai/chatgpt-response-dom.mjs` | 74 | shared ChatGPT top-level assistant DOM extraction helpers |
 | `web-ai/chatgpt-response-observer.mjs` | 190 | ChatGPT observer wake signal and timeout recovery metadata |
-| `web-ai/gemini-live.mjs` | 801 | Gemini provider send/poll/query/status |
-| `web-ai/grok-live.mjs` | 593 | Grok provider send/poll/query/status |
+| `web-ai/gemini-live.mjs` | 804 | Gemini provider send/poll/query/status |
+| `web-ai/grok-live.mjs` | 594 | Grok provider send/poll/query/status |
 | `web-ai/mcp-server.mjs` | 467 | stdio JSON-RPC MCP bridge |
-| `web-ai/tool-schema.mjs` | 207 | MCP and AI SDK schema source |
+| `web-ai/tool-schema.mjs` | 208 | MCP and AI SDK schema source |
 | `web-ai/answer-artifact.mjs` | 153 | provider poll result artifact normalization |
 | `web-ai/source-audit.mjs` | 183 | claim/source coverage audit helper |
 | `web-ai/ax-snapshot.mjs` | 484 | compact accessibility snapshot and refs |
